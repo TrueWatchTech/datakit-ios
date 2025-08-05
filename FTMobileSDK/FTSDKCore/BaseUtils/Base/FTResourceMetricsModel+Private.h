@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2024/8/2.
-//  Copyright © 2024 DataFlux-cn. All rights reserved.
+//  Copyright © 2024 TRUEWATCH. All rights reserved.
 //
 
 #import "FTResourceMetricsModel.h"

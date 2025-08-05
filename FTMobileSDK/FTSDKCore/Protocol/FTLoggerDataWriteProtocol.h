@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2023/5/26.
-//  Copyright © 2023 DataFlux-cn. All rights reserved.
+//  Copyright © 2023 TRUEWATCH. All rights reserved.
 //
 
 #ifndef FTLoggerDataWriteProtocol_h

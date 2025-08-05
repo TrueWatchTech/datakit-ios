@@ -3,7 +3,7 @@
 //  FTMacOSSDK
 //
 //  Created by hulilei on 2021/8/30.
-//  Copyright © 2021 DataFlux-cn. All rights reserved.
+//  Copyright © 2021 TRUEWATCH. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

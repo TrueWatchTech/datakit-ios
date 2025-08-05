@@ -1,7 +1,7 @@
 #FT_PUSH_TAG="refs/tags/1.0.2-alpha.8"
 
 VERSION=$(echo "$FT_PUSH_TAG" | sed -e 's/.*\///g' | sed -e 's/~.*//g' )
-REPO_URL=git@github.com:GuanceCloud/datakit-ios.git
+REPO_URL=git@github.com:TrueWatchTech/datakit-ios.git
 
 if git config remote.github.url; then
     git config remote.github.url $REPO_URL

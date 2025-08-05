@@ -3,7 +3,7 @@
 //  FTMobileAgent
 //
 //  Created by hulilei on 2021/7/28.
-//  Copyright © 2021 DataFlux-cn. All rights reserved.
+//  Copyright © 2021 TRUEWATCH. All rights reserved.
 //
 #if !TARGET_OS_TV
 #import <WebKit/WebKit.h>

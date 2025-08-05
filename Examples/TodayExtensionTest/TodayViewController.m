@@ -40,11 +40,13 @@
      NSDictionary *dict = @{@"11":value};
 }
 - (IBAction)networkClick:(id)sender {
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"http://testing-ft2x-api.cloudcare.cn/api/v1/account/permissions"]];
+    NSString *urlStr = [[NSProcessInfo processInfo] environment][@"TRACE_URL"];
+
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlStr]];
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue currentQueue] completionHandler:^(NSURLResponse * _Nullable response, NSData * _Nullable data, NSError * _Nullable connectionError) {
         
     }];
-    NSURL *url = [NSURL URLWithString:@"http://testing-ft2x-api.cloudcare.cn/api/v1/account/permissions"];
+    NSURL *url = [NSURL URLWithString:urlStr];
     NSMutableURLRequest *request2 = [NSMutableURLRequest requestWithURL:url];
     
     NSURLSessionTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request2 completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {

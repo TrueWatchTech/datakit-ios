@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2025/7/4.
-//  Copyright © 2025 DataFlux-cn. All rights reserved.
+//  Copyright © 2025 TRUEWATCH. All rights reserved.
 //
 
 #ifndef FTCrashMonitor_h

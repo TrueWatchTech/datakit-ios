@@ -3,7 +3,7 @@
 //  FTMobileSDKUnitTests
 //
 //  Created by hulilei on 2024/5/16.
-//  Copyright © 2024 GuanceCloud. All rights reserved.
+//  Copyright © 2024 TRUEWATCH. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>
@@ -87,7 +87,7 @@
         }
             dispatch_async(dispatch_get_global_queue(0, 0), ^{
                 DelegateSwizzlerClass *resourceDelegate = [[DelegateSwizzlerClass alloc]init];
-                NSString *urlStr = [NSString stringWithFormat:@"http://testing-ft2x-api.cloudcare.cn/api/v1/account/permissions%d",i];
+                NSString *urlStr = [NSString stringWithFormat:@"http://www.test.com/some/url/string%d",i];
                 NSURL *url = [NSURL URLWithString:urlStr];
                 NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
                 NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:resourceDelegate delegateQueue:nil];
@@ -105,7 +105,7 @@
     [FIRApp configure];
     for (int i = 0; i<1000; i++) {
         dispatch_async(dispatch_get_global_queue(0, 0), ^{
-            NSString *urlStr = [NSString stringWithFormat:@"http://testing-ft2x-api.cloudcare.cn/api/v1/account/permissions%d",i];
+            NSString *urlStr = [NSString stringWithFormat:@"http://www.test.com/some/url/string%d",i];
             NSURL *url = [NSURL URLWithString:urlStr];
             NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
             NSURLSession *session = [NSURLSession sharedSession];
@@ -124,7 +124,7 @@
     [FIRApp configure];
     for (int i = 0; i<1000; i++) {
         dispatch_async(dispatch_get_global_queue(0, 0), ^{
-            NSString *urlStr = [NSString stringWithFormat:@"http://testing-ft2x-api.cloudcare.cn/api/v1/account/permissions%d",i];
+            NSString *urlStr = [NSString stringWithFormat:@"http://www.test.com/some/url/string%d",i];
             NSURL *url = [NSURL URLWithString:urlStr];
             NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
             NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
@@ -149,7 +149,7 @@
         dispatch_group_enter(group);
         dispatch_async(dispatch_get_global_queue(0, 0), ^{
             DelegateSwizzlerClass *delegate = [[DelegateSwizzlerClass alloc]init];
-            NSString *urlStr = [NSString stringWithFormat:@"http://testing-ft2x-api.cloudcare.cn/api/v1/account/permissions%d",i];
+            NSString *urlStr = [NSString stringWithFormat:@"http://www.test.com/some/url/string%d",i];
             NSURL *url = [NSURL URLWithString:urlStr];
             NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
             NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:delegate delegateQueue:nil];

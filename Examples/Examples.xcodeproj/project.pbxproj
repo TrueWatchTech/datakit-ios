@@ -1131,7 +1131,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1110;
-				ORGANIZATIONNAME = GuanceCloud;
+				ORGANIZATIONNAME = TRUEWATCH;
 				TargetAttributes = {
 					172DD33228F7FC27007AE5E9 = {
 						CreatedOnToolsVersion = 14.0;
@@ -1669,7 +1669,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetDemo;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 DataFlux-cn. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 TRUEWATCH. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1705,7 +1705,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetDemo;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 DataFlux-cn. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 TRUEWATCH. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1741,7 +1741,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetDemo;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 DataFlux-cn. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 TRUEWATCH. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

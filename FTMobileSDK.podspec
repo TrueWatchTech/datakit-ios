@@ -3,9 +3,9 @@ Pod::Spec.new do |s|
 	s.name         = "FTMobileSDK"
 	#s.version      = "1.4.11-alpha.1"
 	s.version      = "$JENKINS_DYNAMIC_VERSION"
-	s.summary      = "Guance Cloud iOS Data Collection SDK"
+	s.summary      = "TrueWatchTech iOS Data Collection SDK"
 	#s.description  = ""
-	s.homepage     = "https://github.com/GuanceCloud/datakit-ios.git"
+	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
 
 	s.license      = { type: 'Apache', :file => 'LICENSE'}
 	s.authors             = { "hulilei" => "hulilei@jiagouyun.com","Brandon Zhang" => "zhangbo@jiagouyun.com" }
@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
 	s.tvos.deployment_target = '12.0'
 
 	#$JENKINS_DYNAMIC_VERSION replacing "#{s.version}" will cause an error during pod valid phase
-	s.source       = { :git => "https://github.com/GuanceCloud/datakit-ios.git", :tag => "$JENKINS_DYNAMIC_VERSION" }
+	s.source       = { :git => "https://github.com/TrueWatchTech/datakit-ios.git", :tag => "$JENKINS_DYNAMIC_VERSION" }
 
     s.resource_bundle = {
       "FTSDKPrivacyInfo" => "FTMobileSDK/Resources/PrivacyInfo.xcprivacy"

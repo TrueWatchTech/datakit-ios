@@ -85,7 +85,7 @@
 3. Optimize data sync packageId generation logic
 ---
 # 1.5.14
-1. Add RUM `Resource` data fields `resource_first_byte_time`, `resource_dns_time`, `resource_download_time`, `resource_connect_time`, `resource_ssl_time`, `resource_redirect_time`, support optimized display on Guance Cloud and APM flame graph time alignment
+1. Add RUM `Resource` data fields `resource_first_byte_time`, `resource_dns_time`, `resource_download_time`, `resource_connect_time`, `resource_ssl_time`, `resource_redirect_time`, support optimized display on TrueWatch and APM flame graph time alignment
 2. Enable `FTMobileConfig.enableDataIntegerCompatible` by default
 3. Add support to disable SDK internal URLSession Method Swizzling through macro `FT_DISABLE_SWIZZLING_RESOURCE`
 4. Optimize data sync, add failure retransmission logic
@@ -100,7 +100,7 @@
 # 1.5.14-alpha.1
 1. Optimize data sync, add failure retransmission logic
 2. Enable `FTMobileConfig.enableDataIntegerCompatible` by default
-3. Add RUM Resource data fields `resource_first_byte_time`, `resource_dns_time`, `resource_download_time`, `resource_connect_time`, `resource_ssl_time`, `resource_redirect_time`, optimize display on Guance Cloud and support APM flame graph time alignment
+3. Add RUM Resource data fields `resource_first_byte_time`, `resource_dns_time`, `resource_download_time`, `resource_connect_time`, `resource_ssl_time`, `resource_redirect_time`, optimize display on TrueWatch and support APM flame graph time alignment
 ---
 # 1.5.13
 1. Optimize page collection logic, prevent RUM View collection loss caused by special views

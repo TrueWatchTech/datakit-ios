@@ -64,9 +64,7 @@
    
             Configure through ``FTMobileSDK/FTRumConfig``.
 
-            Enable user access monitoring function [Prerequisites](https://preprod-docs.cloudcare.cn/real-user-monitoring/config-datakit/)
             
-                
             @Image(source: ios_overview, alt: "ios overview")
         }
         @Steps {

@@ -3,7 +3,7 @@
 //  FTMobileSDKUnitTests
 //
 //  Created by hulilei on 2021/12/14.
-//  Copyright © 2021 DataFlux-cn. All rights reserved.
+//  Copyright © 2021 TRUEWATCH. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>

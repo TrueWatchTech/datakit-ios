@@ -3,7 +3,7 @@
 //  FTMobileSDKUnitTests
 //
 //  Created by hulilei on 2024/11/29.
-//  Copyright © 2024 GuanceCloud. All rights reserved.
+//  Copyright © 2024 TRUEWATCH. All rights reserved.
 //
 
 #import "FTTestUtils.h"

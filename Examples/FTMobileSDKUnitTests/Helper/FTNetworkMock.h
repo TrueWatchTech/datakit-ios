@@ -3,7 +3,7 @@
 //  Examples
 //
 //  Created by hulilei on 2024/5/16.
-//  Copyright © 2024 GuanceCloud. All rights reserved.
+//  Copyright © 2024 TRUEWATCH. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

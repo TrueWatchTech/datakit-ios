@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2023/3/22.
-//  Copyright © 2023 DataFlux-cn. All rights reserved.
+//  Copyright © 2023 TRUEWATCH. All rights reserved.
 //
 
 #include <TargetConditionals.h>

@@ -1,5 +1,5 @@
 # ``FTMobileSDK``
-Used to collect metrics data from iOS applications for "Guance Cloud" application monitoring functionality, 
+Used to collect metrics data from iOS applications for TrueWatchTech application monitoring functionality, 
 analyzing the performance of various iOS applications in a visual way.
 
 ## Topics

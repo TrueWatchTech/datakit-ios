@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2021/8/23.
-//  Copyright © 2021 DataFlux-cn. All rights reserved.
+//  Copyright © 2021 TRUEWATCH. All rights reserved.
 //
 
 #ifndef FTMobileAgentVersion_h

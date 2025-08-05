@@ -3,7 +3,7 @@
 //  tvOS-App
 //
 //  Created by hulilei on 2025/2/8.
-//  Copyright © 2025 GuanceCloud. All rights reserved.
+//  Copyright © 2025 TRUEWATCH. All rights reserved.
 //
 
 import UIKit

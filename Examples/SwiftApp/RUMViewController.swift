@@ -3,7 +3,7 @@
 //  SwiftApp
 //
 //  Created by hulilei on 2023/2/27.
-//  Copyright © 2023 GuanceCloud. All rights reserved.
+//  Copyright © 2023 TRUEWATCH. All rights reserved.
 //
 
 import UIKit
@@ -34,7 +34,7 @@ class RUMViewController: UIViewController,UITableViewDelegate,UITableViewDataSou
         createUI()
     }
     func createUI(){
-        dataSource = ["onCreateView","startView","stopView","addAction","addError","addLongTask","resource","resourceError"]
+        dataSource = ["onCreateView","startView","stopView","addAction","addError","addLongTask","resource"]
         self.view.addSubview(tableView)
     }
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -66,8 +66,6 @@ class RUMViewController: UIViewController,UITableViewDelegate,UITableViewDataSou
             if let traceStr = traceStr {
                 request(urlStr: traceStr)
             }
-        case 7:
-            request(urlStr: "https://console-api.guance.com/not/found/")
         default:
             print("default")
         }

@@ -3,7 +3,7 @@
 //  Examples
 //
 //  Created by hulilei on 2024/1/26.
-//  Copyright © 2024 GuanceCloud. All rights reserved.
+//  Copyright © 2024 TRUEWATCH. All rights reserved.
 //
 
 #ifndef FTMobileSDKUnitTests_Bridging_Header_h

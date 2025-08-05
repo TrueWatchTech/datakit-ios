@@ -3,7 +3,7 @@
 //  App
 //
 //  Created by hulilei on 2023/4/12.
-//  Copyright © 2023 GuanceCloud. All rights reserved.
+//  Copyright © 2023 TRUEWATCH. All rights reserved.
 //
 
 #import "LoggerVC.h"

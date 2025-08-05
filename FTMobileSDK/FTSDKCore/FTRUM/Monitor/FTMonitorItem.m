@@ -3,7 +3,7 @@
 //  FTMobileAgent
 //
 //  Created by hulilei on 2022/7/6.
-//  Copyright © 2022 DataFlux-cn. All rights reserved.
+//  Copyright © 2022 TRUEWATCH. All rights reserved.
 //
 #import "FTMonitorItem.h"
 #import "FTCPUMonitor.h"

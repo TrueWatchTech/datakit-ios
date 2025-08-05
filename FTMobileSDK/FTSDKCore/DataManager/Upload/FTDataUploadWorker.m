@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2025/4/30.
-//  Copyright © 2025 DataFlux-cn. All rights reserved.
+//  Copyright © 2025 TRUEWATCH. All rights reserved.
 //
 
 #import "FTDataUploadWorker.h"

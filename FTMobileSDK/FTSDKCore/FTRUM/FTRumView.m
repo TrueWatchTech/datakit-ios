@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2025/7/23.
-//  Copyright © 2025 DataFlux-cn. All rights reserved.
+//  Copyright © 2025 TRUEWATCH. All rights reserved.
 //
 
 #import "FTRUMView.h"

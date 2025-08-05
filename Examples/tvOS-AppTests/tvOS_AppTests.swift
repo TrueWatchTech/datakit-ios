@@ -3,7 +3,7 @@
 //  tvOS-AppTests
 //
 //  Created by hulilei on 2024/12/16.
-//  Copyright © 2024 GuanceCloud. All rights reserved.
+//  Copyright © 2024 TRUEWATCH. All rights reserved.
 //
 
 import XCTest
