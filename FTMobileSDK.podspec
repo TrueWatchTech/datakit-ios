@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
 	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
 
 	s.license      = { type: 'Apache', :file => 'LICENSE'}
-	s.authors             = { "hulilei" => "hulilei@jiagouyun.com","Brandon Zhang" => "zhangbo@jiagouyun.com" }
+	s.authors             = { "hulilei" => "huuuu1016@gmail.com","Brandon Zhang" => "brandonzhangdev@gmail.com" }
 	s.default_subspec = 'FTMobileAgent'
 
 	s.ios.deployment_target = '10.0'
