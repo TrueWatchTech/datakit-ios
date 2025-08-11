@@ -32,10 +32,9 @@
 #import "FTBaseInfoHandler.h"
 #import "FTCrash.h"
 #import "FTFatalErrorContext.h"
-@interface FTGlobalRumManager ()<FTRunloopDetectorDelegate,FTAppLifeCycleDelegate,FTAppLaunchDataDelegate>
+@interface FTGlobalRumManager ()<FTRunloopDetectorDelegate,FTAppLifeCycleDelegate>
 @property (nonatomic, strong) FTRumConfig *rumConfig;
 @property (nonatomic, strong) FTRUMDependencies *dependencies;
-@property (nonatomic, strong) FTAppLaunchTracker *launchTracker;
 @property (nonatomic, strong) FTRUMMonitor *monitor;
 @property (nonatomic, strong) FTLongTaskManager *longTaskManager;
 @end
@@ -72,13 +71,7 @@ static NSObject *sharedInstanceLock;
     dependencies.fatalErrorContext = [FTFatalErrorContext new];
     self.dependencies = dependencies;
     self.rumManager = [[FTRUMManager alloc]initWithRumDependencies:self.dependencies];
-    [[FTAutoTrackHandler sharedInstance]startWithTrackView:rumConfig.enableTraceUserView action:rumConfig.enableTraceUserAction];
-    [FTAutoTrackHandler sharedInstance].addRumDatasDelegate = self.rumManager;
-    [FTAutoTrackHandler sharedInstance].uiKitViewTrackingHandler = rumConfig.viewTrackingHandler;
-    [FTAutoTrackHandler sharedInstance].actionTrackingHandler = rumConfig.actionTrackingHandler;
-    if(rumConfig.enableTraceUserAction){
-        self.launchTracker = [[FTAppLaunchTracker alloc]initWithDelegate:self];
-    }
+    [[FTAutoTrackHandler sharedInstance] startWithTrackView:rumConfig.enableTraceUserView action:rumConfig.enableTraceUserAction addRumDatasDelegate:self.rumManager viewHandler:rumConfig.viewTrackingHandler actionHandler:rumConfig.actionTrackingHandler];
     [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:self];
     if(rumConfig.enableTrackAppCrash){
         [[FTCrash shared] addErrorDataDelegate:self.rumManager];
@@ -141,13 +134,6 @@ static NSObject *sharedInstanceLock;
 }
 - (void)anrStackDetected:(NSString*)slowStack time:(nonnull NSDate *)time{
     [self.rumManager addErrorWithType:@"anr_error" message:@"ios_anr" stack:slowStack date:time];
-}
-#pragma mark ========== RUM-Action: App Launch ==========
--(void)ftAppHotStart:(NSDate *)launchTime duration:(NSNumber *)duration{
-    [self.rumManager addLaunch:FTLaunchHot launchTime:launchTime duration:duration];
-}
--(void)ftAppColdStart:(NSDate *)launchTime duration:(NSNumber *)duration isPreWarming:(BOOL)isPreWarming{
-    [self.rumManager addLaunch:isPreWarming?FTLaunchWarm:FTLaunchCold launchTime:launchTime duration:duration];
 }
 #pragma mark ========== RUM-ERROR appState: App Life Cycle ==========
 -(void)applicationWillEnterForeground{

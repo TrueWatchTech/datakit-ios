@@ -20,7 +20,9 @@
 #import "FTThreadDispatchManager.h"
 #import "FTConstants.h"
 #import "UIView+FTAutoTrack.h"
-
+#import "FTAppLaunchTracker.h"
+#import "FTDefaultUIKitViewTrackingHandler.h"
+#import "FTDefaultActionTrackingHandler.h"
 @interface RUMView:NSObject
 @property (nonatomic, copy) NSString *viewName;
 @property (nonatomic, copy) NSString *identify;
@@ -55,11 +57,15 @@
     _loadTime = @0;
 }
 @end
-@interface FTAutoTrackHandler()<FTAppLifeCycleDelegate,FTUIViewControllerHandler,FTUIEventHandler>
+@interface FTAutoTrackHandler()<FTAppLifeCycleDelegate,FTUIViewControllerHandler,FTUIEventHandler,FTAppLaunchDataDelegate>
 @property (nonatomic, strong) NSMutableArray<RUMView*> *stack;
 @property (nonatomic, assign) BOOL autoTrackView;
 @property (nonatomic, assign) BOOL autoTrackAction;
-
+@property (nonatomic, strong) FTAppLaunchTracker *launchTracker;
+/// Pass event object, pass collected view and action data to RUM
+@property (nonatomic, weak) id<FTRumDatasProtocol> addRumDatasDelegate;
+@property (nonatomic, strong, nullable) FTViewTrackingHandler uiKitViewTrackingHandler;
+@property (nonatomic, strong, nullable) FTActionTrackingHandler actionTrackingHandler;
 @end
 @implementation FTAutoTrackHandler
 -(instancetype)init{
@@ -77,13 +83,19 @@
     });
     return sharedInstance;
 }
--(void)startWithTrackView:(BOOL)trackView action:(BOOL)trackAction{
+-(void)startWithTrackView:(BOOL)trackView
+                   action:(BOOL)trackAction
+      addRumDatasDelegate:(id<FTRumDatasProtocol>)delegate
+              viewHandler:(FTViewTrackingHandler)viewHandler
+            actionHandler:(FTActionTrackingHandler)actionHandler{
     _autoTrackView = trackView;
     _autoTrackAction = trackAction;
     _stack = [NSMutableArray new];
+    _addRumDatasDelegate = delegate;
     if (trackView) {
         self.viewControllerHandler = self;
         [self hookViewControllerLifeCycle];
+        self.uiKitViewTrackingHandler = viewHandler ? viewHandler : [FTDefaultUIKitViewTrackingHandler new];
         [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:self];
     }else{
         self.viewControllerHandler = nil;
@@ -91,6 +103,8 @@
     if (trackAction) {
         self.actionHandler = self;
         [self hookTargetAction];
+        self.actionTrackingHandler = actionHandler ? actionHandler : [FTDefaultActionTrackingHandler new];
+        self.launchTracker = [[FTAppLaunchTracker alloc]initWithDelegate:self];
     }
 }
 - (void)hookViewControllerLifeCycle{
@@ -128,50 +142,51 @@
     }
     
 }
+#pragma mark ========== RUM-Action: App Launch ==========
+-(void)ftAppHotStart:(NSDate *)launchTime duration:(NSNumber *)duration{
+    if (self.actionTrackingHandler && [self.actionTrackingHandler respondsToSelector:@selector(rumLaunchActionWithLaunchType:)]) {
+        FTRUMAction *action = [self.actionTrackingHandler rumLaunchActionWithLaunchType:FTLaunchHot];
+        if (action == nil) {
+            return;
+        }
+        if (self.addRumDatasDelegate && [self.addRumDatasDelegate respondsToSelector:@selector(addLaunch:type:launchTime:duration:property:)]) {
+            [self.addRumDatasDelegate addLaunch:action.actionName type:FT_LAUNCH_HOT launchTime:launchTime duration:duration property:action.property];
+        }
+    }
+}
+-(void)ftAppColdStart:(NSDate *)launchTime duration:(NSNumber *)duration isPreWarming:(BOOL)isPreWarming{
+    if (self.actionTrackingHandler && [self.actionTrackingHandler respondsToSelector:@selector(rumLaunchActionWithLaunchType:)]) {
+        FTRUMAction *action = [self.actionTrackingHandler rumLaunchActionWithLaunchType:isPreWarming?FTLaunchWarm:FTLaunchCold];
+        if (action == nil) {
+            return;
+        }
+        if (self.addRumDatasDelegate && [self.addRumDatasDelegate respondsToSelector:@selector(addLaunch:type:launchTime:duration:property:)]) {
+            NSString *actionType = isPreWarming?FT_LAUNCH_WARM:FT_LAUNCH_COLD;
+            [self.addRumDatasDelegate addLaunch:action.actionName type:actionType launchTime:launchTime duration:duration property:action.property];
+        }
+    }
+}
 #pragma mark ========== FTUIEventHandler ==========
 - (void)notify_sendAction:(UIView *)view{
 #if TARGET_OS_IOS
-    NSString *actionName = view.ft_actionName;
-    NSDictionary *property = nil;
     if (self.actionTrackingHandler && [self.actionTrackingHandler respondsToSelector:@selector(rumActionWithTargetView:)]) {
         FTRUMAction *action = [self.actionTrackingHandler rumActionWithTargetView:view];
         if ( action == nil ) return;
-        actionName = action.actionName;
-        property = action.property;
-    }
-    
-    if (self.addRumDatasDelegate && [self.addRumDatasDelegate respondsToSelector:@selector(startAction:actionType:property:)]) {
-        [self.addRumDatasDelegate startAction:actionName actionType:FT_KEY_ACTION_TYPE_CLICK property:property];
+        if (self.addRumDatasDelegate && [self.addRumDatasDelegate respondsToSelector:@selector(startAction:actionType:property:)]) {
+            [self.addRumDatasDelegate startAction:action.actionName actionType:FT_KEY_ACTION_TYPE_CLICK property:action.property];
+        }
     }
 #endif
 }
 
 - (void)notify_sendActionWithPressType:(UIPressType)type view:(nonnull UIView *)view {
 #if TARGET_OS_TV
-    NSString *actionName = nil;
-    NSDictionary *property = nil;
     if (self.actionTrackingHandler && [self.actionTrackingHandler respondsToSelector:@selector(rumActionWithPressType:targetView:)]) {
         FTRUMAction *action = [self.actionTrackingHandler rumActionWithPressType:type targetView:view];
         if ( action == nil ) return;
-        actionName = action.actionName;
-        property = action.property;
-    }else{
-        switch (type) {
-            case UIPressTypeSelect:
-                actionName = view.ft_actionName;
-                break;
-            case UIPressTypeMenu:
-                actionName = @"[menu]";
-                break;
-            case UIPressTypePlayPause:
-                actionName = @"[play-pause]";
-                break;
-            default:
-                return;
+        if (self.addRumDatasDelegate && [self.addRumDatasDelegate respondsToSelector:@selector(startAction:actionType:property:)]) {
+            [self.addRumDatasDelegate startAction:action.actionName actionType:FT_KEY_ACTION_TYPE_CLICK property:action.property];
         }
-    }
-    if (self.addRumDatasDelegate && [self.addRumDatasDelegate respondsToSelector:@selector(startAction:actionType:property:)]) {
-        [self.addRumDatasDelegate startAction:actionName actionType:FT_KEY_ACTION_TYPE_CLICK property:property];
     }
 #endif
 }
@@ -210,19 +225,6 @@
             [self addView:view];
         }
         return;
-    }
-    
-    if (!viewController.parentViewController ||
-        [viewController.parentViewController isKindOfClass:[UITabBarController class]] ||
-        [viewController.parentViewController isKindOfClass:[UINavigationController class]] ||
-        [viewController.parentViewController isKindOfClass:[UISplitViewController class]]) {
-        
-        if([self shouldTrackViewController:viewController]){
-            NSString *identify = [NSString stringWithFormat:@"%p", viewController];
-            RUMView *view = [[RUMView alloc]initWithViewController:viewController identify:identify];
-            view.viewName = viewController.ft_viewControllerName;
-            [self addView:view];
-        }
     }
 }
 -(void)notify_viewDidDisappear:(UIViewController *)viewController animated:(BOOL)animated{
@@ -287,9 +289,6 @@
     if(!view.isUntrackedModal){
         [self.addRumDatasDelegate stopViewWithViewID:view.viewControllerUUID property:nil];
     }
-}
-- (BOOL)shouldTrackViewController:(UIViewController *)viewController{
-    return ![viewController isBlackListContainsViewController];
 }
 -(void)shutDown{
     self.addRumDatasDelegate = nil;

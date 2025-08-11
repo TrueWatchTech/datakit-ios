@@ -1,6 +1,20 @@
+# 1.5.8
+1. Added support for RUM View/Action collection filtering and custom View/Action naming via `FTRumConfig.viewTrackingHandler` and `FTRumConfig.actionTrackingHandler`
+2. Added the `-updateViewLoadingTime:` method to support updating the loading time for the currently active RUM View
+3. Made `sdk_name` a mandatory basic field
+4. Fixed the UserScripts conflict issue in WebView data collection
+5. Fixed the thread-safety issue of SDK shutdown operations
+6. Fixed the crash caused by modifying the name of the main thread during Long task monitoring
+---
+# 1.5.8-beta.1
+1. Same as 1.5.18-alpha.6
+---
+# 1.5.18-alpha.6
+1. Add custom RUM Launch Action handler via `FTRumConfig.actionTrackingHandler` 
+---
 # 1.5.18-alpha.5
 1. Changes `FTRumConfig.viewTrackingStrategy` implementation from block to delegate protocol and Changes `FTRumConfig.viewTrackingStrategy` to `FTRumConfig.viewTrackingHandler`
-2. Added support for custom RUM Action tracking strategy via `FTRumConfig.actionTrackingHandler`
+2. Added support for custom RUM Action tracking handler via `FTRumConfig.actionTrackingHandler`
 3. Adds method `-updateViewLoadingTime:` to support update loading time for currently active RUM view
 ---
 # 1.5.18-alpha.4
