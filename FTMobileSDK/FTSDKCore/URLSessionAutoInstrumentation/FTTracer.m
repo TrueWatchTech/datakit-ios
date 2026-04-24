@@ -11,7 +11,6 @@
 #import "NSString+FTAdd.h"
 #import "FTConstants.h"
 #import "FTBaseInfoHandler.h"
-#import "FTEnumConstant.h"
 #import "FTLog.h"
 #include <pthread.h>
 static NSUInteger SkyWalkingSequence = 0.0;
@@ -20,7 +19,7 @@ static NSUInteger SkyWalkingSequence = 0.0;
 @property (nonatomic, strong) NSLock *lock;
 @property (nonatomic, copy) NSString *skyTraceID;
 @property (nonatomic, copy) NSString *skyParentInstance;
-@property (nonatomic, assign) int sampleRate;
+@property (atomic, assign) int sampleRate;
 @property (nonatomic, assign) NetworkTraceType traceType;
 @property (nonatomic, copy) NSString *serviceName;
 
@@ -43,6 +42,9 @@ static NSUInteger SkyWalkingSequence = 0.0;
         _serviceName = serviceName;
     }
     return self;
+}
+- (void)updateTraceSampleRate:(int)sampleRate{
+    self.sampleRate = sampleRate;
 }
 - (NSDictionary *)networkTraceHeaderWithUrl:(NSURL *)url{
     BOOL sampled = [FTBaseInfoHandler randomSampling:self.sampleRate];

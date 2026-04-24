@@ -9,7 +9,7 @@
 #import "FTExtensionManager.h"
 #import "FTExtensionDataManager.h"
 #import "FTCrash.h"
-#import "FTLog+Private.h"
+#import "FTInnerLog.h"
 #import "FTRUMManager.h"
 #import "FTRUMDataWriteProtocol.h"
 #import "FTURLSessionInstrumentation.h"
@@ -22,8 +22,11 @@
 #import "FTMobileConfig+Private.h"
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"
-#import "FTEnumConstant.h"
+#import "FTInternalConstants.h"
 #import "FTLogger+Private.h"
+#import "FTErrorMonitorInfo.h"
+#import "FTCrashMonitorType.h"
+
 @interface FTExtensionManager ()<FTRUMDataWriteProtocol,FTLoggerDataWriteProtocol>
 @property (nonatomic, strong) FTRUMManager *rumManager;
 @property (nonatomic, strong) FTLoggerConfig *loggerConfig;
@@ -62,9 +65,7 @@ static FTExtensionManager *sharedInstance = nil;
     FTRumConfig *rumConfig =[[FTRumConfig alloc]initWithDictionary:rumDict];
     FTTraceConfig *traceConfig =[[FTTraceConfig alloc]initWithDictionary:traceDict];
     FTLoggerConfig *loggerConfig = [[FTLoggerConfig alloc]initWithDictionary:loggerDict];
-    if(mobileConfig){
-        [[FTURLSessionInstrumentation sharedInstance] setSdkUrlStr:mobileConfig.datakitUrl.length>0?mobileConfig.datakitUrl:mobileConfig.datawayUrl serviceName:mobileConfig.service];
-    }
+ 
     if(rumConfig){
         rumConfig.enableTraceUserResource = self.extensionConfig.enableRUMAutoTraceResource;
         rumConfig.enableTrackAppCrash = self.extensionConfig.enableTrackAppCrash;
@@ -72,7 +73,7 @@ static FTExtensionManager *sharedInstance = nil;
     }
     if(traceConfig){
         traceConfig.enableAutoTrace = self.extensionConfig.enableTracerAutoTrace;
-        [self startTraceWithConfigOptions:traceConfig];
+        [self startTraceWithConfigOptions:traceConfig serviceName:mobileConfig.service?:FT_DEFAULT_SERVICE_NAME];
     }
     if(loggerConfig){
         self.loggerConfig = loggerConfig;
@@ -86,9 +87,10 @@ static FTExtensionManager *sharedInstance = nil;
                                               resourcePropertyProvider:rumConfigOptions.resourcePropertyProvider
                                                 sessionTaskErrorFilter:rumConfigOptions.sessionTaskErrorFilter
     ];
+    id<FTErrorMonitorInfoWrapper> errorInfoWrapper = [[FTErrorMonitorInfo alloc]initWithMonitorType:(ErrorMonitorType)rumConfigOptions.errorMonitorType];
     FTRUMDependencies *dependencies = [[FTRUMDependencies alloc]init];
     dependencies.writer = self;
-    dependencies.errorMonitorType = (ErrorMonitorType)rumConfigOptions.errorMonitorType;
+    dependencies.errorMonitorInfoWrapper = errorInfoWrapper;
     dependencies.sampleRate = rumConfigOptions.samplerate;
     self.rumManager = [[FTRUMManager alloc] initWithRumDependencies:dependencies];
     self.rumManager.appState = FTAppStateUnknown;
@@ -96,13 +98,17 @@ static FTExtensionManager *sharedInstance = nil;
     [[FTExternalDataManager sharedManager] setDelegate:rum];
     [FTExternalDataManager sharedManager].resourceDelegate = [FTURLSessionInstrumentation sharedInstance].externalResourceHandler;
     if (rumConfigOptions.enableTrackAppCrash){
-        [[FTCrash shared] addErrorDataDelegate:self.rumManager];
+        FTCrashMonitorType type = (rumConfigOptions.crashMonitoring & (~FTCrashMonitorTypeMachException));
+        [FTCrash setupWithMonitoringType:(FTCrashCMonitorType)type writer:self enableMonitorMemory:[errorInfoWrapper enableMonitorMemory] enableMonitorCpu:[errorInfoWrapper enableMonitorCpu]];
+        dependencies.fatalErrorContext.onChange = ^(NSDictionary * _Nonnull context) {
+            [FTCrash shared].userInfo = context;
+        };
     }
     [[FTURLSessionInstrumentation sharedInstance] setRumResourceHandler:self.rumManager];
 }
 
-- (void)startTraceWithConfigOptions:(FTTraceConfig *)traceConfigOptions{
-    [[FTURLSessionInstrumentation sharedInstance] setTraceEnableAutoTrace:traceConfigOptions.enableAutoTrace enableLinkRumData:traceConfigOptions.enableLinkRumData sampleRate:traceConfigOptions.samplerate traceType:traceConfigOptions.networkTraceType traceInterceptor:traceConfigOptions.traceInterceptor];
+- (void)startTraceWithConfigOptions:(FTTraceConfig *)traceConfigOptions serviceName:(NSString *)serviceName{
+    [[FTURLSessionInstrumentation sharedInstance] setTraceEnableAutoTrace:traceConfigOptions.enableAutoTrace enableLinkRumData:traceConfigOptions.enableLinkRumData sampleRate:traceConfigOptions.samplerate traceType:(NetworkTraceType)traceConfigOptions.networkTraceType traceInterceptor:traceConfigOptions.traceInterceptor serviceName:serviceName];
     [FTExternalDataManager sharedManager].resourceDelegate = [FTURLSessionInstrumentation sharedInstance].externalResourceHandler;
 
 }
@@ -115,9 +121,8 @@ static FTExtensionManager *sharedInstance = nil;
     }
     [[FTLogger sharedInstance] log:content statusType:status property:property];
 }
--(void)logging:(NSString *)content status:(NSString *)status tags:(NSDictionary *)tags field:(NSDictionary *)field time:(long long)time{
+-(void)loggingTags:(NSDictionary *)tags field:(NSDictionary *)field time:(long long)time linkRum:(BOOL)linkRum{
     @try {
-        NSString *newContent = [content ft_subStringWithCharacterLength:FT_LOGGING_CONTENT_SIZE];
         NSString *bundleIdentifier =  [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
         if (bundleIdentifier == nil) {
             return;
@@ -126,22 +131,30 @@ static FTExtensionManager *sharedInstance = nil;
         [tags setValue:bundleIdentifier forKey:@"extension_identifier"];
         [tagDict addEntriesFromDictionary:tags];
         FTInnerLogDebug(@"%@\n",@{@"type":FT_LOGGER_SOURCE,
-                                  @"tags":tagDict,
-                                  @"content":newContent?:@"",
+                                  @"tags":tagDict
                                 });
-        [[FTExtensionDataManager sharedInstance] writeLoggerEvent:status content:newContent tags:tagDict fields:nil tm:time groupIdentifier:self.extensionConfig.groupIdentifier];
+        [[FTExtensionDataManager sharedInstance] writeLoggerTags:tagDict fields:field tm:time groupIdentifier:self.extensionConfig.groupIdentifier];
     } @catch (NSException *exception) {
         FTInnerLogError(@"exception %@",exception);
     }
 }
-- (void)rumWrite:(NSString *)type tags:(NSDictionary *)tags fields:(NSDictionary *)fields time:(long long)time{
+- (void)rumWrite:(NSString *)source tags:(NSDictionary *)tags fields:(NSDictionary *)fields dynamicContext:(NSDictionary *)dynamicContext time:(long long)time updateTime:(long long)updateTime{
+    [self rumWrite:source tags:tags fields:fields dynamicContext:dynamicContext time:time];
+}
+- (void)rumWrite:(NSString *)source tags:(NSDictionary *)tags fields:(NSDictionary *)fields dynamicContext:(NSDictionary *)dynamicContext time:(long long)time updateTime:(long long)updateTime cache:(BOOL)cache{
+    [self rumWrite:source tags:tags fields:fields dynamicContext:dynamicContext time:time];
+}
+- (void)rumWriteAssembledData:(nonnull NSString *)source tags:(nonnull NSDictionary *)tags fields:(nonnull NSDictionary *)fields time:(long long)time {
+    [self rumWrite:source tags:tags fields:fields dynamicContext:@{} time:time];
+}
+- (void)rumWrite:(NSString *)source tags:(NSDictionary *)tags fields:(NSDictionary *)fields dynamicContext:(NSDictionary *)dynamicContext time:(long long)time{
     NSString *bundleIdentifier =  [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
     NSMutableDictionary *tagDict = [NSMutableDictionary new];
     [tagDict setValue:bundleIdentifier forKey:@"extension_identifier"];
     [tagDict addEntriesFromDictionary:tags];
-    FTInnerLogDebug(@"%@\n",@{@"type":type?:@"",
+    FTInnerLogDebug(@"%@\n",@{@"type":source?:@"",
                               @"tags":tagDict,
                               @"fields":fields});
-    [[FTExtensionDataManager sharedInstance] writeRumEventType:type tags:tagDict fields:fields tm:time groupIdentifier:self.extensionConfig.groupIdentifier];
+    [[FTExtensionDataManager sharedInstance] writeRumEventType:source tags:tagDict fields:fields tm:time groupIdentifier:self.extensionConfig.groupIdentifier];
 }
 @end

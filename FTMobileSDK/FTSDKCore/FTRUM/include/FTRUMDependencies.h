@@ -8,20 +8,31 @@
 
 #import <Foundation/Foundation.h>
 #import "FTRUMDataWriteProtocol.h"
-#import "FTEnumConstant.h"
+#import "FTInternalConstants.h"
 #import "FTRUMMonitor.h"
 #import "FTFatalErrorContext.h"
+#import "FTErrorDataProtocol.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FTRUMDependencies : NSObject
 @property (nonatomic, assign) int sampleRate;
 @property (nonatomic, assign) int sessionOnErrorSampleRate;
 @property (nonatomic, assign) BOOL enableResourceHostIP;
+@property (nonatomic, copy) NSString *appId;
 @property (nonatomic, weak) id<FTRUMDataWriteProtocol> writer;
-@property (nonatomic, assign) ErrorMonitorType errorMonitorType;
+@property (nonatomic, strong) id<FTErrorMonitorInfoWrapper> errorMonitorInfoWrapper;
 @property (nonatomic, strong) FTRUMMonitor *monitor;
 @property (nonatomic, strong, nullable) FTFatalErrorContext *fatalErrorContext;
-@property (atomic, assign) BOOL currentSessionSample;
+@property (atomic, strong) NSDictionary *linkRUMSessionContext;
+@property (atomic, strong, nullable) NSDictionary *lastViewUserCustomDatas;
+
+//The following properties need to be readwrite in rumQueue
+@property (nonatomic, strong) NSNumber *sessionHasReplay;
+@property (nonatomic, assign) BOOL sampledForErrorReplay;
+@property (nonatomic, assign) BOOL sampledForErrorSession;
+@property (nonatomic, strong) NSDictionary *sessionReplaySampledFields;
+@property (nonatomic, strong) NSDictionary *sessionReplayStats;
 
 @end
 

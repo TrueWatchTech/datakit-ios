@@ -12,6 +12,8 @@
 #import "FTResourceContentModel.h"
 #import "FTResourceMetricsModel.h"
 #import "FTResourceMetricsModel+Private.h"
+#import "FTRUMContext.h"
+#import "FTModuleManager.h"
 @interface FTRUMResourceHandler()<FTRUMSessionProtocol>
 @property (nonatomic, strong) FTRUMDependencies *dependencies;
 @property (nonatomic, copy,readwrite) NSString *identifier;
@@ -74,12 +76,14 @@
 }
 - (void)writeResourceError:(FTRUMDataModel *)model context:(NSDictionary *)context{
     NSDictionary *sessionTag = [self.context getGlobalSessionViewActionTags];
-    NSMutableDictionary *tags = [NSMutableDictionary dictionaryWithDictionary:context];
+    NSMutableDictionary *tags = [NSMutableDictionary new];
     [tags addEntriesFromDictionary:sessionTag];
     [tags addEntriesFromDictionary:model.tags];
-    NSMutableDictionary *fields = [NSMutableDictionary new];
+    NSMutableDictionary *fields = [NSMutableDictionary dictionary];
+    [fields setValue:self.dependencies.sessionHasReplay forKey:FT_SESSION_HAS_REPLAY];
     [fields addEntriesFromDictionary:model.fields];
-    [self.dependencies.writer rumWrite:FT_RUM_SOURCE_ERROR tags:tags fields:fields time:model.tm];
+    [fields addEntriesFromDictionary:self.context.sessionState.sessionFields];
+    [self.dependencies.writer rumWrite:FT_RUM_SOURCE_ERROR tags:tags fields:fields dynamicContext:context time:model.tm];
 }
 - (void)writeResourceData:(FTRUMDataModel *)data context:(NSDictionary *)context{
     FTRUMResourceDataModel *model = (FTRUMResourceDataModel *)data;
@@ -88,6 +92,8 @@
         [fields addEntriesFromDictionary:self.resourceProperty];
     }
     [fields addEntriesFromDictionary:data.fields];
+    [fields setValue:self.dependencies.sessionHasReplay forKey:FT_SESSION_HAS_REPLAY];
+    [fields setValue:[self.time ft_nanosecondTimeIntervalToDate:data.time] forKey:FT_DURATION];
     if(model.metrics){
         [fields setValue:model.metrics.ttfb forKey:FT_KEY_RESOURCE_TTFB];
         [fields setValue:model.metrics.ssl forKey:FT_KEY_RESOURCE_SSL];
@@ -102,13 +108,13 @@
         [fields setValue:model.metrics.resource_first_byte_time forKey:FT_KEY_RESOURCE_FIRST_BYTE_TIME];
         [fields setValue:model.metrics.resource_redirect_time forKey:FT_KEY_RESOURCE_REDIRECT_TIME];
         [fields setValue:model.metrics.resource_connect_time forKey:FT_KEY_RESOURCE_CONNECT_TIME];
-    }else{
-        [fields setValue:[self.time ft_nanosecondTimeIntervalToDate:data.time] forKey:FT_DURATION];
     }
+    [fields addEntriesFromDictionary:self.context.sessionState.sessionFields];
     NSDictionary *sessionTag = [self.context getGlobalSessionViewActionTags];
-    NSMutableDictionary *tags = [NSMutableDictionary dictionaryWithDictionary:context];
+    NSMutableDictionary *tags = [NSMutableDictionary new];
     [tags addEntriesFromDictionary:sessionTag];
     [tags addEntriesFromDictionary:data.tags];
-    [self.dependencies.writer rumWrite:FT_RUM_SOURCE_RESOURCE tags:tags fields:fields time:[self.time ft_nanosecondTimeStamp]];
+    [tags setValue:model.identifier forKey:FT_KEY_RESOURCE_ID];
+    [self.dependencies.writer rumWrite:FT_RUM_SOURCE_RESOURCE tags:tags fields:fields dynamicContext:context time:[self.time ft_nanosecondTimeStamp]];
 }
 @end

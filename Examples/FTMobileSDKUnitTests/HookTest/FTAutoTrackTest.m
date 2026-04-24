@@ -97,7 +97,7 @@
     [tester waitForTimeInterval:0.1];
     [[tester waitForViewWithAccessibilityLabel:@"UserLogout"] tap];
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    NSArray *newArray = [[FTTrackerEventDBTool sharedManger] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
     [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
         if ([source isEqualToString:FT_RUM_SOURCE_ACTION]&&[tags[FT_KEY_ACTION_TYPE] isEqualToString:@"click"]) {
             NSString *actionName = tags[FT_KEY_ACTION_NAME];
@@ -119,10 +119,10 @@
     [[tester waitForViewWithAccessibilityLabel:@"LABLE_CLICK"] tap];
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
     
-    NSArray *newArray = [[FTTrackerEventDBTool sharedManger] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
     [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
         if ([source isEqualToString:FT_RUM_SOURCE_ACTION]&&[tags[FT_KEY_ACTION_TYPE] isEqualToString:@"click"]) {
-            XCTAssertTrue([tags[FT_KEY_ACTION_NAME] isEqualToString:@"[UILabel][lable]"]);
+            XCTAssertTrue([tags[FT_KEY_ACTION_NAME] isEqualToString:@"[UILabel][label]"]);
             *stop = YES;
         }
     }];
@@ -136,12 +136,12 @@
     [self setSdkWithRum:YES];
     [[tester waitForViewWithAccessibilityLabel:@"UITEST"] tap];
     [tester waitForTimeInterval:1];
-    [[tester waitForViewWithAccessibilityLabel:@"IMAGE_CLICK"] longPressAtPoint:CGPointZero duration:1];
+    [[tester waitForViewWithAccessibilityLabel:@"IMAGE_CLICK"] longPressAtPoint:CGPointMake(20, 10) duration:1];
     [tester waitForTimeInterval:1];
     [[tester waitForViewWithAccessibilityLabel:@"alert cancel"] tap];
     
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    NSArray *newArray = [[FTTrackerEventDBTool sharedManger] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
     [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
         if ([source isEqualToString:FT_RUM_SOURCE_ACTION]&&[tags[FT_KEY_ACTION_TYPE] isEqualToString:@"click"]) {
             NSString *actionName = tags[FT_KEY_ACTION_NAME];
@@ -163,10 +163,10 @@
     [[tester waitForViewWithAccessibilityLabel:@"FirstButton"] tap];
     
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    NSArray *newArray = [[FTTrackerEventDBTool sharedManger] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
     [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
         if ([source isEqualToString:FT_RUM_SOURCE_ACTION]&&[tags[FT_KEY_ACTION_TYPE] isEqualToString:@"click"]) {
-            XCTAssertTrue([tags[FT_KEY_ACTION_NAME] isEqualToString:@"[UIButton][SecondButton]"]);
+            XCTAssertTrue([tags[FT_KEY_ACTION_NAME] isEqualToString:@"[UIButton][ActivityEnd]"]);
             *stop = YES;
         }
     }];
@@ -184,11 +184,11 @@
     [[tester waitForViewWithAccessibilityLabel:@"cell: 2"] tap];
     
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    NSArray *newArray = [[FTTrackerEventDBTool sharedManger] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
     [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
         if ([source isEqualToString:FT_RUM_SOURCE_ACTION]&&[tags[FT_KEY_ACTION_TYPE] isEqualToString:@"click"]) {
             NSString *actionName = tags[FT_KEY_ACTION_NAME];
-            XCTAssertTrue([actionName isEqualToString:@"[UICollectionViewCell]"]);
+            XCTAssertTrue([actionName isEqualToString:@"[CustomCollectionViewCell]"]);
             *stop = YES;
         }
     }];
@@ -221,7 +221,7 @@
     [self waitForExpectations:@[expectation] timeout:10];
     [tester waitForTimeInterval:0.5];
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    NSArray *newArray = [[FTTrackerEventDBTool sharedManger] getAllDatas];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getAllDatas];
     __block BOOL hasRes = NO;
     [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
         if ([source isEqualToString:FT_RUM_SOURCE_RESOURCE]) {
@@ -254,7 +254,7 @@
        }];
     [tester waitForTimeInterval:0.5];
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    NSArray *newArray = [[FTTrackerEventDBTool sharedManger] getAllDatas];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getAllDatas];
     __block BOOL hasRes = NO;
     [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
         if ([source isEqualToString:FT_RUM_SOURCE_RESOURCE]) {
@@ -287,9 +287,9 @@
     [self.testVC viewDidAppear:NO];
     
     XCTAssertTrue([self.testVC.uiswitch.ft_actionName isEqualToString:@"[UISwitch]Off"]);
-    XCTAssertTrue([self.testVC.firstButton.ft_actionName isEqualToString:@"[UIButton][FirstButton]"]);
+    XCTAssertTrue([self.testVC.firstButton.ft_actionName isEqualToString:@"[UIButton][ActivityStart]"]);
     XCTAssertTrue([self.testVC.stepper.ft_actionName isEqualToString:@"[UIStepper]0.00"]);
-    XCTAssertTrue([self.testVC.label.ft_actionName isEqualToString:@"[UILabel][lable]"]);
+    XCTAssertTrue([self.testVC.label.ft_actionName isEqualToString:@"[UILabel][label]"]);
     XCTAssertTrue([self.testVC.segmentedControl.ft_actionName isEqualToString:@"[UISegmentedControl]first"]);
     
 }

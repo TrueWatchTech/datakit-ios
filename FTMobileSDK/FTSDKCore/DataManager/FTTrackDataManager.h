@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "FTDataWriterWorker.h"
 /// Data addition type
 typedef NS_ENUM(NSInteger, FTAddDataType) {
     ///rum
@@ -21,6 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FTRUMDataWriteProtocol;
 /// Data writing and data uploading related operations
 @interface FTTrackDataManager : NSObject
+@property (atomic, assign, readonly) BOOL autoSync;
 
 @property (nonatomic, strong) FTHTTPClient *httpClient;
 
@@ -35,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)updateAutoSync:(BOOL)autoSync
           syncPageSize:(int)syncPageSize
          syncSleepTime:(int)syncSleepTime;
+
+- (void)enableAutoSync:(BOOL)autoSync;
+
 - (void)setEnableLimitWithDb:(BOOL)enable size:(long)size discardNew:(BOOL)discardNew;
 - (void)setLogCacheLimitCount:(int)count discardNew:(BOOL)discardNew;
 - (void)setRUMCacheLimitCount:(int)count discardNew:(BOOL)discardNew;

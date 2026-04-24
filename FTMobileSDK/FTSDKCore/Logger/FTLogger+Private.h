@@ -7,13 +7,14 @@
 //
 
 #import "FTLogger.h"
-#import "FTEnumConstant.h"
 #import "FTLoggerDataWriteProtocol.h"
 #import "FTLinkRumDataProvider.h"
 
 NS_ASSUME_NONNULL_BEGIN
+@class FTLoggerConfig;
 
 @interface FTLogger ()
+
 @property (nonatomic, weak) id<FTLinkRumDataProvider> linkRumDataProvider;
 /// Called when SDK starts, enables Logger
 /// - Parameters:
@@ -29,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)syncProcess;
 
 /// Update dynamically configured settings obtained remotely
-- (void)updateWithRemoteConfiguration:(NSDictionary *)configuration;
+-(void)updateLoggerConfiguration:(FTLoggerConfig *)configuration;
 @end
 
 NS_ASSUME_NONNULL_END

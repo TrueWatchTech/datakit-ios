@@ -9,9 +9,8 @@
 #import "FTDataUploadWorker.h"
 #import "FTHTTPClient.h"
 #import <pthread.h>
-#import "FTLog+Private.h"
+#import "FTInnerLog.h"
 #import "FTTrackerEventDBTool.h"
-#import "FTLog+Private.h"
 #import "FTJSONUtil.h"
 #import "FTConstants.h"
 #import "FTRecordModel.h"
@@ -168,7 +167,7 @@ static const NSTimeInterval kInitialRetryDelay = 0.5; // Initial 500ms delay
             return;
         }
         [strongSelf.errorSampledConsume checkRUMSessionOnErrorDatasExpired];
-        if([[FTTrackerEventDBTool sharedManger] getUploadDatasCount]>0){
+        if([[FTTrackerEventDBTool sharedManager] getUploadDatasCount]>0){
             if([FTNetworkConnectivity sharedInstance].isConnected){
                 [strongSelf privateUpload];
             }else{
@@ -202,7 +201,7 @@ static const NSTimeInterval kInitialRetryDelay = 0.5; // Initial 500ms delay
     }
 }
 -(void)flushWithType:(NSString *)type{
-    NSArray *events = [[FTTrackerEventDBTool sharedManger] getFirstRecords:self.uploadPageSize withType:type];
+    NSArray *events = [[FTTrackerEventDBTool sharedManager] getFirstRecords:self.uploadPageSize withType:type];
     while (events.count > 0) {
         FTInnerLogDebug(@"[NETWORK][%@] Start reporting events (number of events in this report:%lu)", type,(unsigned long)[events count]);
         FTRequest *request = [FTRequest createRequestWithEvents:events type:type];
@@ -210,7 +209,7 @@ static const NSTimeInterval kInitialRetryDelay = 0.5; // Initial 500ms delay
             break;
         }
         FTRecordModel *model = [events lastObject];
-        if (![[FTTrackerEventDBTool sharedManger] deleteItemWithType:type identify:model._id count:events.count]) {
+        if (![[FTTrackerEventDBTool sharedManager] deleteItemWithType:type identify:model._id count:events.count]) {
             FTInnerLogError(@"Failed to delete uploaded data from database");
             break;
         }
@@ -226,7 +225,7 @@ static const NSTimeInterval kInitialRetryDelay = 0.5; // Initial 500ms delay
         }else{
             // Reduce synchronization rate to lower CPU usage
             [NSThread sleepForTimeInterval:0.001*self.syncSleepTime];
-            events = [[FTTrackerEventDBTool sharedManger] getFirstRecords:self.uploadPageSize withType:type];
+            events = [[FTTrackerEventDBTool sharedManager] getFirstRecords:self.uploadPageSize withType:type];
         }
     }
 }
@@ -273,5 +272,9 @@ static const NSTimeInterval kInitialRetryDelay = 0.5; // Initial 500ms delay
         FTInnerLogError(@"[NETWORK] exception %@",exception);
     }
     return NO;
+}
+-(void)dealloc{
+    pthread_rwlock_destroy(&_timerWorkLock);
+    pthread_rwlock_destroy(&_uploadWorkLock);
 }
 @end

@@ -11,7 +11,8 @@
 #import "DemoViewController.h"
 #import "RootTabbarVC.h"
 #import "FTMobileSDK/FTLog.h"
-//Target -> Build Settings -> GCC_PREPROCESSOR_DEFINITIONS to configure preset definitions
+#import <FTSessionReplay/FTRumSessionReplay.h>
+//Target -> Build Settings -> GCC_PREPROCESSOR_DEFINITIONS for configuration preset definitions
 #if PREPROD
 #define STATIC_TAG     @"preprod"
 #else
@@ -41,9 +42,9 @@
      isUITests = 1;
      */
     NSProcessInfo *processInfo = [NSProcessInfo processInfo];
-    NSString *datakitUrl = [processInfo environment][@"ACCESS_SERVER_URL"];
-//    NSString *datawayUrl = [processInfo environment][@"ACCESS_DATAWAY_URL"];
-//    NSString *clientToken = [processInfo environment][@"CLIENT_TOKEN"];
+//    NSString *datakitUrl = [processInfo environment][@"ACCESS_SERVER_URL"];
+    NSString *datawayUrl = [processInfo environment][@"ACCESS_DATAWAY_URL"];
+    NSString *clientToken = [processInfo environment][@"CLIENT_TOKEN"];
     NSString *rumAppid = [processInfo environment][@"APP_ID"];
     NSString *trackid = [processInfo environment][@"TRACK_ID"]?:@"N/A";
     BOOL isUnitTests = [[processInfo environment][@"isUnitTests"] boolValue];
@@ -51,13 +52,33 @@
     if ( !isUnitTests && !isUITests) {
         [[FTLog sharedInstance] registerInnerLogCacheToLogsDirectory:nil fileNamePrefix:nil];
         // Local environment deployment
-        FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakitUrl];
+      //  FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakitUrl];
         // Use public network DataWay deployment
-//        FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatawayUrl:datawayUrl clientToken:clientToken];
+        FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatawayUrl:datawayUrl clientToken:clientToken];
         config.enableSDKDebugLog = YES;
+        config.autoSync = YES;
         [config setEnvWithType:FTEnvPre];
         config.globalContext = @{@"example_id":@"example_id_1"};//eg.
         config.groupIdentifiers = @[@"group.com.ft.widget.demo"];
+        config.remoteConfiguration = YES;
+        config.remoteConfigFetchCompletionBlock = ^FTRemoteConfigModel * _Nullable(BOOL success, NSError * _Nullable error, FTRemoteConfigModel * _Nullable model, NSDictionary<NSString *,id> * _Nullable content) {
+            if (error) {
+                NSLog(@"emoteConfigFetch error:%@",error.description);
+            }
+            if (success) {
+                NSString *userId = content[@"custom_userid"];
+                // example this user uid = @"user_1"
+                if ([userId isEqualToString:@"user_1"]) {
+                    model.rumSampleRate = @(1);
+                    model.logSampleRate = @(1);
+                    model.traceSampleRate = @(1);
+                    model.sessionReplaySampleRate = @(1);
+                    model.sessionReplayOnErrorSampleRate = @(0);
+                }
+            }
+            //if the model is not modified, `return nil`(use original model) == `return model`
+            return model;
+        };
         // Enable rum
         FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:rumAppid];
         rumConfig.enableTrackAppCrash = YES;
@@ -69,6 +90,7 @@
 //        rumConfig.resourceUrlHandler = ^(NSURL *url){
 //            return NO;
 //        };
+        rumConfig.crashMonitoring = FTCrashMonitorTypeAll;
         rumConfig.errorMonitorType = FTErrorMonitorAll;
         rumConfig.deviceMetricsMonitorType = FTDeviceMetricsMonitorAll;
         rumConfig.monitorFrequency = FTMonitorFrequencyRare;
@@ -88,11 +110,20 @@
         [[FTMobileAgent sharedInstance] startRumWithConfigOptions:rumConfig];
         [[FTMobileAgent sharedInstance] startLoggerWithConfigOptions:loggerConfig];
         [[FTMobileAgent sharedInstance] startTraceWithConfigOptions:traceConfig];
+
+        FTSessionReplayConfig *srConfig = [[FTSessionReplayConfig alloc]init];
+        srConfig.textAndInputPrivacy = FTTextAndInputPrivacyLevelMaskSensitiveInputs;
+        srConfig.touchPrivacy = FTTouchPrivacyLevelShow;
+        srConfig.imagePrivacy = FTImagePrivacyLevelMaskNone;
+        srConfig.sampleRate = 100;
+
+        [[FTRumSessionReplay sharedInstance] startWithSessionReplayConfig:srConfig];
+
     }
     // UI test
    
     if (@available(iOS 13.0, *)) {
-        //iOS 13+ 
+        //iOS 13+
     } else {
         self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
         UITabBarController *tab = [[UITabBarController alloc]init];

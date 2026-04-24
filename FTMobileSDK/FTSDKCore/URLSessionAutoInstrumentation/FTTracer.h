@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import "FTTracerProtocol.h"
-#import "FTEnumConstant.h"
+#import "FTInternalConstants.h"
 NS_ASSUME_NONNULL_BEGIN
 
 /// Specific implementation of trace functionality, adding parameters to request headers
@@ -23,6 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
                       serviceName:(NSString *)serviceName
                   enableAutoTrace:(BOOL)trace
                 enableLinkRumData:(BOOL)link;
+- (void)updateTraceSampleRate:(int)sampleRate;
 #if FTSDKUNITTEST
 -(NSUInteger)getSkyWalkingSequence;
 #endif

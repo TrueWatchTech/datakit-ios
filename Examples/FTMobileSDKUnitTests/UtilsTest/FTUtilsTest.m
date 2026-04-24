@@ -7,6 +7,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import <TargetConditionals.h>
 #import "FTMobileAgent.h"
 #import "FTMobileAgent+Private.h"
 #import "FTTrackerEventDBTool.h"
@@ -23,6 +24,9 @@
 #import "FTReadWriteHelper.h"
 #import "NSNumber+FTAdd.h"
 #import "NSError+FTDescription.h"
+#if !TARGET_OS_TV
+#import "FTLimitedSizeSet.h"
+#endif
 @interface FTUtilsTest : XCTestCase
 
 @end
@@ -31,7 +35,7 @@
 
 - (void)setUp {
     // Put setup code here. This method is called before the invocation of each test method in the class.
-    [[FTTrackerEventDBTool sharedManger] deleteAllDatas];
+    [[FTTrackerEventDBTool sharedManager] deleteAllDatas];
 }
 #pragma mark NSString+FTAdd
 - (void)testStringRemoveFrontBackBlank{
@@ -66,8 +70,7 @@
                           @"key6":@"test",
     };
     
-    FTJSONUtil *util = [FTJSONUtil new];
-    NSData *data = [util JSONSerializeDictObject:dict];
+    NSData *data = [FTJSONUtil JSONSerializeDictObject:dict];
     NSString *jsonString = [[NSString alloc]initWithData:data encoding:NSUTF8StringEncoding];
     NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
     NSError *err;
@@ -173,9 +176,9 @@
     for (NSDictionary *domain in array) {
         if([domain[@"key"] isEqualToString:@"NSURLErrorDomain"]){
             NSArray *errors = domain[@"errors"];
-            for (NSDictionary *error in errors) {
-                NSInteger code =  [error[@"code"] integerValue];
-                NSString *description = error[@"description"];
+            for (NSDictionary *errorDict in errors) {
+                NSInteger code =  [errorDict[@"code"] integerValue];
+                NSString *description = errorDict[@"description"];
                 NSDictionary* errorMessage = [NSDictionary dictionaryWithObject:@"testErrorDescription" forKey:NSLocalizedDescriptionKey];
                 NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:code userInfo:errorMessage];
                 NSString *ftError = [error ft_description];
@@ -183,6 +186,30 @@
             }
         }
     }
+}
+#endif
+#if !TARGET_OS_TV
+- (void)testFTLimitedSizeSet{
+    FTLimitedSizeSet *set = [[FTLimitedSizeSet alloc]initWithMaxCount:5];
+    [set addObject:@1];
+    [set addObject:@2];
+    [set addObject:@3];
+    [set addObject:@4];
+    [set addObject:@5];
+    XCTAssertTrue([set containsObject:@1]);
+    XCTAssertTrue([set containsObject:@2]);
+    XCTAssertTrue([set containsObject:@3]);
+    XCTAssertTrue([set containsObject:@4]);
+    XCTAssertTrue([set containsObject:@5]);
+    [set addObject:@6];
+
+    XCTAssertFalse([set containsObject:@1]);
+    XCTAssertTrue([set containsObject:@2]);
+    XCTAssertTrue([set containsObject:@3]);
+    XCTAssertTrue([set containsObject:@4]);
+    XCTAssertTrue([set containsObject:@5]);
+    XCTAssertTrue([set containsObject:@6]);
+
 }
 #endif
 @end

@@ -5,8 +5,8 @@ import PackageDescription
 
 let package = Package(
     name: "FTMobileSDK",
-    platforms: [.iOS(.v10),
-                .macOS(.v10_13),
+    platforms: [.iOS(.v12),
+                .macOS(.v10_14),
                 .tvOS(.v12),
     ],
     products: [
@@ -26,6 +26,9 @@ let package = Package(
             targets: [
                       "FTSDKCore",
                      ]),
+        .library(
+            name: "FTSessionReplay",
+            targets: ["FTSessionReplay"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -51,7 +54,9 @@ let package = Package(
         ),
         .target(name: "_FTConfig",
                 dependencies: ["_FTBaseUtils_Base",
-                               "_FTRUM"],
+                               "_FTRUM",
+                               "_FTProtocol",
+                              ],
                 path: "FTMobileSDK/FTMobileAgent",
                 sources: ["Config"],
                 publicHeadersPath: "Config",
@@ -72,7 +77,6 @@ let package = Package(
             path: "FTMobileSDK/FTSDKCore/Protocol",
             publicHeadersPath: ".",
             cSettings: [
-                .headerSearchPath("FTErrorDataProtocol.h"),
             ]
         ),
         .target(
@@ -83,7 +87,11 @@ let package = Package(
             path: "FTMobileSDK/FTSDKCore/FTRUM",
             cSettings: [
                 .headerSearchPath("Monitor"),
-                .headerSearchPath("Crash"),
+                .headerSearchPath("FTCrash"),
+                .headerSearchPath("FTCrash/RecordingCore"),
+                .headerSearchPath("FTCrash/Recording"),
+                .headerSearchPath("FTCrash/Recording/Monitors"),
+                .headerSearchPath("RUMCore"),
             ]
         ),
         .target(name: "_FTURLSessionAutoInstrumentation",
@@ -164,6 +172,31 @@ let package = Package(
                     .headerSearchPath("FTSDKCore/FTWKWebView/JSBridge"),
 
                 ]
-               )
+               ),
+        .target(name: "FTSessionReplay",
+                dependencies: ["FTSDKCore"],
+                path: "FTMobileSDK/FTSessionReplay",
+                publicHeadersPath: "Public",
+                cSettings: [
+                    .headerSearchPath("../.."),
+                    .headerSearchPath("."),
+                    .headerSearchPath("Processor/Builders"),
+                    .headerSearchPath("DataStore"),
+                    .headerSearchPath("Recorder"),
+                    .headerSearchPath("Recorder/Touch"),
+                    .headerSearchPath("Recorder/SRWireframe"),
+                    .headerSearchPath("Recorder/SRWireframe/ViewTreeSnapshot"),
+                    .headerSearchPath("Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder"),
+                    .headerSearchPath("Recorder/ScreenChangeMonitor"),
+                    .headerSearchPath("Storage"),
+                    .headerSearchPath("Storage/Writer"),
+                    .headerSearchPath("Storage/Reader"),
+                    .headerSearchPath("Storage/TmpCache"),
+                    .headerSearchPath("TLV"),
+                    .headerSearchPath("Upload"),
+                    .headerSearchPath("Upload/Request"),
+                    .headerSearchPath("Utilities"),
+                ]
+               ),
     ]
 )

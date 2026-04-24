@@ -8,11 +8,12 @@
 
 #import "FTRUMHandler.h"
 #import "FTRUMDependencies.h"
-@class FTRumConfig,FTRUMMonitor;
+@class FTRumConfig,FTRUMMonitor,FTRUMContext;
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FTRUMSessionHandler : FTRUMHandler
 @property (nonatomic, strong) FTRUMDependencies *rumDependencies;
+@property (nonatomic, strong, readonly) FTRUMContext *context;
 
 -(instancetype)initWithModel:(FTRUMDataModel *)model dependencies:(FTRUMDependencies *)dependencies;
 -(instancetype)initWithExpiredSession:(FTRUMSessionHandler *)expiredSession time:(NSDate *)time;
