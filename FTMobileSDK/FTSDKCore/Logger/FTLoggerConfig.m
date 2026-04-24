@@ -9,7 +9,8 @@
 #import "FTLoggerConfig.h"
 #import "FTConstants.h"
 #import "FTJSONUtil.h"
-#import "FTLog+Private.h"
+#import "FTInnerLog.h"
+
 @implementation FTLoggerConfig
 -(instancetype)init{
     self = [super init];
@@ -27,9 +28,9 @@
     options.samplerate = self.samplerate;
     options.enableLinkRumData = self.enableLinkRumData;
     options.enableCustomLog = self.enableCustomLog;
-    options.logLevelFilter = self.logLevelFilter;
+    options.logLevelFilter = [self.logLevelFilter copy];
     options.discardType = self.discardType;
-    options.globalContext = self.globalContext;
+    options.globalContext = [self.globalContext copy];
     options.printCustomLogToConsole = self.printCustomLogToConsole;
     options.logCacheLimitCount = self.logCacheLimitCount;
     return options;
@@ -65,30 +66,7 @@
     [dict setValue:@(self.printCustomLogToConsole) forKey:@"printCustomLogToConsole"];
     return dict;
 }
--(void)mergeWithRemoteConfigDict:(NSDictionary *)dict{
-    @try {
-        if (!dict || dict.count == 0) {
-            return;
-        }
-        NSNumber *sampleRate = dict[FT_R_LOG_SAMPLERATE];
-        NSString *logLevelFilters = dict[FT_R_LOG_LEVEL_FILTERS];
-        NSNumber *enableCustomLog = dict[FT_R_LOG_ENABLE_CUSTOM_LOG];
-        if (sampleRate != nil && [sampleRate isKindOfClass:NSNumber.class]) {
-            self.samplerate = [sampleRate doubleValue] * 100;
-        }
-        if (enableCustomLog != nil && [enableCustomLog isKindOfClass:NSNumber.class]) {
-            self.enableCustomLog = [enableCustomLog boolValue];
-        }
-        if (logLevelFilters && [logLevelFilters isKindOfClass:NSString.class] && logLevelFilters.length > 0) {
-            NSArray *filters = [FTJSONUtil arrayWithJsonString:logLevelFilters];
-            if (filters.count>0) {
-                self.logLevelFilter = filters;
-            }
-        }
-    } @catch (NSException *exception) {
-        FTInnerLogError(@"exception: %@",exception);
-    }
-}
+
 -(NSString *)debugDescription{
     return [NSString stringWithFormat:@"%@",[self convertToDictionary]];
 }

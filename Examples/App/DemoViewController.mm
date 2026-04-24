@@ -19,6 +19,9 @@
 #import "ManualRumAndTraceDataAdd.h"
 #import "NetworkTraceVC.h"
 #import "LoggerVC.h"
+#import "TestUIControlVC.h"
+#import "TestImageVC.h"
+
 @interface DemoViewController ()<UITableViewDelegate,UITableViewDataSource>
 @property (nonatomic, strong) UITableView *mtableView;
 @property (nonatomic, strong) NSMutableArray<TableViewCellItem*> *dataSource;
@@ -41,7 +44,9 @@
 -(void)createUI{
     __weak typeof(self) weakSelf = self;
     TableViewCellItem *item1 = [[TableViewCellItem alloc]initWithTitle:@"EventFlowLog" handler:^{
+        weakSelf.hidesBottomBarWhenPushed = YES;
         [weakSelf.navigationController pushViewController:[UITestVC new] animated:YES];
+        weakSelf.hidesBottomBarWhenPushed = NO;
     }];
     TableViewCellItem *item2 = [[TableViewCellItem alloc]initWithTitle:@"BindUser" handler:^{
         [[FTMobileAgent sharedInstance] bindUserWithUserID:@"user1" userName:@"User1" userEmail:@"1@qq.com" extra:@{@"user_age":@21}];
@@ -77,12 +82,45 @@
         [weakSelf.navigationController pushViewController:[ManualRumAndTraceDataAdd new] animated:YES];
 
     }];
-    TableViewCellItem *item13 = [[TableViewCellItem alloc]initWithTitle:@"ClearAllData" handler:^{
+    
+    TableViewCellItem *item13 = [[TableViewCellItem alloc]initWithTitle:@"UI Controls" handler:^{
+        weakSelf.hidesBottomBarWhenPushed = YES;
+        [weakSelf.navigationController pushViewController:[TestUIControlVC new] animated:YES];
+        weakSelf.hidesBottomBarWhenPushed = NO;
+
+    }];
+    TableViewCellItem *item14 = [[TableViewCellItem alloc]initWithTitle:@"ClearAllData" handler:^{
         [FTMobileAgent clearAllData];
     }];
-   
-    [self.dataSource addObjectsFromArray:@[item1,item2,item3,item4,item5,item7,item8,item9,item10,item11,item12,item13]];
-    _mtableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
+    TableViewCellItem *item15 = [[TableViewCellItem alloc]initWithTitle:@"updateRemoteConfig" handler:^{
+        [FTMobileAgent updateRemoteConfig];
+    }];
+    TableViewCellItem *item16 = [[TableViewCellItem alloc]initWithTitle:@"updateRemoteConfigWithMiniUpdateInterval:completion" handler:^{
+        [FTMobileAgent updateRemoteConfigWithMiniUpdateInterval:0 completion:^FTRemoteConfigModel * _Nullable(BOOL success, NSError * _Nullable error, FTRemoteConfigModel * _Nullable model, NSDictionary<NSString *,id> * _Nullable content) {
+            if (error) {
+                NSLog(@"emoteConfigFetch error:%@",error.description);
+            }
+            if (success) {
+                NSString *userId = content[@"custom_userid"];
+                // example this user uid = @"user_1"
+                if ([userId isEqualToString:@"user_1"]) {
+                    model.rumSampleRate = @(1);
+                    model.logSampleRate = @(1);
+                    model.traceSampleRate = @(1);
+                }
+            }
+            //if the model is not modified, `return nil`(use original model) == `return model`
+            return model;
+        }];
+    }];
+    TableViewCellItem *item17 = [[TableViewCellItem alloc]initWithTitle:@"Session Replay Image Test" handler:^{
+        weakSelf.hidesBottomBarWhenPushed = YES;
+        [weakSelf.navigationController pushViewController:[TestImageVC new] animated:YES];
+        weakSelf.hidesBottomBarWhenPushed = NO;
+    }];
+    
+    [self.dataSource addObjectsFromArray:@[item1,item2,item3,item4,item5,item7,item8,item9,item10,item11,item12,item13,item14,item15,item16,item17]];
+    _mtableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, self.view.bounds.size.height)];
     _mtableView.dataSource = self;
     _mtableView.delegate = self;
     [self.view addSubview:_mtableView];

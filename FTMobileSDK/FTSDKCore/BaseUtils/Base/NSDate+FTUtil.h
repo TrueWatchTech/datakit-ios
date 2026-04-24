@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (long long)ft_currentMillisecondTimeStamp;
 + (long long)ft_currentNanosecondTimeStamp;
 - (long long)ft_nanosecondTimeStamp;
+- (long long)ft_millisecondTimeStamp;
 - (NSString *)ft_stringWithBaseFormat;
 + (NSDate *)ft_dateFromBaseFormatString:(NSString *)string;
 - (NSString *)ft_stringWithGMTFormat;

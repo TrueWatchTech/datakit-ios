@@ -8,32 +8,53 @@
 
 #import "FTNetworkConnectivity.h"
 #import <Network/Network.h>
-#import "FTReachability.h"
-#import "FTLog+Private.h"
-typedef NS_ENUM(NSInteger, FTReachable) {
-    yes,
-    no,
-    maybe,
-};
+#import "FTInnerLog.h"
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+#import <CoreTelephony/CTTelephonyNetworkInfo.h>
+#endif
+
 NSString *const FTConnectivityCellular = @"cellular";
 NSString *const FTConnectivityWiFi = @"wifi";
 NSString *const FTConnectivityNone = @"unreachable";
 NSString *const FTConnectivityEthernet = @"ethernet";
 NSString *const FTConnectivityUnknown = @"unknown";
-
+typedef NS_ENUM(NSInteger, FTNetworkStatus) {
+    /// No network connection
+    FTNetworkStatusNotReachable = 0,
+    /// Cellular network
+    FTNetworkStatusWWAN = 1,
+    /// WiFi
+    FTNetworkStatusWiFi = 2,
+    /// Ethernet
+    FTNetworkStatusEthernet = 3,
+    /// Unknown
+    FTNetworkStatusUnknown = 4,
+};
 @interface FTNetworkConnectivity()
 @property (nonatomic, assign, readwrite) BOOL isConnected;
-@property (nonatomic, copy) NSString *networkType;
-@property (nonatomic, strong) FTReachability *reachability;
-@property(strong, nonatomic, readonly) NSPointerArray *networkObservers;
-@property(strong, nonatomic, readonly) NSLock *observerLock;
+@property (atomic, copy) NSString *networkType;
+@property (nonatomic, strong, readonly) NSPointerArray *networkObservers;
+@property (nonatomic, strong, readonly) NSLock *observerLock;
 @property (atomic, assign) BOOL isNotifying;
-
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+@property (nonatomic, strong) CTTelephonyNetworkInfo *networkInfo;
+#endif
+@property (nonatomic, assign) FTNetworkStatus networkStatus;
 @end
 @implementation FTNetworkConnectivity{
     nw_path_monitor_t _pathMonitor;
     dispatch_queue_t _monitorQueue;
 }
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
++ (CTTelephonyNetworkInfo *)sharedNetworkInfo {
+    static CTTelephonyNetworkInfo *networkInfo;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        networkInfo = [[CTTelephonyNetworkInfo alloc] init];
+    });
+    return networkInfo;
+}
+#endif
 + (FTNetworkConnectivity *)sharedInstance {
     static FTNetworkConnectivity *instance;
     static dispatch_once_t onceToken;
@@ -47,7 +68,6 @@ NSString *const FTConnectivityUnknown = @"unknown";
     if(self){
         _isConnected = NO;
         _monitorQueue = dispatch_queue_create("com.ft.reachability", NULL);
-        _reachability = [FTReachability reachabilityForInternetConnection];
         _networkObservers = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
         _observerLock = [[NSLock alloc] init];
     }
@@ -59,17 +79,12 @@ NSString *const FTConnectivityUnknown = @"unknown";
         return;
     }
     self.isNotifying = YES;
-#if !TARGET_OS_IOS
-    if (@available(iOS 12.0,tvOS 12.0,macOS 10.14, *)) {
-        [self startPathMonitorNotifier];
-    } else {
-        [self startReachabilityNotifier];
-    }
-#else
-    [self startReachabilityNotifier];
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+    _networkInfo = [FTNetworkConnectivity sharedNetworkInfo];
 #endif
+    [self startPathMonitorNotifier];
 }
--(void)startPathMonitorNotifier API_AVAILABLE(macos(10.14), ios(12.0), tvos(12.0)){
+-(void)startPathMonitorNotifier{
     _pathMonitor = nw_path_monitor_create();
     if (_pathMonitor == nil) {
         FTInnerLogError(@"nw_path_monitor_create failed.");
@@ -80,21 +95,21 @@ NSString *const FTConnectivityUnknown = @"unknown";
             if (!strongSelf)  return;
             nw_path_status_t status = nw_path_get_status(path);
             strongSelf.isConnected = status != nw_path_status_unsatisfied;
-            NSString *current = FTConnectivityUnknown;
+            FTNetworkStatus networkStatus = FTNetworkStatusUnknown;
             if(status == nw_path_status_unsatisfied){
                 strongSelf.isConnected = NO;
-                current = FTConnectivityNone;
+                networkStatus = FTNetworkStatusUnknown;
             }else{
                 strongSelf.isConnected = YES;
                 if (nw_path_uses_interface_type(path,nw_interface_type_wired)) {
-                    current = FTConnectivityEthernet;
+                    networkStatus = FTNetworkStatusEthernet;
                 }else if (nw_path_uses_interface_type(path,nw_interface_type_wifi)) {
-                    current = FTConnectivityWiFi;
+                    networkStatus = FTNetworkStatusWiFi;
                 }
             }
             // When network status changes, if it's consistent with the previous network type, no notification is sent
-            if(![strongSelf.networkType isEqualToString:current]){
-                strongSelf.networkType = current;
+            if( strongSelf.networkStatus != networkStatus ){
+                strongSelf.networkStatus = networkStatus;
                 [strongSelf connectivityChanged];
             }
         });
@@ -102,23 +117,14 @@ NSString *const FTConnectivityUnknown = @"unknown";
         nw_path_monitor_start(_pathMonitor);
     }
 }
-- (void)startReachabilityNotifier{
-    [_reachability startNotifier];
-    __weak typeof(self) weakSelf = self;
-    _reachability.networkChanged = ^{
-        __strong __typeof(weakSelf) strongSelf = weakSelf;
-        if (!strongSelf) return;
-        strongSelf.networkType = strongSelf.reachability.net;
-        strongSelf.isConnected = strongSelf.reachability.isReachable;
-    };
-    self.networkType = self.reachability.net;
-    self.isConnected = self.reachability.isReachable;
+-(void)setNetworkStatus:(FTNetworkStatus)networkStatus{
+    self.networkType = [self networkTypeWithStatus:networkStatus];
 }
 - (void)connectivityChanged{
     [self.observerLock lock];
     for (id observer in self.networkObservers) {
         if ([observer respondsToSelector:@selector(connectivityChanged:typeDescription:)]) {
-            [observer connectivityChanged:self.isConnected typeDescription:self.networkType];
+            [observer connectivityChanged:self.isConnected typeDescription:[self networkTypeWithStatus:self.networkStatus]];
         }
     }
     [self.observerLock unlock];
@@ -140,18 +146,76 @@ NSString *const FTConnectivityUnknown = @"unknown";
     }
     [self.observerLock unlock];
 }
--(void)cancel{
-#if TARGET_OS_TV
-    if (@available(iOS 12.0,tvOS 12.0,macOS 10.14, *)) {
-        nw_path_monitor_cancel(_pathMonitor);
-        _pathMonitor = nil;
-    } else {
-        [_reachability stopNotifier];
-    }
-#else
-    [_reachability stopNotifier];
+- (NSString *)networkTypeWithStatus:(FTNetworkStatus)status{
+    switch (status) {
+        case FTNetworkStatusNotReachable:
+            return FTConnectivityNone;
+            break;
+        case FTNetworkStatusWWAN:{
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+            NSArray *typeStrings2G = @[CTRadioAccessTechnologyEdge,
+                                       CTRadioAccessTechnologyGPRS,
+                                       CTRadioAccessTechnologyCDMA1x];
+            NSArray *typeStrings3G = @[CTRadioAccessTechnologyHSDPA,
+                                       CTRadioAccessTechnologyWCDMA,
+                                       CTRadioAccessTechnologyHSUPA,
+                                       CTRadioAccessTechnologyCDMAEVDORev0,
+                                       CTRadioAccessTechnologyCDMAEVDORevA,
+                                       CTRadioAccessTechnologyCDMAEVDORevB,
+                                       CTRadioAccessTechnologyeHRPD];
+            
+            NSArray *typeStrings4G = @[CTRadioAccessTechnologyLTE];
+            
+            NSString *currentStatus = nil;
+
+            if (_networkInfo && [_networkInfo respondsToSelector:@selector(serviceCurrentRadioAccessTechnology)]) {
+                NSDictionary *radioDic = [_networkInfo serviceCurrentRadioAccessTechnology];
+                if (radioDic.allKeys.count) {
+                    currentStatus = [radioDic objectForKey:radioDic.allKeys[0]];
+                }
+            }
+            
+            if (!currentStatus) {
+                return FTConnectivityUnknown;
+            }
+            if (@available(iOS 14.1, *)) {
+                NSArray *typeStrings5G = @[CTRadioAccessTechnologyNRNSA,
+                                           CTRadioAccessTechnologyNR];
+                if ([typeStrings5G containsObject:currentStatus]) {
+                    return @"5G";
+                }
+            }
+            if ([typeStrings4G containsObject:currentStatus]) {
+                return @"4G";
+            } else if ([typeStrings3G containsObject:currentStatus]) {
+                return @"3G";
+            } else if ([typeStrings2G containsObject:currentStatus]) {
+                return @"2G";
+            } else {
+                return FTConnectivityUnknown;
+            }
 #endif
-    self.isNotifying = YES;
+            return FTConnectivityUnknown;
+        }
+            break;
+        case FTNetworkStatusWiFi:
+            return FTConnectivityWiFi;
+            break;
+            
+        case FTNetworkStatusEthernet:
+            return FTConnectivityEthernet;
+            break;
+        case FTNetworkStatusUnknown:
+            return FTConnectivityUnknown;
+            break;
+    }
+    return @"unreachable";
+}
+
+-(void)cancel{
+    nw_path_monitor_cancel(_pathMonitor);
+    _pathMonitor = nil;
+    self.isNotifying = NO;
 }
 - (void)stop {
   [self cancel];

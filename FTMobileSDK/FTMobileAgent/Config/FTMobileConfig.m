@@ -11,10 +11,10 @@
 #import "FTMobileConfig.h"
 #import "FTConstants.h"
 #import "FTBaseInfoHandler.h"
-#import "FTEnumConstant.h"
+#import "FTInternalConstants.h"
 #import "NSDictionary+FTCopyProperties.h"
 #import "FTJSONUtil.h"
-#import "FTLog+Private.h"
+#import "FTInnerLog.h"
 
 @implementation FTTraceConfig
 -(instancetype)init{
@@ -31,7 +31,7 @@
     options.enableLinkRumData = self.enableLinkRumData;
     options.networkTraceType = self.networkTraceType;
     options.enableAutoTrace = self.enableAutoTrace;
-    options.traceInterceptor = self.traceInterceptor;
+    options.traceInterceptor = [self.traceInterceptor copy];
     return options;
 }
 -(instancetype)initWithDictionary:(NSDictionary *)dict{
@@ -60,40 +60,6 @@
     NSMutableDictionary *dict = [[self convertToDictionary] mutableCopy];
     [dict setValue:[self.traceInterceptor copy] forKey:@"traceInterceptor"];
     return [NSString stringWithFormat:@"%@",dict];
-}
--(void)mergeWithRemoteConfigDict:(NSDictionary *)dict{
-    @try {
-        if (!dict || dict.count == 0) {
-            return;
-        }
-        NSNumber *sampleRate = dict[FT_R_TRACE_SAMPLERATE];
-        NSNumber *enableAutoTrace = dict[FT_R_TRACE_ENABLE_AUTO_TRACE];
-        NSString *traceType = dict[FT_R_TRACE_TRACE_TYPE];
-        if (sampleRate != nil && [sampleRate isKindOfClass:NSNumber.class]) {
-            self.samplerate = [sampleRate doubleValue] * 100;
-        }
-        if (enableAutoTrace != nil && [enableAutoTrace isKindOfClass:NSNumber.class]) {
-            self.enableAutoTrace = [enableAutoTrace boolValue];
-        }
-        if (traceType && [traceType isKindOfClass:NSString.class] &&traceType.length>0) {
-            NSString *trace = [traceType lowercaseString];
-            if ([trace isEqualToString:@"ddtrace"]) {
-                self.networkTraceType = FTNetworkTraceTypeDDtrace;
-            }else if ([trace isEqualToString:@"zipkinmutiheader"]){
-                self.networkTraceType = FTNetworkTraceTypeZipkinMultiHeader;
-            }else if ([trace isEqualToString:@"zipkinsingleheader"]){
-                self.networkTraceType = FTNetworkTraceTypeZipkinSingleHeader;
-            }else if ([trace isEqualToString:@"traceparent"]){
-                self.networkTraceType = FTNetworkTraceTypeTraceparent;
-            }else if ([trace isEqualToString:@"skywalking"]){
-                self.networkTraceType = FTNetworkTraceTypeSkywalking;
-            }else if ([trace isEqualToString:@"jaeger"]){
-                self.networkTraceType = FTNetworkTraceTypeJaeger;
-            }
-        }
-    } @catch (NSException *exception) {
-        FTInnerLogError(@"exception: %@",exception);
-    }
 }
 @end
 @interface FTMobileConfig()
@@ -201,8 +167,8 @@
     options.clientToken = self.clientToken;
     options.enableSDKDebugLog = self.enableSDKDebugLog;
     options.env = self.env;
-    options.globalContext = self.globalContext;
-    options.groupIdentifiers = self.groupIdentifiers;
+    options.globalContext = [self.globalContext copy];
+    options.groupIdentifiers = [self.groupIdentifiers copy];
     options.service = self.service;
     options.autoSync = self.autoSync;
     options.syncPageSize = self.syncPageSize;
@@ -217,6 +183,7 @@
     options.lineDataModifier = [self.lineDataModifier copy];
     options.remoteConfiguration = self.remoteConfiguration;
     options.remoteConfigMiniUpdateInterval = self.remoteConfigMiniUpdateInterval;
+    options.remoteConfigFetchCompletionBlock = [self.remoteConfigFetchCompletionBlock copy];
     return options;
 }
 -(instancetype)initWithDictionary:(NSDictionary *)dict{
@@ -269,40 +236,9 @@
     [dict setValue:self.lineDataModifier forKey:@"lineDataModifier"];
     [dict setValue:@(self.remoteConfiguration) forKey:@"remoteConfiguration"];
     [dict setValue:@(self.remoteConfigMiniUpdateInterval) forKey:@"remoteConfigMiniUpdateInterval"];
+    [dict setValue:self.remoteConfigFetchCompletionBlock forKey:@"remoteConfigFetchCompletionBlock"];
+    [dict setValue:self.pkgInfo forKey:@"sdkPkgInfo"];
     return [NSString stringWithFormat:@"%@",dict];
 }
-#pragma mark remote
--(void)mergeWithRemoteConfigDict:(NSDictionary *)dict{
-    @try {
-        if (!dict || dict.count == 0) {
-            return;
-        }
-        NSString *env = dict[FT_ENV];
-        NSString *serviceName = dict[FT_R_SERVICE_NAME];
-        NSNumber *autoSync = dict[FT_R_AUTO_SYNC];
-        NSNumber *compressIntakeRequests = dict[FT_R_COMPRESS_INTAKE_REQUESTS];
-        NSNumber *syncPageSize = dict[FT_R_SYNC_PAGE_SIZE];
-        NSNumber *syncSleepTime = dict[FT_R_SYNC_SLEEP_TIME];
-        if (env && env.length>0) {
-            self.env = env;
-        }
-        if (serviceName && serviceName.length>0) {
-            self.service = serviceName;
-        }
-        if (autoSync != nil) {
-            self.autoSync = [autoSync boolValue];
-        }
-        if (compressIntakeRequests != nil) {
-            self.compressIntakeRequests = [compressIntakeRequests boolValue];
-        }
-        if (syncPageSize != nil) {
-            self.syncPageSize = [syncPageSize intValue];
-        }
-        if (syncSleepTime != nil) {
-            self.syncSleepTime = [syncSleepTime intValue];
-        }
-    } @catch (NSException *exception) {
-        FTInnerLogError(@"exception: %@",exception);
-    }
-}
+
 @end

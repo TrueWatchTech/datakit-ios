@@ -9,7 +9,7 @@
 #error This file must be compiled with ARC. Either turn on ARC for the project or use -fobjc-arc flag on this file.
 #endif
 
-#import "FTLog+Private.h"
+#import "FTInnerLog.h"
 #import <os/log.h>
 #import "FTLogMessage.h"
 #import "FTFileLogger.h"
@@ -23,7 +23,7 @@
 - (NSString *)formatLogMessage:(FTLogMessage *)logMessage{
     if(logMessage.userLog){
         NSString *prefix = @"IOS APP" ;
-#if FT_MAC
+#if FT_HOST_MAC
         prefix = @"MACOS APP";
 #endif
         NSString *status = logMessage.status.length>0?[logMessage.status uppercaseString]:[FTStatusStringMap[logMessage.level] uppercaseString];

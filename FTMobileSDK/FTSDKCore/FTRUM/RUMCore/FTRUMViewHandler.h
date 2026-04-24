@@ -10,18 +10,22 @@
 NS_ASSUME_NONNULL_BEGIN
 typedef void(^FTErrorHandled)(void);
 
-@class FTRUMMonitor;
-@interface FTRUMViewHandler : FTRUMHandler
+@class FTRUMMonitor,FTRUMContext;
+
+@interface FTRUMViewHandler : FTRUMHandler<FTRUMSessionProtocol>
 @property (nonatomic, strong,readonly) FTRUMContext *context;
 @property (nonatomic, assign,readwrite) BOOL isActiveView;
 @property (nonatomic, copy) NSString *view_id;
 @property (nonatomic, copy) NSString *view_name;
 @property (nonatomic, copy) NSString *view_referrer;
 @property (nonatomic, strong) NSNumber *loading_time;
-/// Current view processed error data callback
-@property (nonatomic, copy) FTErrorHandled errorHandled;
 
 -(instancetype)initWithModel:(FTRUMViewModel *)model context:(FTRUMContext *)context rumDependencies:(FTRUMDependencies *)rumDependencies;
+
+- (instancetype)initWithModel:(FTRUMViewModel *)model
+                      context:(FTRUMContext *)context
+              rumDependencies:(FTRUMDependencies *)rumDependencies
+              needsMonitoring:(BOOL)needsMonitoring;
 @end
 
 NS_ASSUME_NONNULL_END

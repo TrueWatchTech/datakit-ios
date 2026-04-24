@@ -38,7 +38,7 @@ NSString * const FT_TVOS_SERVICE_NAME = @"df_rum_tvos";
 NSString * const FT_IOS_SDK_NAME = @"df_ios_rum_sdk";
 NSString * const FT_TVOS_SDK_NAME = @"df_tvos_rum_sdk";
 NSString * const FT_MACOS_SDK_NAME = @"df_macos_rum_sdk";
-#if FT_MAC
+#if FT_HOST_MAC
 NSString * const FT_SDK_NAME_VALUE = FT_MACOS_SDK_NAME;
 NSString * const FT_USER_AGENT_NAME = @"DF-RUM-macOS";
 #elif TARGET_OS_TV
@@ -76,11 +76,15 @@ NSString * const FT_DURATION = @"duration";
 //session tag
 NSString * const FT_RUM_KEY_SESSION_ID = @"session_id";
 NSString * const FT_RUM_KEY_SESSION_TYPE = @"session_type";
-NSString * const FT_RUM_KEY_SAMPLED_FOR_ERROR_SESSION = @"sampled_for_error_session";
+
 NSString * const FT_SESSION_ERROR_TIMESTAMP = @"session_error_timestamp";
 //session field
 NSString * const FT_RUM_SESSION_ON_ERROR_SAMPLE_RATE = @"session_on_error_sample_rate";
+NSString * const FT_RUM_SESSION_REPLAY_ON_ERROR_SAMPLE_RATE = @"session_replay_on_error_sample_rate";
 NSString * const FT_RUM_SESSION_SAMPLE_RATE = @"session_sample_rate";
+NSString * const FT_RUM_SESSION_REPLAY_SAMPLE_RATE = @"session_replay_sample_rate";
+NSString * const FT_RUM_KEY_SAMPLED_FOR_ERROR_SESSION = @"sampled_for_error_session";
+NSString * const FT_RUM_KEY_SAMPLED_FOR_ERROR_REPLAY = @"sampled_for_error_replay";
 
 //view tag
 NSString * const FT_KEY_VIEW_ID = @"view_id";
@@ -102,8 +106,9 @@ NSString * const FT_MEMORY_AVG = @"memory_avg";
 NSString * const FT_MEMORY_MAX = @"memory_max";
 NSString * const FT_FPS_MINI = @"fps_mini";
 NSString * const FT_FPS_AVG = @"fps_avg";
-
+NSString * const FT_NETWORK_TYPE = @"network_type";
 //resource tag
+NSString * const FT_KEY_RESOURCE_ID= @"resource_id";
 NSString * const FT_KEY_RESOURCE_URL = @"resource_url";
 NSString * const FT_KEY_RESOURCE_URL_HOST = @"resource_url_host";
 NSString * const FT_KEY_RESOURCE_URL_PATH = @"resource_url_path";
@@ -134,6 +139,9 @@ NSString * const FT_KEY_RESOURCE_DOWNLOAD_TIME = @"resource_download_time";
 NSString * const FT_KEY_RESOURCE_FIRST_BYTE_TIME = @"resource_first_byte_time";
 NSString * const FT_KEY_RESOURCE_CONNECT_TIME = @"resource_connect_time";
 NSString * const FT_KEY_RESOURCE_REDIRECT_TIME = @"resource_redirect_time";
+NSString * const FT_KEY_RESOURCE_HTTP_PROTOCOL = @"resource_http_protocol";
+NSString * const FT_KEY_RESOURCE_REQUEST_SIZE = @"resource_request_size";
+NSString * const FT_KEY_RESOURCE_CONNECTION_REUSE = @"resource_connection_reuse";
 //trace link rum tag
 NSString * const FT_KEY_TRACEID  = @"trace_id";
 NSString * const FT_KEY_SPANID = @"span_id";
@@ -159,6 +167,11 @@ NSString * const FT_KEY_LONG_TASK_STACK = @"long_task_stack";
 NSString * const FT_KEY_ACTION_LONG_TASK_COUNT = @"action_long_task_count";
 NSString * const FT_KEY_ACTION_RESOURCE_COUNT = @"action_resource_count";
 NSString * const FT_KEY_ACTION_ERROR_COUNT = @"action_error_count";
+NSString * const FT_KEY_LAUNCH_FIRST_FRAME_RENDER_TIME = @"app_first_frame_init_time";
+NSString * const FT_KEY_LAUNCH_APP_INIT_TIME = @"app_application_init_time";
+NSString * const FT_KEY_LAUNCH_UIKITI_INIT_TIME = @"app_uikit_init_time";
+NSString * const FT_KEY_LAUNCH_PRE_RUNTIME_INIT_TIME = @"app_pre_runtime_init_time";
+NSString * const FT_KEY_LAUNCH_RUNTIME_INIT_TIME = @"app_runtime_init_time";
 //action tag
 NSString * const FT_KEY_ACTION_ID = @"action_id";
 NSString * const FT_KEY_ACTION_NAME = @"action_name";
@@ -169,6 +182,13 @@ NSString * const FT_LAUNCH_COLD = @"launch_cold";
 NSString * const FT_LAUNCH_WARM = @"launch_warm";
 
 NSString * const FT_RUM_CUSTOM_KEYS = @"custom_keys";
+#pragma mark ========== Session Replay ==========
+NSString * const FT_SESSION_HAS_REPLAY = @"session_has_replay";
+NSString * const FT_SESSION_REPLAY_STATS = @"session_replay_stats";
+NSString * const FT_RECORDS_COUNT = @"records_count";
+NSString * const FT_SEGMENTS_COUNT = @"segments_count";
+NSString * const FT_SEGMENTS_TOTAL_RAW_SIZE = @"segments_total_raw_size";
+NSString * const FT_LINK_RUM_KEYS = @"bindInfo";
 #pragma mark ========== error monitor ==========
 NSString * const FT_MEMORY_TOTAL  = @"memory_total";
 NSString * const FT_MEMORY_USE  = @"memory_use";
@@ -197,57 +217,10 @@ NSString * const FT_NETWORK_SKYWALKING_V2 = @"sw6";
 NSString * const FT_NETWORK_TRACEPARENT_KEY = @"traceparent";
 NSString * const FT_NETWORK_ZIPKIN_SINGLE_KEY = @"b3";
 
-NSUInteger const FT_LOGGING_CONTENT_SIZE = 30720;
-NSUInteger const FT_TIME_INTERVAL = 100;
 
-int const FT_DB_LOG_MAX_COUNT = 5000;
-int const FT_DB_LOG_MIN_COUNT = 1000;
-
-int const FT_DB_RUM_MAX_COUNT = 100000;
-int const FT_DB_RUM_MIN_COUNT = 10000;
-
-// 100MB
-long const FT_DEFAULT_DB_SIZE_LIMIT = 104857600;
-long const FT_MIN_DB_SIZE_LIMIT = 31457280;
-
-NSString * const FT_SCRIPT_MESSAGE_HANDLER_NAME = @"ftMobileSdk";
-long const FT_DEFAULT_BLOCK_DURATIONS_MS = 250;
-long const FT_MIN_DEFAULT_BLOCK_DURATIONS_MS = 100;
-long const FT_ANR_THRESHOLD_MS = 5000;
-
-long long const FT_ANR_THRESHOLD_NS = 5000000000;
-#pragma mark ========== remote config ==========
-NSString * const FT_R_SERVICE_NAME = @"serviceName";
-NSString * const FT_R_AUTO_SYNC = @"autoSync";
-NSString * const FT_R_COMPRESS_INTAKE_REQUESTS = @"compressIntakeRequests";
-NSString * const FT_R_SYNC_PAGE_SIZE = @"syncPageSize";
-NSString * const FT_R_SYNC_SLEEP_TIME = @"syncSleepTime";
-
-NSString * const FT_R_RUM_SAMPLERATE = @"rumSampleRate";
-NSString * const FT_R_RUM_SESSION_ON_ERROR_SAMPLE_RATE = @"rumSessionOnErrorSampleRate";
-NSString * const FT_R_RUM_ENABLE_TRACE_USER_ACTION = @"rumEnableTraceUserAction";
-NSString * const FT_R_RUM_ENABLE_TRACE_USER_VIEW = @"rumEnableTraceUserView";
-NSString * const FT_R_RUM_ENABLE_TRACE_USER_RESOURCE = @"rumEnableTraceUserResource";
-NSString * const FT_R_RUM_ENABLE_RESOURCE_HOST_IP = @"rumEnableResourceHostIP";
-NSString * const FT_R_RUM_ENABLE_TRACE_APP_FREEZE = @"rumEnableTrackAppUIBlock";
-NSString * const FT_R_RUM_FREEZE_DURATION_MS = @"rumBlockDurationMs";
-NSString * const FT_R_RUM_ENABLE_TRACK_APP_CRASH = @"rumEnableTrackAppCrash";
-NSString * const FT_R_RUM_ENABLE_TRACK_APP_ANR = @"rumEnableTrackAppANR";
-NSString * const FT_R_RUM_ENABLE_TRACE_WEBVIEW = @"rumEnableTraceWebView";
-NSString * const FT_R_RUM_ALLOW_WEBVIEW_HOST = @"rumAllowWebViewHost";
-
-NSString * const FT_R_TRACE_SAMPLERATE = @"traceSampleRate";
-NSString * const FT_R_TRACE_ENABLE_AUTO_TRACE = @"traceEnableAutoTrace";
-NSString * const FT_R_TRACE_TRACE_TYPE = @"traceType";
-
-NSString * const FT_R_LOG_SAMPLERATE = @"logSampleRate";
-NSString * const FT_R_LOG_LEVEL_FILTERS = @"logLevelFilters";
-NSString * const FT_R_LOG_ENABLE_CUSTOM_LOG = @"logEnableCustomLog";
 #pragma mark ==========  user info ==========
 NSString * const FT_USER_ID = @"userid";
 NSString * const FT_USER_NAME = @"user_name";
 NSString * const FT_USER_EMAIL = @"user_email";
 NSString * const FT_USER_EXTRA = @"user_extra";
 
-NSString * const FT_BLACK_LIST_VIEW = @"FT_BLACK_LIST_VIEW";
-NSString * const FT_BLACK_LIST_VIEW_ACTION = @"FT_BLACK_LIST_VIEW_ACTION";

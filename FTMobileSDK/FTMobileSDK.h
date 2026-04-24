@@ -1,6 +1,5 @@
 //
 //  FTMobileSDK.h
-//  FTMobileSDK
 //
 //  Created by hulilei on 2023/4/19.
 //  Copyright © 2023 TRUEWATCH. All rights reserved.
@@ -34,3 +33,9 @@ FOUNDATION_EXPORT const unsigned char FTMobileSDKVersionString[];
 #import <FTMobileSDK/FTConstants.h>
 #import <FTMobileSDK/FTWKWebViewHandler.h>
 #import <FTMobileSDK/FTMobileConfig+Private.h>
+#import <FTMobileSDK/FTActionTrackingHandler.h>
+#import <FTMobileSDK/FTViewTrackingHandler.h>
+#import <FTMobileSDK/FTRUMView.h>
+#import <FTMobileSDK/FTRUMAction.h>
+#import <FTMobileSDK/FTDefaultActionTrackingHandler.h>
+#import <FTMobileSDK/FTDefaultUIKitViewTrackingHandler.h>

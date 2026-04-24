@@ -10,21 +10,21 @@
 
 
 - (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)connectionOptions  API_AVAILABLE(ios(13.0)){
-    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-    self.window.windowScene = (UIWindowScene*)scene;
     UITabBarController *tab = [[UITabBarController alloc]init];
     DemoViewController *rootVC = [[DemoViewController alloc] init];
     rootVC.title = @"home";
    
     UINavigationController *rootNav = [[UINavigationController alloc] initWithRootViewController:rootVC];
+    rootNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"home"
+                                                       image:[UIImage systemImageNamed:@"house"]
+                                               selectedImage:[UIImage systemImageNamed:@"house.fill"]];
     UITestVC *second =  [UITestVC new];
-    second.title = @"uitest";
     UINavigationController *rootNav2 = [[UINavigationController alloc] initWithRootViewController:second];
-
+    rootNav2.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"UITEST"
+                                                        image:[UIImage systemImageNamed:@"list.bullet"]
+                                                selectedImage:[UIImage systemImageNamed:@"list.bullet.fill"]];
     tab.viewControllers = @[rootNav,rootNav2];
-    tab.tabBar.items.firstObject.title = @"home";
     tab.tabBar.items.firstObject.isAccessibilityElement = YES;
-    tab.tabBar.items.lastObject.title = @"UITEST";
     tab.tabBar.items.lastObject.isAccessibilityElement = YES;
     self.window.rootViewController = tab;
     

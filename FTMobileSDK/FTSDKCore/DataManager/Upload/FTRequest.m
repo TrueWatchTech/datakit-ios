@@ -13,8 +13,8 @@
 #import "FTConstants.h"
 #import "FTBaseInfoHandler.h"
 #import "FTDataCompression.h"
-#import "FTLog+Private.h"
-#import "FTEnumConstant.h"
+#import "FTInnerLog.h"
+#import "FTInternalConstants.h"
 #import <objc/runtime.h>
 @interface FTRequest()
 
@@ -41,13 +41,16 @@
     return self;
 }
 -(NSURL *)absoluteURL{
-    if (FTNetworkInfoManager.sharedInstance.datakitUrl) {
-        return [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",FTNetworkInfoManager.sharedInstance.datakitUrl,self.path]];
+    FTNetworkConfigState state = [FTNetworkInfoManager sharedInstance].configState;
+    switch (state) {
+        case FTNetworkConfigStateDatakitMode:
+            return [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",FTNetworkInfoManager.sharedInstance.datakitUrl,self.path]];
+        case FTNetworkConfigStateDatawayMode:
+            return [NSURL URLWithString:[NSString stringWithFormat:@"%@%@?token=%@&to_headless=true",FTNetworkInfoManager.sharedInstance.datawayUrl,self.path,FTNetworkInfoManager.sharedInstance.clientToken]];
+        default:
+            return nil;
     }
-    if(FTNetworkInfoManager.sharedInstance.datawayUrl&&FTNetworkInfoManager.sharedInstance.clientToken){
-        return [NSURL URLWithString:[NSString stringWithFormat:@"%@%@?token=%@&to_headless=true",FTNetworkInfoManager.sharedInstance.datawayUrl,self.path,FTNetworkInfoManager.sharedInstance.clientToken]];
-    }
-    return nil;
+   
 }
 -(NSString *)contentType{
     return @"text/plain;charset=UTF-8";
@@ -86,14 +89,17 @@
     objc_setAssociatedObject(self, @selector(serialGenerator), serialGenerator, OBJC_ASSOCIATION_RETAIN);
 }
 - (void)addHTTPHeaderFields:(NSMutableURLRequest *)mutableRequest packageId:(NSString *)packageId{
-    NSString *date =[[NSDate date] ft_stringWithGMTFormat];
-    [mutableRequest setValue:date forHTTPHeaderField:@"Date"];
+    NSDate *date = [NSDate date];
+    NSString *gmtDate =[date ft_stringWithGMTFormat];
+    [mutableRequest setValue:gmtDate forHTTPHeaderField:@"Date"];
+    NSString *timestamp = [NSString stringWithFormat:@"%lld",[date ft_millisecondTimeStamp]];
+    [mutableRequest setValue:timestamp forHTTPHeaderField:FT_HTTP_HEADER_X_CLIENT_TIMESTAMP];
     if(self.contentType){
         [mutableRequest setValue:self.contentType forHTTPHeaderField:@"Content-Type"];
     }
     [mutableRequest setValue:@"zh-CN" forHTTPHeaderField:@"Accept-Language"];
     [mutableRequest setValue:self.userAgent forHTTPHeaderField:@"User-Agent"];
-    [mutableRequest setValue:[NSString stringWithFormat:@"rumm-%@",packageId] forHTTPHeaderField:@"X-Pkg-Id"];
+    [mutableRequest setValue:[NSString stringWithFormat:@"rumm-%@",packageId] forHTTPHeaderField:FT_HTTP_HEADER_X_PKG_ID];
 }
 - (NSMutableURLRequest *)adaptedRequest:(NSMutableURLRequest *)mutableRequest{
     if (!self.requestBody || !self.events) {

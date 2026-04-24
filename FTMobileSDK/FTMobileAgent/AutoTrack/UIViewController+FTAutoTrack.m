@@ -11,12 +11,12 @@
 #import "UIViewController+FTAutoTrack.h"
 #import <objc/runtime.h>
 #import "FTConstants.h"
-#import "BlacklistedVCClassNames.h"
-#import "FTLog+Private.h"
+#import "FTInnerLog.h"
 #import "FTAutoTrackHandler.h"
 #import "NSDate+FTUtil.h"
 #import "FTBaseInfoHandler.h"
 #import "FTWeakPropertyContainer.h"
+#import "BlacklistedVCClassNames.h"
 #import "FTDateUtil.h"
 
 static char *viewLoadStartTimeKey = "viewLoadStartTimeKey";
