@@ -231,30 +231,46 @@ static dispatch_once_t onceToken;
                                  FTSWArguments(NSURL *url, CompletionHandler completionHandler),
                                  FTSWReplacement({
             NSURLSession *session = self;
-            id<FTURLSessionInterceptorProtocol> rumIntercepter = [[FTURLSessionInstrumentation sharedInstance] rumInterceptor:session.delegate];
-            CompletionHandler handler = completionHandler;
-            
-            if (rumIntercepter) {
-                __block NSURLSessionDataTask *taskReference;
-                if (handler) {
-                    CompletionHandler newCompletionHandler = ^(NSData *data, NSURLResponse *response, NSError *error) {
-                        completionHandler(data, response, error);
-                        if (taskReference) {
-                            if (data) {
-                                [rumIntercepter taskReceivedData:taskReference data:data];
-                            }
-                            [rumIntercepter taskCompleted:taskReference error:error];
-                        }
-                    };
-                    handler = newCompletionHandler;
-                }
-                
-                NSURLSessionDataTask *task = FTSWCallOriginal(url, handler);
-                task.ft_hasCompletion = handler ? YES : NO;
-                taskReference = task;
-                return task;
+            id<FTURLSessionInterceptorProtocol> rumInterceptor = nil;
+
+            @try {
+                rumInterceptor = [[FTURLSessionInstrumentation sharedInstance] rumInterceptor:session.delegate];
+            } @catch (NSException *exception) {
+                FTInnerLogError(@"exception: %@", exception);
             }
-            return FTSWCallOriginal(url, completionHandler);
+
+            if (!rumInterceptor) {
+                return FTSWCallOriginal(url, completionHandler);
+            }
+
+            __block __weak NSURLSessionDataTask *taskReference;
+            CompletionHandler originalHandler = [completionHandler copy];
+            CompletionHandler handler = originalHandler;
+
+            if (originalHandler) {
+                handler = ^(NSData *data, NSURLResponse *response, NSError *error) {
+                    @try {
+                        originalHandler(data, response, error);
+                    } @finally {
+                        @try {
+                            NSURLSessionDataTask *task = taskReference;
+                            if (task) {
+                                if (data) {
+                                    [rumInterceptor taskReceivedData:task data:data];
+                                }
+                                [rumInterceptor taskCompleted:task error:error];
+                            }
+                        } @catch (NSException *exception) {
+                            FTInnerLogError(@"exception: %@", exception);
+                        }
+                    }
+                };
+            }
+
+            NSURLSessionDataTask *task = FTSWCallOriginal(url, handler);
+            task.ft_hasCompletion = handler ? YES : NO;
+            taskReference = task;
+            return task;
         }), FTSwizzlerModeOncePerClassAndSuperclasses, kFTURLSessionDataTaskWithURL);
     }
 }
@@ -266,35 +282,47 @@ static dispatch_once_t onceToken;
                              FTSWReturnType(NSURLSessionDataTask *),
                              FTSWArguments(NSURLRequest *request, CompletionHandler completionHandler),
                              FTSWReplacement({
+        NSURLSession *session = self;
+        id<FTURLSessionInterceptorProtocol> rumInterceptor = nil;
+
         @try {
-            NSURLSession *session = self;
-            id<FTURLSessionInterceptorProtocol> rumIntercepter = [[FTURLSessionInstrumentation sharedInstance] rumInterceptor:session.delegate];
-            CompletionHandler handler = completionHandler;
-            
-            if (rumIntercepter) {
-                __block NSURLSessionDataTask *taskReference;
-                if (handler) {
-                    CompletionHandler newCompletionHandler = ^(NSData *data, NSURLResponse *response, NSError *error) {
-                        completionHandler(data, response, error);
-                        if (taskReference) {
-                            if (data) {
-                                [rumIntercepter taskReceivedData:taskReference data:data];
-                            }
-                            [rumIntercepter taskCompleted:taskReference error:error];
-                        }
-                    };
-                    handler = newCompletionHandler;
-                }
-                
-                NSURLSessionDataTask *task = FTSWCallOriginal(request, handler);
-                task.ft_hasCompletion = handler ? YES : NO;
-                taskReference = task;
-                return task;
-            }
+            rumInterceptor = [[FTURLSessionInstrumentation sharedInstance] rumInterceptor:session.delegate];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception: %@", exception);
         }
-        return FTSWCallOriginal(request, completionHandler);
+
+        if (!rumInterceptor) {
+            return FTSWCallOriginal(request, completionHandler);
+        }
+
+        __block __weak NSURLSessionDataTask *taskReference;
+        CompletionHandler originalHandler = [completionHandler copy];
+        CompletionHandler handler = originalHandler;
+
+        if (originalHandler) {
+            handler = ^(NSData *data, NSURLResponse *response, NSError *error) {
+                @try {
+                    originalHandler(data, response, error);
+                } @finally {
+                    @try {
+                        NSURLSessionDataTask *task = taskReference;
+                        if (task) {
+                            if (data) {
+                                [rumInterceptor taskReceivedData:task data:data];
+                            }
+                            [rumInterceptor taskCompleted:task error:error];
+                        }
+                    } @catch (NSException *exception) {
+                        FTInnerLogError(@"exception: %@", exception);
+                    }
+                }
+            };
+        }
+
+        NSURLSessionDataTask *task = FTSWCallOriginal(request, handler);
+        task.ft_hasCompletion = handler ? YES : NO;
+        taskReference = task;
+        return task;
     }), FTSwizzlerModeOncePerClassAndSuperclasses, kFTURLSessionDataTaskWithRequest);
 }
 
