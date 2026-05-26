@@ -63,6 +63,7 @@
 		17018D472F50253200688324 /* FTResourceProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = 17018CC62F50253200688324 /* FTResourceProcessor.m */; };
 		17018D482F50253200688324 /* FTSRRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = 17018CAA2F50253200688324 /* FTSRRecord.m */; };
 		17018D492F50253200688324 /* FTDataUploadDelay.m in Sources */ = {isa = PBXBuildFile; fileRef = 17018CFA2F50253200688324 /* FTDataUploadDelay.m */; };
+		A1F0C0042FAB000100A0A001 /* FTUploadStatus.m in Sources */ = {isa = PBXBuildFile; fileRef = A1F0C0022FAB000100A0A001 /* FTUploadStatus.m */; };
 		17018D4A2F50253200688324 /* FTUnsupportedViewRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = 17018C932F50253200688324 /* FTUnsupportedViewRecorder.m */; };
 		17018D4B2F50253200688324 /* FTViewTreeRecordingContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 17018C9A2F50253200688324 /* FTViewTreeRecordingContext.m */; };
 		17018D4C2F50253200688324 /* FTSessionReplayPrivacyOverrides.m in Sources */ = {isa = PBXBuildFile; fileRef = 17018D0E2F50253200688324 /* FTSessionReplayPrivacyOverrides.m */; };
@@ -144,6 +145,7 @@
 		17018D982F50253200688324 /* FTTmpCacheManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 17018CD72F50253200688324 /* FTTmpCacheManager.h */; };
 		17018D992F50253200688324 /* FTRumSessionReplay.h in Headers */ = {isa = PBXBuildFile; fileRef = 17018C6D2F50253200688324 /* FTRumSessionReplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17018D9A2F50253200688324 /* FTUploadConditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 17018CFD2F50253200688324 /* FTUploadConditions.h */; };
+		A1F0C0032FAB000100A0A001 /* FTUploadStatus.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0C0012FAB000100A0A001 /* FTUploadStatus.h */; };
 		17018D9B2F50253200688324 /* FTViewTreeRecordingContext.h in Headers */ = {isa = PBXBuildFile; fileRef = 17018C992F50253200688324 /* FTViewTreeRecordingContext.h */; };
 		17018D9C2F50253200688324 /* FTFeatureRequestBuilder.h in Headers */ = {isa = PBXBuildFile; fileRef = 17018CED2F50253200688324 /* FTFeatureRequestBuilder.h */; };
 		17018D9D2F50253200688324 /* FTResourceProcessor.h in Headers */ = {isa = PBXBuildFile; fileRef = 17018CC52F50253200688324 /* FTResourceProcessor.h */; };
@@ -1321,6 +1323,8 @@
 		17018CFC2F50253200688324 /* FTFeatureUpload.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTFeatureUpload.m; sourceTree = "<group>"; };
 		17018CFD2F50253200688324 /* FTUploadConditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTUploadConditions.h; sourceTree = "<group>"; };
 		17018CFE2F50253200688324 /* FTUploadConditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTUploadConditions.m; sourceTree = "<group>"; };
+		A1F0C0012FAB000100A0A001 /* FTUploadStatus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTUploadStatus.h; sourceTree = "<group>"; };
+		A1F0C0022FAB000100A0A001 /* FTUploadStatus.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTUploadStatus.m; sourceTree = "<group>"; };
 		17018D002F50253200688324 /* FTFeature.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTFeature.h; sourceTree = "<group>"; };
 		17018D012F50253200688324 /* FTLimitedSizeSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTLimitedSizeSet.h; sourceTree = "<group>"; };
 		17018D022F50253200688324 /* FTLimitedSizeSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTLimitedSizeSet.m; sourceTree = "<group>"; };
@@ -2050,6 +2054,8 @@
 				17018CFC2F50253200688324 /* FTFeatureUpload.m */,
 				17018CFD2F50253200688324 /* FTUploadConditions.h */,
 				17018CFE2F50253200688324 /* FTUploadConditions.m */,
+				A1F0C0012FAB000100A0A001 /* FTUploadStatus.h */,
+				A1F0C0022FAB000100A0A001 /* FTUploadStatus.m */,
 			);
 			path = Upload;
 			sourceTree = "<group>";
@@ -3478,6 +3484,7 @@
 				17018D982F50253200688324 /* FTTmpCacheManager.h in Headers */,
 				17018D992F50253200688324 /* FTRumSessionReplay.h in Headers */,
 				17018D9A2F50253200688324 /* FTUploadConditions.h in Headers */,
+				A1F0C0032FAB000100A0A001 /* FTUploadStatus.h in Headers */,
 				17018D9B2F50253200688324 /* FTViewTreeRecordingContext.h in Headers */,
 				17018D9C2F50253200688324 /* FTFeatureRequestBuilder.h in Headers */,
 				1701B1B62F57D11100E2AE8A /* FTCALayerSwizzler.h in Headers */,
@@ -4209,6 +4216,7 @@
 				17018D2E2F50253200688324 /* FTUIViewRecorder.m in Sources */,
 				17018D4A2F50253200688324 /* FTUnsupportedViewRecorder.m in Sources */,
 				17018D402F50253200688324 /* FTUploadConditions.m in Sources */,
+				A1F0C0042FAB000100A0A001 /* FTUploadStatus.m in Sources */,
 				17018D3D2F50253200688324 /* FTViewAttributes.m in Sources */,
 				17018D3B2F50253200688324 /* FTViewTreeRecorder.m in Sources */,
 				17018D4B2F50253200688324 /* FTViewTreeRecordingContext.m in Sources */,

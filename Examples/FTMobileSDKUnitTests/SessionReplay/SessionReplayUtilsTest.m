@@ -22,6 +22,9 @@
 #import "FTSRRecord.h"
 #import "FTViewAttributes.h"
 #import "FTResourceWriter.h"
+#import "FTUploadConditions.h"
+#import "FTNetworkInfoManager.h"
+#import "FTUploadStatus.h"
 
 BOOL isNull(id value)
 {
@@ -70,7 +73,7 @@ BOOL isNAN(id value) {
 @end
 
 @interface FTImageFeatureUpload (Testing)
-- (BOOL)flushWithEvent:(id)event parameters:(NSDictionary *)parameters;
+- (FTUploadStatus *)flushWithEvent:(id)event parameters:(NSDictionary *)parameters;
 - (void)cancelSynchronously;
 @end
 
@@ -103,6 +106,7 @@ BOOL isNAN(id value) {
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *checkBodies;
 @property (nonatomic, strong) NSMutableArray<NSString *> *writeBodies;
 @property (nonatomic, strong) NSDictionary<NSString *, NSNumber *> *contentMap;
+@property (nonatomic, assign) NSInteger writeStatusCode;
 @end
 
 @implementation FTMockHTTPClient
@@ -111,6 +115,7 @@ BOOL isNAN(id value) {
     if (self) {
         _checkBodies = [NSMutableArray new];
         _writeBodies = [NSMutableArray new];
+        _writeStatusCode = 200;
     }
     return self;
 }
@@ -120,8 +125,8 @@ BOOL isNAN(id value) {
     if ([request respondsToSelector:@selector(adaptedRequest:)]) {
         urlRequest = [request adaptedRequest:urlRequest];
     }
-    NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:urlRequest.URL statusCode:200 HTTPVersion:nil headerFields:nil];
     if ([request isKindOfClass:[FTResourceCheckRequest class]]) {
+        NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:urlRequest.URL statusCode:200 HTTPVersion:nil headerFields:nil];
         NSDictionary *body = [NSJSONSerialization JSONObjectWithData:urlRequest.HTTPBody options:kNilOptions error:nil];
         [self.checkBodies addObject:body];
         NSMutableDictionary *content = [NSMutableDictionary dictionary];
@@ -134,6 +139,7 @@ BOOL isNAN(id value) {
     }
     NSString *body = [[NSString alloc] initWithData:urlRequest.HTTPBody encoding:NSUTF8StringEncoding];
     [self.writeBodies addObject:body ?: @""];
+    NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:urlRequest.URL statusCode:self.writeStatusCode HTTPVersion:nil headerFields:nil];
     callback(response, [NSData data], nil);
 }
 @end
@@ -150,6 +156,7 @@ BOOL isNAN(id value) {
 
 - (void)tearDown {
     // Put teardown code here. This method is called after the invocation of each test method in the class.
+    [[FTNetworkInfoManager sharedInstance] clearUploadInfo];
 }
 
 - (NSData *)resourceDataWithIdentifier:(NSString *)identifier bindInfo:(NSDictionary *)bindInfo{
@@ -173,6 +180,74 @@ BOOL isNAN(id value) {
     [upload setValue:httpClient forKey:@"httpClient"];
     [upload cancelSynchronously];
     return upload;
+}
+
+- (void)verifyImageFeatureUploadFailsWithStatusCode:(NSInteger)statusCode{
+    FTMockHTTPClient *httpClient = [[FTMockHTTPClient alloc] init];
+    httpClient.contentMap = @{@"resource-a":@NO};
+    httpClient.writeStatusCode = statusCode;
+    FTImageFeatureUpload *upload = [self createImageUploadWithHTTPClient:httpClient];
+    NSArray *event = @[
+        [self resourceDataWithIdentifier:@"resource-a" bindInfo:@{@"user_id":@"user-1"}]
+    ];
+    
+    FTUploadStatus *status = [upload flushWithEvent:event parameters:@{@"service":@"demo-service"}];
+    [upload cancelSynchronously];
+    
+    XCTAssertFalse(status.success);
+    XCTAssertTrue(status.needsRetry);
+    XCTAssertEqualObjects(status.responseCode, @(statusCode));
+    XCTAssertEqual(httpClient.checkBodies.count, 1);
+    XCTAssertEqual(httpClient.writeBodies.count, 1);
+}
+
+- (void)testUploadStatusTreatsCurrentSuccessfulCodesAsSuccess{
+    NSArray<NSNumber *> *successCodes = @[@200, @202, @204, @400, @401, @404, @413];
+    for (NSNumber *statusCode in successCodes) {
+        NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:[NSURL URLWithString:@"https://example.com"] statusCode:statusCode.integerValue HTTPVersion:nil headerFields:nil];
+        FTUploadStatus *status = [FTUploadStatus statusWithHTTPResponse:response error:nil previousStatus:nil];
+        
+        XCTAssertTrue(status.success, @"statusCode:%@", statusCode);
+        XCTAssertFalse(status.needsRetry, @"statusCode:%@", statusCode);
+        XCTAssertEqualObjects(status.responseCode, statusCode);
+    }
+}
+
+- (void)testUploadStatusTreatsCurrentFailureCodesAsRetryable{
+    NSArray<NSNumber *> *failureCodes = @[@403, @429, @500, @502, @503, @504];
+    for (NSNumber *statusCode in failureCodes) {
+        NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:[NSURL URLWithString:@"https://example.com"] statusCode:statusCode.integerValue HTTPVersion:nil headerFields:nil];
+        FTUploadStatus *status = [FTUploadStatus statusWithHTTPResponse:response error:nil previousStatus:nil];
+        
+        XCTAssertFalse(status.success, @"statusCode:%@", statusCode);
+        XCTAssertTrue(status.needsRetry, @"statusCode:%@", statusCode);
+        XCTAssertEqualObjects(status.responseCode, statusCode);
+    }
+}
+
+- (void)testUploadStatusTreatsNetworkErrorAndNilResponseAsRetryable{
+    NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorTimedOut userInfo:nil];
+    FTUploadStatus *errorStatus = [FTUploadStatus statusWithHTTPResponse:nil error:error previousStatus:nil];
+    FTUploadStatus *nilResponseStatus = [FTUploadStatus statusWithHTTPResponse:nil error:nil previousStatus:nil];
+    
+    XCTAssertFalse(errorStatus.success);
+    XCTAssertTrue(errorStatus.needsRetry);
+    XCTAssertNil(errorStatus.responseCode);
+    XCTAssertEqualObjects(errorStatus.error, error);
+    
+    XCTAssertFalse(nilResponseStatus.success);
+    XCTAssertTrue(nilResponseStatus.needsRetry);
+    XCTAssertNil(nilResponseStatus.responseCode);
+}
+
+- (void)testUploadStatusIncreasesAttemptFromPreviousStatus{
+    NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:[NSURL URLWithString:@"https://example.com"] statusCode:500 HTTPVersion:nil headerFields:nil];
+    
+    FTUploadStatus *first = [FTUploadStatus statusWithHTTPResponse:response error:nil previousStatus:nil];
+    FTUploadStatus *second = [FTUploadStatus statusWithHTTPResponse:response error:nil previousStatus:first];
+    
+    XCTAssertEqual(first.attempt, 0);
+    XCTAssertEqual(second.attempt, 1);
 }
 
 - (void)testFuncConflict{
@@ -247,6 +322,24 @@ BOOL isNAN(id value) {
     XCTAssertEqualObjects(writer.writtenResources.firstObject.bindInfo, context.bindInfo);
 }
 
+- (void)testUploadConditionsIncludesUploadURLNotConfigured{
+    [[FTNetworkInfoManager sharedInstance] clearUploadInfo];
+    
+    FTUploadConditions *conditions = [[FTUploadConditions alloc] init];
+    NSArray *result = [conditions checkForUpload];
+    
+    XCTAssertEqualObjects(result, @[@"Upload URL Not Configured"]);
+}
+
+- (void)testUploadConditionsAllowsConfiguredUploadURL{
+    [FTNetworkInfoManager sharedInstance].setUploadURL(@"https://example.com", nil, nil);
+    
+    FTUploadConditions *conditions = [[FTUploadConditions alloc] init];
+    NSArray *result = [conditions checkForUpload];
+    
+    XCTAssertFalse([result containsObject:@"Upload URL Not Configured"]);
+}
+
 - (void)testResourceRequestContainsBindInfoFields{
     FTEnrichedResource *resource = [[FTEnrichedResource alloc] init];
     resource.identifier = @"resource-id";
@@ -300,10 +393,10 @@ BOOL isNAN(id value) {
         [self resourceDataWithIdentifier:@"resource-c" bindInfo:@{@"user_id":@"user-1"}]
     ];
     
-    BOOL success = [upload flushWithEvent:event parameters:@{@"service":@"demo-service"}];
+    FTUploadStatus *status = [upload flushWithEvent:event parameters:@{@"service":@"demo-service"}];
     [upload cancelSynchronously];
     
-    XCTAssertTrue(success);
+    XCTAssertTrue(status.success);
     XCTAssertEqual(httpClient.checkBodies.count, 2);
     XCTAssertEqual(httpClient.writeBodies.count, 2);
     
@@ -330,6 +423,11 @@ BOOL isNAN(id value) {
     XCTAssertFalse([secondWrite containsString:@"resource-a"]);
 }
 
+- (void)testImageFeatureUploadTreats403And429AsFailure{
+    [self verifyImageFeatureUploadFailsWithStatusCode:403];
+    [self verifyImageFeatureUploadFailsWithStatusCode:429];
+}
+
 - (void)testImageFeatureUploadMergesSameBindInfoIntoSingleBatch{
     FTMockHTTPClient *httpClient = [[FTMockHTTPClient alloc] init];
     httpClient.contentMap = @{
@@ -342,10 +440,10 @@ BOOL isNAN(id value) {
         [self resourceDataWithIdentifier:@"resource-b" bindInfo:@{@"user_id":@"user-1"}]
     ];
     
-    BOOL success = [upload flushWithEvent:event parameters:@{@"service":@"demo-service"}];
+    FTUploadStatus *status = [upload flushWithEvent:event parameters:@{@"service":@"demo-service"}];
     [upload cancelSynchronously];
     
-    XCTAssertTrue(success);
+    XCTAssertTrue(status.success);
     XCTAssertEqual(httpClient.checkBodies.count, 1);
     XCTAssertEqual(httpClient.writeBodies.count, 1);
     NSDictionary *checkBody = httpClient.checkBodies.firstObject;
