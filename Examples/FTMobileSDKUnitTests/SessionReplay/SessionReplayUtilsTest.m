@@ -25,6 +25,8 @@
 #import "FTUploadConditions.h"
 #import "FTNetworkInfoManager.h"
 #import "FTUploadStatus.h"
+#import "FTUIImageResource.h"
+#import "FTSRWireframe.h"
 
 BOOL isNull(id value)
 {
@@ -180,6 +182,94 @@ BOOL isNAN(id value) {
     [upload setValue:httpClient forKey:@"httpClient"];
     [upload cancelSynchronously];
     return upload;
+}
+
+- (void)runOnMainThreadAndWait:(dispatch_block_t)block {
+    if ([NSThread isMainThread]) {
+        block();
+        return;
+    }
+    
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Run on main thread"];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        block();
+        [expectation fulfill];
+    });
+    [self waitForExpectationsWithTimeout:1 handler:nil];
+}
+
+- (UIImage *)sessionReplayTestImage{
+    CGSize size = CGSizeMake(1, 1);
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:size];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull rendererContext) {
+        [[UIColor blackColor] setFill];
+        UIRectFill((CGRect){CGPointZero, size});
+    }];
+}
+
+- (void)testImageResourceResolvesDynamicTintColorBeforeBackgroundProcessing API_AVAILABLE(ios(13.0)){
+    __block NSInteger providerCallCount = 0;
+    __block NSInteger backgroundProviderCallCount = 0;
+    UIColor *dynamicColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        providerCallCount += 1;
+        if (![NSThread isMainThread]) {
+            backgroundProviderCallCount += 1;
+        }
+        return [UIColor colorWithRed:0.1 green:0.2 blue:0.3 alpha:0.4];
+    }];
+    UITraitCollection *traitCollection = [UITraitCollection traitCollectionWithUserInterfaceStyle:UIUserInterfaceStyleDark];
+    
+    __block FTUIImageResource *resource = nil;
+    [self runOnMainThreadAndWait:^{
+        resource = [[FTUIImageResource alloc] initWithImage:[self sessionReplayTestImage]
+                                                  tintColor:dynamicColor
+                                            traitCollection:traitCollection];
+    }];
+    NSInteger providerCallsAfterSnapshot = providerCallCount;
+    
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Background resource processing"];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        [resource calculateIdentifier];
+        [resource calculateData];
+        [expectation fulfill];
+    });
+    [self waitForExpectationsWithTimeout:1 handler:nil];
+    
+    XCTAssertEqual(backgroundProviderCallCount, 0);
+    XCTAssertEqual(providerCallCount, providerCallsAfterSnapshot);
+}
+
+- (void)testViewAttributesResolveDynamicColorsBeforeBackgroundProcessing API_AVAILABLE(ios(13.0)){
+    __block NSInteger providerCallCount = 0;
+    __block NSInteger backgroundProviderCallCount = 0;
+    UIColor *dynamicColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        providerCallCount += 1;
+        if (![NSThread isMainThread]) {
+            backgroundProviderCallCount += 1;
+        }
+        return [UIColor colorWithRed:0.4 green:0.3 blue:0.2 alpha:0.8];
+    }];
+    
+    __block FTViewAttributes *attributes = nil;
+    [self runOnMainThreadAndWait:^{
+        UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
+        view.backgroundColor = dynamicColor;
+        attributes = [[FTViewAttributes alloc] initWithView:view
+                                            frameInRootView:view.frame
+                                                       clip:view.frame
+                                                  overrides:[PrivacyOverrides new]];
+    }];
+    NSInteger providerCallsAfterSnapshot = providerCallCount;
+    
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Background wireframe processing"];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        __unused FTSRShapeWireframe *wireframe = [[FTSRShapeWireframe alloc] initWithIdentifier:1 attributes:attributes];
+        [expectation fulfill];
+    });
+    [self waitForExpectationsWithTimeout:1 handler:nil];
+    
+    XCTAssertEqual(backgroundProviderCallCount, 0);
+    XCTAssertEqual(providerCallCount, providerCallsAfterSnapshot);
 }
 
 - (void)verifyImageFeatureUploadFailsWithStatusCode:(NSInteger)statusCode{

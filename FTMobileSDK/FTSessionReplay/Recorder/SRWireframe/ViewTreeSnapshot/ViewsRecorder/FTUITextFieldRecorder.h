@@ -10,7 +10,7 @@
 #import <UIKit/UIKit.h>
 #import "FTSRNodeWireframesBuilder.h"
 
-@class FTViewAttributes;
+@class FTViewAttributes, FTSRColorSnapshot;
 @protocol FTSRTextObfuscatingProtocol;
 NS_ASSUME_NONNULL_BEGIN
 /// Draw textField
@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) CGRect wireframeRect;
 @property (nonatomic, assign) int64_t wireframeID;
 @property (nonatomic, copy) NSString *text;
-@property (nonatomic, strong) UIColor *textColor;
+@property (nonatomic, strong, nullable) FTSRColorSnapshot *textColor;
 @property (nonatomic, assign) NSTextAlignment textAlignment;
 @property (nonatomic, assign) BOOL isPlaceholderText;
 @property (nonatomic, strong) UIFont *font;

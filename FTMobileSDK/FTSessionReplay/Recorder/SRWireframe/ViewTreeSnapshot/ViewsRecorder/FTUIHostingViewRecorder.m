@@ -114,7 +114,7 @@ typedef NS_ENUM(NSInteger, FTSwiftUIWireframePayloadKind) {
         return nil;
     }
     FTSwiftUIReflectionBridge *bridge = self.reflectionBridge;
-    UIColor *borderColor = attributes.layerBorderColor ? [UIColor colorWithCGColor:attributes.layerBorderColor] : nil;
+    CGColorRef borderColor = attributes.layerBorderColor.cgColor;
     FTSwiftUIRecordingAttributes *recordingAttributes = [self recordingAttributesWithViewAttributes:attributes
                                                                                         borderColor:borderColor
                                                                                         textPrivacy:[attributes resolveTextAndInputPrivacyLevel:context.recorder]
@@ -127,7 +127,7 @@ typedef NS_ENUM(NSInteger, FTSwiftUIWireframePayloadKind) {
 }
 
 - (FTSwiftUIRecordingAttributes *)recordingAttributesWithViewAttributes:(FTViewAttributes *)attributes
-                                                             borderColor:(UIColor *)borderColor
+                                                             borderColor:(CGColorRef)borderColor
                                                              textPrivacy:(FTTextAndInputPrivacyLevel)textPrivacy
                                                             imagePrivacy:(FTImagePrivacyLevel)imagePrivacy
                                                              wireframeID:(int64_t)wireframeID API_AVAILABLE(ios(13.0)) {
@@ -140,7 +140,7 @@ typedef NS_ENUM(NSInteger, FTSwiftUIWireframePayloadKind) {
     recordingAttributes.frame = attributes.frame;
     recordingAttributes.clip = attributes.clip;
     recordingAttributes.alpha = attributes.alpha;
-    recordingAttributes.backgroundColor = attributes.backgroundColor;
+    recordingAttributes.backgroundColor = attributes.backgroundColor.cgColor;
     recordingAttributes.borderColor = borderColor;
     recordingAttributes.borderWidth = attributes.layerBorderWidth;
     recordingAttributes.cornerRadius = attributes.layerCornerRadius;

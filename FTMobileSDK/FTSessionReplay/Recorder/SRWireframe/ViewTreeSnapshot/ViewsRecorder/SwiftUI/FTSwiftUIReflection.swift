@@ -170,8 +170,8 @@ public final class FTSwiftUIRecordingAttributes: NSObject {
     @objc dynamic var frame: CGRect = .zero
     @objc dynamic var clip: CGRect = .zero
     @objc dynamic var alpha: CGFloat = 1
-    @objc dynamic var backgroundColor: UIColor?
-    @objc dynamic var borderColor: UIColor?
+    @objc dynamic var backgroundColor: CGColor?
+    @objc dynamic var borderColor: CGColor?
     @objc dynamic var borderWidth: CGFloat = 0
     @objc dynamic var cornerRadius: CGFloat = 0
     @objc dynamic var textPrivacy: Int = 0
@@ -319,8 +319,8 @@ private struct FTSwiftUIWireframesBuilder {
     let rootFrame: CGRect
     let rootClip: CGRect
     let rootAlpha: CGFloat
-    let rootBackgroundColor: UIColor?
-    let rootBorderColor: UIColor?
+    let rootBackgroundColor: CGColor?
+    let rootBorderColor: CGColor?
     let rootBorderWidth: CGFloat
     let rootCornerRadius: CGFloat
 
@@ -346,9 +346,9 @@ private struct FTSwiftUIWireframesBuilder {
             id: wireframeID,
             frame: rootFrame,
             clip: rootClip,
-            borderColor: rootBorderColor?.cgColor,
+            borderColor: rootBorderColor,
             borderWidth: rootBorderWidth,
-            backgroundColor: rootBackgroundColor?.cgColor,
+            backgroundColor: rootBackgroundColor,
             cornerRadius: rootCornerRadius,
             opacity: rootAlpha
         )
