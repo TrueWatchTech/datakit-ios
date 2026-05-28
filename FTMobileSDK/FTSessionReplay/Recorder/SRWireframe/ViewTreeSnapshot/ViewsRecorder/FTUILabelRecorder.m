@@ -45,7 +45,7 @@
     builder.attributes = attributes;
     builder.wireframeID = [context.viewIDGenerator SRViewID:label nodeRecorder:self];
     builder.fontScalingEnabled = label.adjustsFontSizeToFitWidth;
-    builder.font = label.font;
+    builder.fontSize = label.font.pointSize;
     builder.textColor = [FTSRColorSnapshot snapshotWithColor:label.textColor traitCollection:label.traitCollection];
     builder.textAlignment = label.textAlignment;
     builder.textObfuscator = self.textObfuscator(context,attributes);
@@ -67,12 +67,12 @@
     wireframe.text = [self.textObfuscator mask:self.text];
     wireframe.border = [[FTSRShapeBorder alloc]initWithColor:self.attributes.layerBorderColor.hexString width:self.attributes.layerBorderWidth];
     wireframe.shapeStyle = [[FTSRShapeStyle alloc]initWithBackgroundColor:self.attributes.backgroundColor.hexString cornerRadius:@(self.attributes.layerCornerRadius) opacity:@(self.attributes.alpha)];
-    CGFloat fontSize = self.font.pointSize;
+    CGFloat fontSize = self.fontSize;
     if (wireframe.text.length > 0 && self.fontScalingEnabled ){
         // Calculates the approximate font size for available text area √(frameArea / numberOfCharacters)
         CGFloat area = self.attributes.frame.size.width * self.attributes.frame.size.height;
         int calculatedFontSize = sqrt(area / wireframe.text.length);
-        if (calculatedFontSize < self.font.pointSize) {
+        if (calculatedFontSize < self.fontSize) {
             fontSize = calculatedFontSize;
         }
     }

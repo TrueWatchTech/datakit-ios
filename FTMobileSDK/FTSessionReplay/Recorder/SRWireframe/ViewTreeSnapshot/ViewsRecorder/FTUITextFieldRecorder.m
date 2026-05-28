@@ -101,7 +101,7 @@ typedef id<FTSRTextObfuscatingProtocol>(^FTTextFieldObfuscator)(FTViewTreeRecord
     builder.textColor = [FTSRColorSnapshot snapshotWithColor:textField.textColor traitCollection:textField.traitCollection];
     builder.textAlignment = textField.textAlignment;
     builder.isPlaceholderText = isPlaceholder;
-    builder.font = textField.font;
+    builder.fontSize = textField.font.pointSize;
     builder.fontScalingEnabled = textField.adjustsFontSizeToFitWidth;
     builder.textObfuscator = self.textObfuscator(context,attributes,[FTSRUtils isSensitiveText:textField],isPlaceholder);
     return builder;
@@ -119,7 +119,7 @@ typedef id<FTSRTextObfuscatingProtocol>(^FTTextFieldObfuscator)(FTViewTreeRecord
     position.alignment = alignment;
     position.padding = [[FTPadding alloc]initWithLeft:0 top:0 right:0 bottom:0];
     wireframe.textPosition = position;
-    FTSRTextStyle *textStyle = [[FTSRTextStyle alloc]initWithSize:self.font.pointSize color:self.isPlaceholderText? [FTSystemColors placeholderTextColorStr]:self.textColor.hexString family:nil];
+    FTSRTextStyle *textStyle = [[FTSRTextStyle alloc]initWithSize:self.fontSize color:self.isPlaceholderText? [FTSystemColors placeholderTextColorStr]:self.textColor.hexString family:nil];
     wireframe.textStyle = textStyle;
     return @[wireframe];
 }

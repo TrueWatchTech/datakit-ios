@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy) NSString *text;
 @property (nonatomic, assign) BOOL fontScalingEnabled;
-@property (nonatomic, strong) UIFont *font;
+@property (nonatomic, assign) CGFloat fontSize;
 @property (nonatomic, strong, nullable) FTSRColorSnapshot *textColor;
 @property (nonatomic, assign) NSTextAlignment textAlignment;
 @property (nonatomic, assign) NSLineBreakMode lineBreakMode;

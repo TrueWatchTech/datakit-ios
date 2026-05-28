@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) FTSRColorSnapshot *textColor;
 @property (nonatomic, assign) NSTextAlignment textAlignment;
 @property (nonatomic, assign) BOOL isPlaceholderText;
-@property (nonatomic, strong) UIFont *font;
+@property (nonatomic, assign) CGFloat fontSize;
 @property (nonatomic, assign) BOOL fontScalingEnabled;
 @property (nonatomic, strong) id<FTSRTextObfuscatingProtocol> textObfuscator;
 @end

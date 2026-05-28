@@ -21,7 +21,7 @@ typedef id<FTSRTextObfuscatingProtocol>_Nullable(^FTTextViewObfuscator)(FTViewTr
 @property (nonatomic, copy) NSString *text;
 @property (nonatomic, assign) NSTextAlignment textAlignment;
 @property (nonatomic, strong, nullable) FTSRColorSnapshot * textColor;
-@property (nonatomic, strong) UIFont *font;
+@property (nonatomic, assign) CGFloat fontSize;
 @property (nonatomic, assign) CGRect contentRect;
 @property (nonatomic, strong) id<FTSRTextObfuscatingProtocol> textObfuscator;
 @end

@@ -48,7 +48,7 @@
     builder.text = textView.text;
     builder.textAlignment = textView.textAlignment;
     builder.textColor = [FTSRColorSnapshot snapshotWithColor:textView.textColor traitCollection:textView.traitCollection];
-    builder.font = textView.font;
+    builder.fontSize = textView.font.pointSize;
     builder.contentRect = CGRectMake(textView.contentOffset.x, textView.contentOffset.y, textView.contentSize.width, textView.contentSize.height);
     builder.textObfuscator = self.textObfuscator(context,attributes,[FTSRUtils isSensitiveText:textView],textView.isEditable);
     builder.contentRect = CGRectMake(textView.contentOffset.x, textView.contentOffset.y, textView.contentSize.width, textView.contentSize.height);
@@ -71,7 +71,7 @@
     FTSRShapeStyle *shapeStyle = [[FTSRShapeStyle alloc]initWithBackgroundColor:self.attributes.backgroundColor.hexString cornerRadius:@(self.attributes.layerCornerRadius) opacity:@(self.attributes.alpha)];
     wireframe.shapeStyle = shapeStyle;
     FTAlignment *alignment = [[FTAlignment alloc]initWithTextAlignment:NSTextAlignmentLeft vertical:@"top"];
-    wireframe.textStyle = [[FTSRTextStyle alloc]initWithSize:self.font.pointSize color:self.textColor.hexString family:nil];
+    wireframe.textStyle = [[FTSRTextStyle alloc]initWithSize:self.fontSize color:self.textColor.hexString family:nil];
     FTSRTextPosition *position = [[FTSRTextPosition alloc]init];
     position.alignment = alignment;
     position.padding = [[FTPadding alloc]initWithLeft:0 top:0 right:0 bottom:0];

@@ -409,9 +409,18 @@ private struct FTSwiftUIWireframesBuilder {
 
         case let .text(view, _):
             let storage = view.text.storage
-            let style = storage.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
-            let foregroundColor = storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
-            let font = storage.attribute(.font, at: 0, effectiveRange: nil) as? UIFont
+            let style: NSParagraphStyle?
+            let foregroundColor: UIColor?
+            let font: UIFont?
+            if storage.length > 0 {
+                style = storage.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+                foregroundColor = storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
+                font = storage.attribute(.font, at: 0, effectiveRange: nil) as? UIFont
+            } else {
+                style = nil
+                foregroundColor = nil
+                font = nil
+            }
             return makeText(
                 id: id,
                 frame: frame,
@@ -1554,6 +1563,9 @@ private extension UIImage.Orientation {
 @available(iOS 13.0, *)
 private extension FTSwiftUIResourcePayload {
     static func imageResource(image: UIImage, tintColor: UIColor?) -> FTSwiftUIResourcePayload? {
+        guard image.size.width > 0, image.size.height > 0 else {
+            return nil
+        }
         let renderedImage: UIImage
         if let tintColor {
             UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
