@@ -86,7 +86,7 @@ typedef NS_ENUM(NSInteger, SampleState) {
     FTResourceProcessor *resourceProcessor = [[FTResourceProcessor alloc]initWithQueue:self.processorsQueue resourceWriter:resource];
     FTSnapshotProcessor *srProcessor = [[FTSnapshotProcessor alloc]initWithQueue:self.processorsQueue writer:recordStorage.writer resourceProcessor:resourceProcessor];
 
-    FTRecorder *windowRecorder = [[FTRecorder alloc]initWithWindowObserver:self.windowObserver snapshotProcessor:srProcessor  additionalNodeRecorders:self.config.additionalNodeRecorders];
+    FTRecorder *windowRecorder = [[FTRecorder alloc]initWithWindowObserver:self.windowObserver snapshotProcessor:srProcessor additionalNodeRecorders:self.config.additionalNodeRecorders enableSwiftUI:self.config.enableSwiftUI];
     self.windowRecorder = windowRecorder;
 }
 - (void)setSampleState:(SampleState)sampleState{

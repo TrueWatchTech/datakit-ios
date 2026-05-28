@@ -41,18 +41,22 @@
     return [self initWithAdditionalNodeRecorders:nil];
 }
 -(instancetype)initWithAdditionalNodeRecorders:(NSArray <id <FTSRWireframesRecorder>>*)additionalNodeRecorders{
+    return [self initWithAdditionalNodeRecorders:additionalNodeRecorders enableSwiftUI:NO];
+}
+-(instancetype)initWithAdditionalNodeRecorders:(NSArray <id <FTSRWireframesRecorder>>*)additionalNodeRecorders enableSwiftUI:(BOOL)enableSwiftUI{
     self = [super init];
     if(self){
         _idGen = [[FTSRViewID alloc]init];
         _viewTreeRecorder = [[FTViewTreeRecorder alloc] init];
         _webViewCache = [NSHashTable weakObjectsHashTable];
         if(additionalNodeRecorders.count>0){
-            NSMutableArray<id <FTSRWireframesRecorder>> *recorders = [NSMutableArray arrayWithArray:[self createDefaultNodeRecorders]];
+            NSMutableArray<id <FTSRWireframesRecorder>> *recorders = [NSMutableArray arrayWithArray:[self createDefaultNodeRecordersWithSwiftUIEnabled:enableSwiftUI]];
             [recorders addObjectsFromArray:additionalNodeRecorders];
             _viewTreeRecorder.nodeRecorders = recorders;
         }else{
-            _viewTreeRecorder.nodeRecorders = [self createDefaultNodeRecorders];
+            _viewTreeRecorder.nodeRecorders = [self createDefaultNodeRecordersWithSwiftUIEnabled:enableSwiftUI];
         }
+        _recorders = _viewTreeRecorder.nodeRecorders;
     }
     return self;
 }
@@ -86,9 +90,9 @@
     viewTree.resources = resource;
     return viewTree;
 }
-- (NSArray <id <FTSRWireframesRecorder>> *)createDefaultNodeRecorders{
+- (NSArray <id <FTSRWireframesRecorder>> *)createDefaultNodeRecordersWithSwiftUIEnabled:(BOOL)enableSwiftUI{
     NSMutableArray *recorders = @[
-        [FTUnsupportedViewRecorder new],
+        [[FTUnsupportedViewRecorder alloc] initWithSwiftUIEnabled:enableSwiftUI],
         [FTUIViewRecorder new],
         [FTUILabelRecorder new],
         [FTUIImageViewRecorder new],
@@ -108,7 +112,7 @@
         [FTUIProgressViewRecorder new],
         [FTUIActivityIndicatorRecorder new],
     ].mutableCopy;
-    if (@available(iOS 13, *)) {
+    if (@available(iOS 13.0, *)) {
         [recorders addObject:[FTUIHostingViewRecorder new]];
     }
     return [recorders copy];
