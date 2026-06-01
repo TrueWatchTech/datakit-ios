@@ -185,7 +185,7 @@
         __weak typeof(self) weakSelf = self;
         dispatch_semaphore_t flushSemaphore = dispatch_semaphore_create(0);
         [self.requestBuilder requestWithEvents:event parameters:parameters];
-        [self.httpClient sendRequest:self.requestBuilder completion:^(NSHTTPURLResponse * _Nonnull httpResponse, NSData * _Nullable data, NSError * _Nullable error) {
+        [self.httpClient sendRequest:self.requestBuilder completion:^(NSHTTPURLResponse * _Nullable httpResponse, NSData * _Nullable data, NSError * _Nullable error) {
             __strong __typeof(weakSelf) strongSelf = weakSelf;
             if (!strongSelf) {
                 dispatch_semaphore_signal(flushSemaphore); 
@@ -306,7 +306,7 @@
     __block NSDictionary *content = nil;
     dispatch_semaphore_t flushSemaphore = dispatch_semaphore_create(0);
     [self.checkRequest requestWithEvents:event parameters:parameters];
-    [self.httpClient sendRequest:self.checkRequest completion:^(NSHTTPURLResponse * _Nonnull httpResponse, NSData * _Nullable data, NSError * _Nullable error) {
+    [self.httpClient sendRequest:self.checkRequest completion:^(NSHTTPURLResponse * _Nullable httpResponse, NSData * _Nullable data, NSError * _Nullable error) {
         __strong __typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf) {
             dispatch_semaphore_signal(flushSemaphore);
