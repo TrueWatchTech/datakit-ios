@@ -122,7 +122,7 @@ BOOL isNAN(id value) {
     return self;
 }
 
-- (void)sendRequest:(id<FTRequestProtocol>)request completion:(void (^)(NSHTTPURLResponse * _Nonnull, NSData * _Nullable, NSError * _Nullable))callback{
+- (void)sendRequest:(id<FTRequestProtocol>)request completion:(void (^)(NSHTTPURLResponse * _Nullable, NSData * _Nullable, NSError * _Nullable))callback{
     NSMutableURLRequest *urlRequest = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:@"https://example.com"]];
     if ([request respondsToSelector:@selector(adaptedRequest:)]) {
         urlRequest = [request adaptedRequest:urlRequest];
