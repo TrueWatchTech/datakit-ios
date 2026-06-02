@@ -21,6 +21,7 @@ static const NSInteger kMaxRetryCount = 5;
 static const NSTimeInterval kInitialRetryDelay = 0.5; // Initial 500ms delay
 static const NSInteger kRUMMaxBatchesPerUploadPass = 3;
 static const NSInteger kLogMaxBatchesPerUploadPass = 1;
+static void *FTDataUploadWorkerNetworkQueueKey = &FTDataUploadWorkerNetworkQueueKey;
 
 typedef NS_ENUM(NSInteger, FTUploadWorkerState) {
     FTUploadWorkerStateIdle,
@@ -62,6 +63,7 @@ typedef NS_ENUM(NSInteger, FTUploadWorkerState) {
         _httpClient =[[FTHTTPClient alloc]initWithTimeoutIntervalForRequest:syncPageSize>30?syncPageSize:30];
         dispatch_queue_attr_t attributes = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_UTILITY, 0);
         _networkQueue = dispatch_queue_create("com.ft.network", attributes);
+        dispatch_queue_set_specific(_networkQueue, FTDataUploadWorkerNetworkQueueKey, &FTDataUploadWorkerNetworkQueueKey, NULL);
     }
     return self;
 }
@@ -85,6 +87,16 @@ typedef NS_ENUM(NSInteger, FTUploadWorkerState) {
     block_t = _uploadWork;
     pthread_rwlock_unlock(&_uploadWorkLock);
     return block_t;
+}
+- (void)performSynchronouslyOnNetworkQueue:(dispatch_block_t)block{
+    if (!block) {
+        return;
+    }
+    if (dispatch_get_specific(FTDataUploadWorkerNetworkQueueKey) == &FTDataUploadWorkerNetworkQueueKey) {
+        block();
+    } else {
+        dispatch_sync(self.networkQueue, block);
+    }
 }
 - (BOOL)isUploading{
     @synchronized (self) {
@@ -185,14 +197,14 @@ typedef NS_ENUM(NSInteger, FTUploadWorkerState) {
             return;
         }
         __weak typeof(self) weakSelf = self;
-        dispatch_sync(self.networkQueue, ^{
+        [self performSynchronouslyOnNetworkQueue:^{
             __strong typeof(weakSelf) strongSelf = weakSelf;
             if (!strongSelf) return;
             if(strongSelf.timerSource) dispatch_source_cancel(strongSelf.timerSource);
             strongSelf.timerSource = nil;
             if(strongSelf.uploadWork) dispatch_block_cancel(strongSelf.uploadWork);
             strongSelf.uploadWork = nil;
-        });
+        }];
         [self _flushSyncData:NO];
     }
 }
@@ -228,7 +240,7 @@ typedef NS_ENUM(NSInteger, FTUploadWorkerState) {
 -(void)cancelSynchronously{
     [self clearDelayedUploadPending];
     __weak typeof(self) weakSelf = self;
-    dispatch_sync(self.networkQueue, ^{
+    [self performSynchronouslyOnNetworkQueue:^{
         __strong __typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf) {
             return;
@@ -237,7 +249,7 @@ typedef NS_ENUM(NSInteger, FTUploadWorkerState) {
         strongSelf.uploadWork = nil;
         if(strongSelf.timerSource) dispatch_source_cancel(strongSelf.timerSource);
         strongSelf.timerSource = nil;
-    });
+    }];
 }
 - (void)cancelAsynchronously{
     [self clearDelayedUploadPending];
