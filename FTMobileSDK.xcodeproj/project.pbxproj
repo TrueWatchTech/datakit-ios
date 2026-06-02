@@ -3569,7 +3569,6 @@
 				4A884256239E5754001B44C3 /* Sources */,
 				4A884257239E5754001B44C3 /* Frameworks */,
 				4A884258239E5754001B44C3 /* Resources */,
-				172C1DD52BC7F29C00412DB6 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -3675,26 +3674,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		172C1DD52BC7F29C00412DB6 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n# Get current version number\nremove_dash_and_after() {  \n    local str=\"$1\"  \n    echo \"${str%%-*}\"  \n}  \nFILE_PATH=\"FTMobileSDK/FTMobileAgent/Core/FTMobileAgentVersion.h\"\n# Use grep and awk to extract SDK_VERSION value\nbundleVersion=$(grep 'SDK_VERSION' \"$FILE_PATH\" | awk -F'\"' '{print $2}')\nformatBundleVersion=$(remove_dash_and_after \"$bundleVersion\")  \nINFO_PLIST_PATH=\"${PROJECT_DIR}/${INFOPLIST_FILE}\"  \n\necho \"INFO_PLIST_PATH: $INFO_PLIST_PATH\"\n\n# Use defaults to write new version number\ndefaults write \"${INFO_PLIST_PATH}\" CFBundleShortVersionString \"${formatBundleVersion}\"\n\n\n# Print result\necho \"Updated CFBundleShortVersionString to ${formatBundleVersion}\"\n\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		17510E7129C9C24500C8F1E4 /* Sources */ = {
