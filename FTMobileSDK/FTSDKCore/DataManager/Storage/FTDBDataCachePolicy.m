@@ -260,7 +260,7 @@ static void *FTLogCacheQueueKey = &FTLogCacheQueueKey;
 - (void)cancelLogCacheFlushOnQueue{
     [self.logFlushTimer cancel];
 }
-- (void)flushLogCacheOnQueue{
+- (void)flushLogCacheOnQueueWithCallback:(BOOL)shouldCallback{
     if (self.messageCaches.count == 0) {
         return;
     }
@@ -280,12 +280,21 @@ static void *FTLogCacheQueueKey = &FTLogCacheQueueKey;
         return;
     }
     [self trimDBBelowLimitAfterInsertIfNeeded];
-    if (self.callback) self.callback();
+    if (shouldCallback && self.callback) self.callback();
+}
+- (void)flushLogCacheOnQueue{
+    [self flushLogCacheOnQueueWithCallback:YES];
 }
 - (void)insertCacheToDB{
+    [self insertCacheToDBWithCallback:YES];
+}
+- (void)insertCacheToDBWithoutCallback{
+    [self insertCacheToDBWithCallback:NO];
+}
+- (void)insertCacheToDBWithCallback:(BOOL)shouldCallback{
     if (dispatch_get_specific(FTLogCacheQueueKey)) {
         [self cancelLogCacheFlushOnQueue];
-        [self flushLogCacheOnQueue];
+        [self flushLogCacheOnQueueWithCallback:shouldCallback];
         return;
     }
     dispatch_queue_t logCacheQueue = self.logCacheQueue;
@@ -296,7 +305,7 @@ static void *FTLogCacheQueueKey = &FTLogCacheQueueKey;
             return;
         }
         [strongSelf cancelLogCacheFlushOnQueue];
-        [strongSelf flushLogCacheOnQueue];
+        [strongSelf flushLogCacheOnQueueWithCallback:shouldCallback];
     });
 }
 #pragma mark --------- FTUploadCountProtocol ----------

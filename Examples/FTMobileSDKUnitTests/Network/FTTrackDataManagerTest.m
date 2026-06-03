@@ -22,6 +22,7 @@
 #import "FTRequest.h"
 #import "FTTrackDataManager+Test.h"
 #import "FTDataUploadWorker.h"
+#import "FTAppLifeCycle.h"
 @interface FTTrackDataManagerTest : XCTestCase
 
 @end
@@ -369,6 +370,40 @@
     });
 
     [self waitForExpectations:@[expectation] timeout:1];
+    [FTTrackDataManager shutDown];
+}
+- (void)testInsertCacheToDBSchedulesDelayedUploadWhenAutoSyncEnabled{
+    [FTTrackDataManager shutDown];
+    [[FTTrackerEventDBTool sharedManager] deleteAllDatas];
+    [FTTrackDataManager startWithAutoSync:NO syncPageSize:10 syncSleepTime:0];
+    FTTrackDataManager *manager = [FTTrackDataManager sharedInstance];
+    [manager setValue:@YES forKey:@"autoSync"];
+    FTDataUploadWorker *worker = manager.dataUploadWorker;
+
+    [manager addTrackData:[FTModelHelper createLogModel:@"testInsertCacheToDBSchedulesDelayedUploadWhenAutoSyncEnabled"] type:FTAddDataLogging];
+    [manager insertCacheToDB];
+    dispatch_sync(worker.networkQueue, ^{});
+
+    XCTAssertTrue(worker.hasPendingUpload);
+    XCTAssertFalse(worker.isUploading);
+    XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getDatasCountWithType:FT_DATA_TYPE_LOGGING], 1);
+    [FTTrackDataManager shutDown];
+}
+- (void)testLifecycleFlushesLogCacheWithoutSchedulingUpload{
+    [FTTrackDataManager shutDown];
+    [[FTTrackerEventDBTool sharedManager] deleteAllDatas];
+    [FTTrackDataManager startWithAutoSync:NO syncPageSize:10 syncSleepTime:0];
+    FTTrackDataManager *manager = [FTTrackDataManager sharedInstance];
+    [manager setValue:@YES forKey:@"autoSync"];
+    FTDataUploadWorker *worker = manager.dataUploadWorker;
+
+    [manager addTrackData:[FTModelHelper createLogModel:@"testLifecycleFlushesLogCacheWithoutSchedulingUpload"] type:FTAddDataLogging];
+    [(id<FTAppLifeCycleDelegate>)manager applicationWillResignActive];
+    dispatch_sync(worker.networkQueue, ^{});
+
+    XCTAssertFalse(worker.hasPendingUpload);
+    XCTAssertFalse(worker.isUploading);
+    XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getDatasCountWithType:FT_DATA_TYPE_LOGGING], 1);
     [FTTrackDataManager shutDown];
 }
 - (void)testSynchronousCancelCalledFromNetworkQueueDoesNotDeadlock{
