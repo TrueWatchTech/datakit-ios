@@ -27,6 +27,8 @@
 #import "FTSessionReplayConfig.h"
 #import "FTModuleManager.h"
 #import "FTRemoteConfigManager.h"
+#import "FTScheduler.h"
+#import "FTQueue.h"
 typedef NS_ENUM(NSInteger, SampleState) {
     SampleStateNormal,
     SampleStateError,
@@ -40,6 +42,40 @@ typedef NS_ENUM(NSInteger, SampleState) {
 @property (nonatomic, strong) dispatch_queue_t processorsQueue;
 @property (nonatomic, strong) FTSessionReplayConfig *config;
 @property (nonatomic, assign) SampleState sampleState;
+@property (nonatomic, strong) id<FTScheduler> scheduler;
+- (void)evaluateRecordingConditions;
+@end
+
+@interface FTTestSyncQueue : NSObject<FTQueue>
+@end
+@implementation FTTestSyncQueue
+- (void)run:(void (^)(void))block {
+    if (block) {
+        block();
+    }
+}
+@end
+
+@interface FTTestSessionReplayScheduler : NSObject<FTScheduler>
+@property (nonatomic, strong, readonly) id<FTQueue> queue;
+@property (nonatomic, assign) NSInteger startCount;
+@property (nonatomic, assign) NSInteger stopCount;
+@end
+@implementation FTTestSessionReplayScheduler
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _queue = [[FTTestSyncQueue alloc] init];
+    }
+    return self;
+}
+- (void)scheduleWithOperation:(void (^)(void))operation {}
+- (void)start {
+    self.startCount += 1;
+}
+- (void)stop {
+    self.stopCount += 1;
+}
 @end
 #endif
 
@@ -428,6 +464,32 @@ typedef NS_ENUM(NSInteger, SampleState) {
 }
 
 #if !TARGET_OS_TV
+- (void)testSessionReplayRecordingStartsForErrorSampleState{
+    FTSessionReplayFeature *feature = [[FTSessionReplayFeature alloc] initWithConfig:[[FTSessionReplayConfig alloc] init]];
+    FTTestSessionReplayScheduler *scheduler = [[FTTestSessionReplayScheduler alloc] init];
+    feature.scheduler = scheduler;
+    feature.sampleState = SampleStateError;
+    
+    [feature startRecording];
+    
+    XCTAssertEqual(scheduler.startCount, 1);
+    XCTAssertEqual(scheduler.stopCount, 0);
+}
+
+- (void)testSessionReplayRecordingStopsForNoneSampleState{
+    FTSessionReplayFeature *feature = [[FTSessionReplayFeature alloc] initWithConfig:[[FTSessionReplayConfig alloc] init]];
+    FTTestSessionReplayScheduler *scheduler = [[FTTestSessionReplayScheduler alloc] init];
+    feature.scheduler = scheduler;
+    feature.sampleState = SampleStateError;
+    [feature startRecording];
+    
+    feature.sampleState = SampleStateNone;
+    [feature evaluateRecordingConditions];
+    
+    XCTAssertEqual(scheduler.startCount, 1);
+    XCTAssertEqual(scheduler.stopCount, 1);
+}
+
 - (void)testSessionReplaySampleRateUpdate{
     
     FTSessionReplayConfig *config = [[FTSessionReplayConfig alloc]init];

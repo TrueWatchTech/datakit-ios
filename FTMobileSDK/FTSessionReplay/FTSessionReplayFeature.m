@@ -243,7 +243,7 @@ typedef NS_ENUM(NSInteger, SampleState) {
     }
 }
 - (void)evaluateRecordingConditions{
-    if (self.recordingEnabled && self.sampleState == SampleStateNormal) {
+    if (self.recordingEnabled && self.sampleState != SampleStateNone) {
         [self.scheduler start];
     } else {
         [self.scheduler stop];
