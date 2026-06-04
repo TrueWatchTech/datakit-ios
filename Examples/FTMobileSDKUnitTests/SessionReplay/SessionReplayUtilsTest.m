@@ -21,7 +21,12 @@
 #import "FTSRNodeWireframesBuilder.h"
 #import "FTSRRecord.h"
 #import "FTViewAttributes.h"
-#import "FTResourceWriter.h"
+#import "FTResourcesWriter.h"
+#import "FTFeatureScope.h"
+#import "FTFeatureStorage.h"
+#import "FTFeatureDirectories.h"
+#import "FTDirectory.h"
+#import "FTDataStore.h"
 #import "FTUploadConditions.h"
 #import "FTNetworkInfoManager.h"
 #import "FTUploadStatus.h"
@@ -101,6 +106,33 @@ BOOL isNAN(id value) {
 @implementation FTMockResourcesWriter
 - (void)write:(NSArray<FTEnrichedResource *> *)resources{
     self.writtenResources = resources;
+}
+@end
+
+@interface FTMockDataStore : NSObject<FTDataStore>
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSData *> *values;
+@property (nonatomic, strong) NSMutableArray<NSString *> *setKeys;
+@end
+
+@implementation FTMockDataStore
+- (instancetype)init{
+    self = [super init];
+    if (self) {
+        _values = [NSMutableDictionary new];
+        _setKeys = [NSMutableArray new];
+    }
+    return self;
+}
+- (void)setValue:(NSData *)value forKey:(NSString *)key version:(FTDataStoreKeyVersion)version{
+    self.values[key] = value;
+    [self.setKeys addObject:key];
+}
+- (void)removeValueForKey:(NSString *)key{
+    [self.values removeObjectForKey:key];
+}
+- (void)valueForKey:(NSString *)key callback:(DataStoreValueResult)callback{
+    NSData *data = self.values[key];
+    callback(nil, data, data ? DataStoreDefaultKeyVersion : (FTDataStoreKeyVersion)-1);
 }
 @end
 
@@ -410,6 +442,39 @@ BOOL isNAN(id value) {
     
     XCTAssertEqual(writer.writtenResources.count, 1);
     XCTAssertEqualObjects(writer.writtenResources.firstObject.bindInfo, context.bindInfo);
+}
+
+- (void)testResourcesWriterDoesNotPersistKnownIdentifierWhenNotGranted{
+    dispatch_queue_t queue = dispatch_queue_create("com.ft.sr.resources-writer.not-granted.test", DISPATCH_QUEUE_SERIAL);
+    NSString *basePath = [NSString stringWithFormat:@"ft-session-replay-resource-writer-test/%@", NSUUID.UUID.UUIDString];
+    FTDirectory *grantedDirectory = [[FTDirectory alloc] initWithSubdirectoryPath:basePath];
+    FTFeatureDirectories *directories = [[FTFeatureDirectories alloc] initWithGranted:grantedDirectory
+                                                                              pending:nil
+                                                                         errorSampled:nil];
+    FTFeatureStorage *storage = [[FTFeatureStorage alloc] initWithFeatureName:@"session-replay-resources"
+                                                                        queue:queue
+                                                                  directories:directories
+                                                                  performance:[[FTPerformancePreset alloc] init]];
+    __block FTTrackingConsent trackingConsent = FTTrackingConsentNotGranted;
+    FTFeatureScope *scope = [[FTFeatureScope alloc] initWithStorage:storage trackingConsentProvider:^FTTrackingConsent{
+        return trackingConsent;
+    }];
+    FTMockDataStore *dataStore = [[FTMockDataStore alloc] init];
+    FTResourcesWriter *writer = [[FTResourcesWriter alloc] initWithFeatureScope:scope dataStore:dataStore];
+    FTEnrichedResource *resource = [[FTEnrichedResource alloc] init];
+    resource.identifier = @"resource-id";
+    resource.appId = @"app-id";
+    resource.data = [@"abc" dataUsingEncoding:NSUTF8StringEncoding];
+    resource.mimeType = @"image/png";
+
+    [writer write:@[resource]];
+    dispatch_sync(queue, ^{
+    });
+
+    NSSet *knownIdentifiers = [writer valueForKey:@"knownIdentifiers"];
+    XCTAssertFalse([knownIdentifiers containsObject:resource.identifier]);
+    XCTAssertFalse([dataStore.setKeys containsObject:@"ft-known-resources"]);
+    XCTAssertEqual(grantedDirectory.files.count, 0);
 }
 
 - (void)testUploadConditionsIncludesUploadURLNotConfigured{

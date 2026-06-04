@@ -18,7 +18,7 @@
 #import "FTNodesFlattener.h"
 #import "FTSnapshotProcessor.h"
 #import "FTViewTreeSnapshotBuilder.h"
-#import "FTResourceWriter.h"
+#import "FTResourcesWriter.h"
 @interface FTRecorder()
 @property (nonatomic, strong) FTWindowObserver *windowObserver;
 @property (nonatomic, strong) FTViewTreeSnapshotBuilder *viewSnapShotBuilder;
