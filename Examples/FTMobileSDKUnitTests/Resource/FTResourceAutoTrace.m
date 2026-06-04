@@ -269,10 +269,10 @@
         dispatch_group_enter(group);
         dispatch_async(lifecycleQueue, ^{
             [FTMobileAgent shutDown];
-            dispatch_async(dispatch_get_main_queue(), ^{
+            dispatch_sync(dispatch_get_main_queue(), ^{
                 [self initSDK];
-                dispatch_group_leave(group);
             });
+            dispatch_group_leave(group);
         });
     }
     dispatch_group_notify(group, dispatch_get_main_queue(), ^{
