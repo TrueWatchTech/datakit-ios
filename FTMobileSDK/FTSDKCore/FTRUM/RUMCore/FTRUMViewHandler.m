@@ -269,7 +269,7 @@
     [fields addEntriesFromDictionary:self.rumDependencies.sessionReplaySampledFields];
     // session-replay
     if (self.rumDependencies.sessionHasReplay != nil) {
-        BOOL sessionHasReplay = self.sessionHasReplay || self.rumDependencies.sessionHasReplay;
+        BOOL sessionHasReplay = self.sessionHasReplay || self.rumDependencies.sessionHasReplay.boolValue;
         [fields setValue:@(sessionHasReplay) forKey:FT_SESSION_HAS_REPLAY];
         if (sessionHasReplay) {
             NSDictionary *dict = [self.rumDependencies.sessionReplayStats valueForKey:self.view_id];
