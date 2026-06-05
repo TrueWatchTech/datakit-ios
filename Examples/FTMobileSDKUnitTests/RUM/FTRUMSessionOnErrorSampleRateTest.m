@@ -887,6 +887,23 @@ typedef NS_ENUM(NSInteger, SampleState) {
     XCTAssertFalse([context.grantedDirectory hasFileWithName:inactiveWindowFile]);
 }
 
+- (void)testFeatureStorageRegistersCacheWriterBeforeReturningErrorSampledWriter{
+    FTTestFeatureStorageContext *context = [self sessionReplayStorageContextWithName:@"session-replay-register-before-return"];
+    long long errorTime = [NSDate ft_currentNanosecondTimeStamp];
+    NSString *windowFile = [self createErrorWindowCacheFileInContext:context errorTime:errorTime offsetSeconds:-30];
+
+    dispatch_suspend(context.storage.queue);
+    id<FTWriter> writer = [context.storage writerForTrackingConsent:FTTrackingConsentErrorSampled];
+    XCTAssertNotNil(writer);
+    [[FTModuleManager sharedInstance] postMessageWithKey:FTMessageKeyRumError message:@{@"error_date":@(errorTime)} sync:YES];
+    dispatch_resume(context.storage.queue);
+    [self waitForStorageQueueDrain:context.storage];
+
+    XCTAssertFalse([context.errorSampledDirectory hasFileWithName:windowFile]);
+    XCTAssertTrue([context.grantedDirectory hasFileWithName:windowFile]);
+    [context.storage updateTrackingConsent:FTTrackingConsentGranted];
+}
+
 - (void)testSessionReplaySampleRateUpdateTogglesRecordAndResourceCacheWriters{
     FTSessionReplayConfig *config = [[FTSessionReplayConfig alloc] init];
     config.sampleRate = 0;

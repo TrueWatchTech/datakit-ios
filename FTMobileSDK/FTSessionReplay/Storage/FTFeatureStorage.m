@@ -96,22 +96,15 @@
         }
         _cacheWriterActive = shouldActivateCacheWriter;
     }
-    __weak typeof(self) weakSelf = self;
-    dispatch_async(self.queue, ^{
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        if (!strongSelf) {
-            return;
-        }
-        id<FTCacheWriter> cacheWriter = strongSelf.cacheWriter;
-        if (!cacheWriter) {
-            return;
-        }
-        if(shouldActivateCacheWriter){
-            [cacheWriter active];
-        }else{
-            [cacheWriter inactive];
-        }
-    });
+    id<FTCacheWriter> cacheWriter = self.cacheWriter;
+    if (!cacheWriter) {
+        return;
+    }
+    if(shouldActivateCacheWriter){
+        [cacheWriter active];
+    }else{
+        [cacheWriter inactive];
+    }
 }
 - (id<FTWriter>)writerForTrackingConsent:(FTTrackingConsent)trackingConsent{
     [self updateTrackingConsent:trackingConsent];
