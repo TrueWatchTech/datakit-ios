@@ -397,6 +397,34 @@ typedef NS_ENUM(NSInteger, SampleState) {
     NSString *lineTime = [[lineStr componentsSeparatedByString:@" "] lastObject];
     XCTAssertEqual(lineTime.longLongValue, eventTime);
 }
+- (void)testRUMWriterSeparatesPayloadTimeFromRecordTimeForNormalRUM{
+    [FTTrackDataManager startWithAutoSync:NO syncPageSize:10 syncSleepTime:0];
+    FTDataWriterWorker *writerManager = [[FTDataWriterWorker alloc]init];
+    long long eventTime = 123;
+    long long updateTime = [NSDate ft_currentNanosecondTimeStamp];
+
+    [writerManager isCacheWriter:NO];
+    [writerManager rumWrite:FT_RUM_SOURCE_VIEW
+                       tags:@{@"view_id":@"time"}
+                     fields:@{@"test":@"normal"}
+             dynamicContext:@{}
+                       time:eventTime
+                 updateTime:updateTime];
+
+    NSArray<FTRecordModel *> *records = [[FTTrackerEventDBTool sharedManager] getFirstRecords:1 withType:FT_DATA_TYPE_RUM];
+    XCTAssertEqual(records.count, 1);
+    FTRecordModel *model = records.firstObject;
+    NSDictionary *data = [FTJSONUtil dictionaryWithJsonString:model.data];
+    NSNumber *payloadTime = data[FT_OPDATA][FT_TIME];
+    XCTAssertEqualObjects(model.op, FT_DATA_TYPE_RUM);
+    XCTAssertEqual(model.tm, updateTime);
+    XCTAssertEqual(payloadTime.longLongValue, eventTime);
+
+    FTRequestLineBody *line = [[FTRequestLineBody alloc]init];
+    NSString *lineStr = [line getRequestBodyWithEventArray:@[model] packageId:@"1" enableIntegerCompatible:NO];
+    NSString *lineTime = [[lineStr componentsSeparatedByString:@" "] lastObject];
+    XCTAssertEqual(lineTime.longLongValue, eventTime);
+}
 - (void)testRUMWriterKeepsNonViewRecordTimeAsEventTime{
     [FTTrackDataManager startWithAutoSync:NO syncPageSize:10 syncSleepTime:0];
     FTDataWriterWorker *writerManager = [[FTDataWriterWorker alloc]init];
@@ -522,7 +550,7 @@ typedef NS_ENUM(NSInteger, SampleState) {
     writerManager.processStartTime = [[NSDate date] timeIntervalSince1970]*1e9;
     [writerManager checkLastProcessErrorSampled];
 
-    [writerManager rumWrite:FT_RUM_SOURCE_ERROR tags:@{@"view_id":@"3"} fields:@{@"test":@"delete"} dynamicContext:@{} time:123 updateTime:[[NSDate date] timeIntervalSince1970]*1e9];
+    [writerManager rumWrite:FT_RUM_SOURCE_ERROR tags:@{@"view_id":@"3"} fields:@{@"test":@"delete"} dynamicContext:@{} time:[[NSDate date] timeIntervalSince1970]*1e9 updateTime:0];
 
     [writerManager checkRUMSessionOnErrorDatasExpired];
     NSArray<FTRecordModel *> *newArray = [[FTTrackerEventDBTool sharedManager] getAllDatas];
