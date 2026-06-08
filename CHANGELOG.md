@@ -1,3 +1,13 @@
+# 1.6.5-alpha.2
+1. Fixed a RUM View time display issue where View data could use update time instead of event time.
+2. Fixed RUM View deduplication before upload package ID generation so package counts, `sdk_data_id`, and payload lines stay consistent.
+3. Improved Session Replay writer registration when tracking consent changes, ensuring cache writers are available synchronously.
+4. Improved Session Replay SwiftUI recording stability and rendering support.
+5. Improved Session Replay node flattening performance.
+6. Improved Session Replay processor queue priority.
+7. Fixed Session Replay view-tree privacy override inheritance.
+8. Fixed unsupported Session Replay placeholders so they are clipped correctly.
+---
 # 1.6.5-alpha.1
 1. Fixed Session Replay crashes related to dynamic `UIColor` resolution and background snapshot processing
 2. Added `FTSessionReplayConfig.enableSwiftUI` to explicitly enable SwiftUI recording in Session Replay. The default is `NO`.
