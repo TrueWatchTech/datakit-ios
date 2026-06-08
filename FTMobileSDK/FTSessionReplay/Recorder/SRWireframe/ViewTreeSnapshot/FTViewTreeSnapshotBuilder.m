@@ -113,7 +113,9 @@
         [FTUIActivityIndicatorRecorder new],
     ].mutableCopy;
     if (@available(iOS 13.0, *)) {
-        [recorders addObject:[FTUIHostingViewRecorder new]];
+        if (enableSwiftUI) {
+            [recorders addObject:[FTUIHostingViewRecorder new]];
+        }
     }
     return [recorders copy];
 }

@@ -49,7 +49,7 @@
     XCTAssertFalse(config.enableSwiftUI);
     
     FTViewTreeSnapshotBuilder *builder = [[FTViewTreeSnapshotBuilder alloc] initWithAdditionalNodeRecorders:nil enableSwiftUI:config.enableSwiftUI];
-    XCTAssertTrue([self recorders:builder.recorders containClassName:@"FTUIHostingViewRecorder"]);
+    XCTAssertFalse([self recorders:builder.recorders containClassName:@"FTUIHostingViewRecorder"]);
 }
 - (void)testEnableSwiftUIKeepsSwiftUIRecorderRegistered{
     FTSessionReplayConfig *config = [FTSessionReplayConfig new];
