@@ -904,6 +904,33 @@ typedef NS_ENUM(NSInteger, SampleState) {
     [context.storage updateTrackingConsent:FTTrackingConsentGranted];
 }
 
+- (void)testFeatureStorageWebViewGrantedWriterUsesWebPrefix{
+    FTTestFeatureStorageContext *context = [self sessionReplayStorageContextWithName:@"session-replay-web-granted-prefix"];
+    id<FTWriter> writer = [context.storage webViewWriterForTrackingConsent:FTTrackingConsentGranted];
+
+    [writer write:[@"web-granted" dataUsingEncoding:NSUTF8StringEncoding] forceNewFile:YES];
+    [self waitForStorageQueueDrain:context.storage];
+
+    NSArray<FTFile *> *files = context.grantedDirectory.files;
+    XCTAssertEqual(files.count, 1);
+    NSString *fileName = files.firstObject.url.lastPathComponent;
+    XCTAssertTrue([fileName hasPrefix:@"w_"], @"fileName:%@", fileName);
+}
+
+- (void)testFeatureStorageWebViewErrorSampledWriterUsesWebPrefix{
+    FTTestFeatureStorageContext *context = [self sessionReplayStorageContextWithName:@"session-replay-web-cache-prefix"];
+    id<FTWriter> writer = [context.storage webViewWriterForTrackingConsent:FTTrackingConsentErrorSampled];
+
+    [writer write:[@"web-error-sampled" dataUsingEncoding:NSUTF8StringEncoding] forceNewFile:YES];
+    [self waitForStorageQueueDrain:context.storage];
+
+    NSArray<FTFile *> *files = context.errorSampledDirectory.files;
+    XCTAssertEqual(files.count, 1);
+    NSString *fileName = files.firstObject.url.lastPathComponent;
+    XCTAssertTrue([fileName hasPrefix:@"w_"], @"fileName:%@", fileName);
+    [context.storage updateTrackingConsent:FTTrackingConsentGranted];
+}
+
 - (void)testSessionReplaySampleRateUpdateTogglesRecordAndResourceCacheWriters{
     FTSessionReplayConfig *config = [[FTSessionReplayConfig alloc] init];
     config.sampleRate = 0;
