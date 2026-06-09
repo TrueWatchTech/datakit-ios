@@ -1,6 +1,7 @@
 # 1.6.5-beta.1
 1. Fixed Session Replay SwiftUI recorder registration so SwiftUI recording stays disabled unless `FTSessionReplayConfig.enableSwiftUI` is enabled.
 2. Improved Session Replay SwiftUI reflection alignment and type-safe display list access to reduce SwiftUI recording crash risk.
+3. Reverted the WebView Session Replay file naming change from 1.6.5-alpha and restored the w file prefix.
 ---
 # 1.6.5-alpha.2
 1. Fixed a RUM View time display issue where View data could use update time instead of event time.
