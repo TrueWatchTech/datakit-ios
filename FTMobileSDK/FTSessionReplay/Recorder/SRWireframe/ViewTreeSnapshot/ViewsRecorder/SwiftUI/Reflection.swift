@@ -19,7 +19,7 @@ enum FTReflectionDisplayStyle: Equatable {
     case `class`
     case `enum`(String)
     case tuple
-    case nilValue
+    case `nil`
     case opaque
 }
 

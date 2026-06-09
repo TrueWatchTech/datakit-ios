@@ -52,7 +52,7 @@ struct FTDisplayList {
         }
 
         let viewCache: ViewCache
-        let lastList: FTReflector.Lazy<FTDisplayList>
+        let lastList: FTDisplayList.Lazy
     }
 
     struct Index {

@@ -20,23 +20,13 @@ struct FTReflectionMirror {
         case `class`
         case `enum`(String)
         case tuple
-        case nilValue
+        case `nil`
         case opaque
     }
 
     enum Path {
         case index(Int)
         case key(String)
-
-        init?(_ path: Any) {
-            if let index = path as? Int {
-                self = .index(index)
-            } else if let key = path as? String {
-                self = .key(key)
-            } else {
-                return nil
-            }
-        }
 
         var label: String {
             switch self {
@@ -145,7 +135,7 @@ struct FTReflectionMirror {
                 let some = Self.child(of: subject, type: subjectType, index: 0)
                 self.init(reflecting: some.value)
             } else {
-                self.init(subject: subject, subjectType: subjectType, displayStyle: .nilValue)
+                self.init(subject: subject, subjectType: subjectType, displayStyle: .nil)
             }
 
         default:
@@ -153,17 +143,29 @@ struct FTReflectionMirror {
         }
     }
 
+    func descendant(_ first: Path, _ rest: Path...) -> Any? {
+        var paths = [first] + rest
+        return descendant(paths: &paths)
+    }
+
     func descendant(_ paths: [Path]) -> Any? {
-        guard let first = paths.first else {
-            return subject
-        }
-        guard let child = descendant(first) else {
+        var paths = paths
+        return descendant(paths: &paths)
+    }
+
+    private func descendant(paths: inout [Path]) -> Any? {
+        let path = paths.removeFirst()
+
+        guard let child = descendant(path) else {
             return nil
         }
-        if paths.count == 1 {
+
+        if paths.isEmpty {
             return child
         }
-        return FTReflectionMirror(reflecting: child).descendant(Array(paths.dropFirst()))
+
+        return FTReflectionMirror(reflecting: child)
+            .descendant(paths: &paths)
     }
 
     private func descendant(_ path: Path) -> Any? {
@@ -213,6 +215,18 @@ struct FTReflectionMirror {
                 .map { result[$0] = index - skip }
             field.freeFunc?(field.name)
         }
+    }
+}
+
+extension FTReflectionMirror.Path: ExpressibleByIntegerLiteral {
+    init(integerLiteral value: Int) {
+        self = .index(value)
+    }
+}
+
+extension FTReflectionMirror.Path: ExpressibleByStringLiteral {
+    init(stringLiteral value: String) {
+        self = .key(value)
     }
 }
 
