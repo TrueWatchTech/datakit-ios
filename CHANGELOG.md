@@ -1,3 +1,7 @@
+# 1.6.5-beta.1
+1. Fixed Session Replay SwiftUI recorder registration so SwiftUI recording stays disabled unless `FTSessionReplayConfig.enableSwiftUI` is enabled.
+2. Improved Session Replay SwiftUI reflection alignment and type-safe display list access to reduce SwiftUI recording crash risk.
+---
 # 1.6.5-alpha.2
 1. Fixed a RUM View time display issue where View data could use update time instead of event time.
 2. Fixed RUM View deduplication before upload package ID generation so package counts, `sdk_data_id`, and payload lines stay consistent.
