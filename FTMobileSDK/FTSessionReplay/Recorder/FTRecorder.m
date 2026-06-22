@@ -18,7 +18,7 @@
 #import "FTNodesFlattener.h"
 #import "FTSnapshotProcessor.h"
 #import "FTViewTreeSnapshotBuilder.h"
-#import "FTResourceWriter.h"
+#import "FTResourcesWriter.h"
 @interface FTRecorder()
 @property (nonatomic, strong) FTWindowObserver *windowObserver;
 @property (nonatomic, strong) FTViewTreeSnapshotBuilder *viewSnapShotBuilder;
@@ -27,11 +27,12 @@
 @implementation FTRecorder
 -(instancetype)initWithWindowObserver:(FTWindowObserver *)observer
                     snapshotProcessor:(FTSnapshotProcessor *)snapshotProcessor
-              additionalNodeRecorders:(NSArray<id <FTSRWireframesRecorder>>*)additionalNodeRecorders;{
+              additionalNodeRecorders:(NSArray<id <FTSRWireframesRecorder>>*)additionalNodeRecorders
+                        enableSwiftUI:(BOOL)enableSwiftUI;{
     self = [super init];
     if(self){
         _windowObserver = observer;
-        _viewSnapShotBuilder = [[FTViewTreeSnapshotBuilder alloc]initWithAdditionalNodeRecorders:additionalNodeRecorders];
+        _viewSnapShotBuilder = [[FTViewTreeSnapshotBuilder alloc]initWithAdditionalNodeRecorders:additionalNodeRecorders enableSwiftUI:enableSwiftUI];
         _snapshotProcessor = snapshotProcessor;
     }
     return self;

@@ -68,6 +68,10 @@ NSString * const FTBatteryStateStringMap[] = {
 }
 - (NSArray *)checkForUpload{
     NSMutableArray *conditions = [[NSMutableArray alloc]init];
+    if(![FTNetworkInfoManager sharedInstance].isNetworkConfigured){
+        [conditions addObject:@"Upload URL Not Configured"];
+        return conditions;
+    }
     if(![FTNetworkConnectivity sharedInstance].isConnected){
         [conditions addObject:@"Network Unreachable"];
     }

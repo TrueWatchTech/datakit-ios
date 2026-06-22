@@ -132,7 +132,10 @@
 		179BEB9A2D30CFAF004AA5A6 /* FTNetworkInterceptorTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 179BEB992D30CFAF004AA5A6 /* FTNetworkInterceptorTest.m */; };
 		179BF6512D3D47F0004AA5A6 /* FTReadWriteHelperTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 179BF6502D3D47F0004AA5A6 /* FTReadWriteHelperTest.m */; };
 		17A61BBA2F307BFA00201932 /* SessionReplayUtilsTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17A61BB92F307BFA00201932 /* SessionReplayUtilsTest.m */; };
+		17D6A7402FD7094C00E60B01 /* FTNodesFlattenerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D6A73F2FD7094C00E60B01 /* FTNodesFlattenerTests.m */; };
 		17B17151281042B7004002C9 /* FTThreadDispatchTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17B17150281042B7004002C9 /* FTThreadDispatchTest.m */; };
+		17F5A0112FCB010100D17137 /* FTSerialTimerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5A0102FCB010100D17137 /* FTSerialTimerTest.m */; };
+		17F5A0122FCB010100D17137 /* FTSerialTimerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5A0102FCB010100D17137 /* FTSerialTimerTest.m */; };
 		17B1715528115AE0004002C9 /* FTAppLifeCycleTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17B1715428115ADF004002C9 /* FTAppLifeCycleTest.m */; };
 		17B1715A28154A6E004002C9 /* FTRequestTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17B1715928154A6E004002C9 /* FTRequestTest.m */; };
 		17BCF3862D66FF6D009A63FD /* TestPageVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 17BCF3852D66FF6D009A63FD /* TestPageVC.m */; };
@@ -372,8 +375,10 @@
 		179BF6502D3D47F0004AA5A6 /* FTReadWriteHelperTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTReadWriteHelperTest.m; sourceTree = "<group>"; };
 		179FCFF729C989B900DBB66F /* FTMobileSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FTMobileSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		17A61BB92F307BFA00201932 /* SessionReplayUtilsTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SessionReplayUtilsTest.m; sourceTree = "<group>"; };
+		17D6A73F2FD7094C00E60B01 /* FTNodesFlattenerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTNodesFlattenerTests.m; sourceTree = "<group>"; };
 		17ABD7392D190E150014422B /* FTTrackDataManager+Test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FTTrackDataManager+Test.h"; sourceTree = "<group>"; };
 		17B17150281042B7004002C9 /* FTThreadDispatchTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTThreadDispatchTest.m; sourceTree = "<group>"; };
+		17F5A0102FCB010100D17137 /* FTSerialTimerTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTSerialTimerTest.m; sourceTree = "<group>"; };
 		17B1715428115ADF004002C9 /* FTAppLifeCycleTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTAppLifeCycleTest.m; sourceTree = "<group>"; };
 		17B1715928154A6E004002C9 /* FTRequestTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTRequestTest.m; sourceTree = "<group>"; };
 		17BCF3842D66FF6D009A63FD /* TestPageVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestPageVC.h; sourceTree = "<group>"; };
@@ -589,6 +594,7 @@
 				172C3570280E7D5F002D139E /* FTSwizzleTest.m */,
 				172C3594280FAC16002D139E /* FTSwizzlerTest.m */,
 				17B17150281042B7004002C9 /* FTThreadDispatchTest.m */,
+				17F5A0102FCB010100D17137 /* FTSerialTimerTest.m */,
 				17B1715428115ADF004002C9 /* FTAppLifeCycleTest.m */,
 				4A1D78A024F52ACB006125D0 /* FTDatabaseTest.m */,
 				172931D12BF602D700AA9D53 /* FTSwizzlerConflictTest.m */,
@@ -681,6 +687,7 @@
 			isa = PBXGroup;
 			children = (
 				17CA1A012F91A00100E2AE8A /* FTCALayerChangeAggregatorTests.m */,
+				17D6A73F2FD7094C00E60B01 /* FTNodesFlattenerTests.m */,
 				178377F62D84141A00C590AE /* SessionReplayPrivacyOverridesTests.m */,
 				1757C83B2D9D222600163865 /* SessionReplayConfigTests.m */,
 				17A61BB92F307BFA00201932 /* SessionReplayUtilsTest.m */,
@@ -1499,6 +1506,7 @@
 				178AE3822D55B74F00BDC51B /* FTTraceTest.m in Sources */,
 				178AE3842D55B74F00BDC51B /* FTReadWriteHelperTest.m in Sources */,
 				178AE3852D55B74F00BDC51B /* FTThreadDispatchTest.m in Sources */,
+				17F5A0122FCB010100D17137 /* FTSerialTimerTest.m in Sources */,
 				178AE3862D55B74F00BDC51B /* FTTrackDataManagerTest.m in Sources */,
 				178AE3882D55B74F00BDC51B /* FTSwizzlerTest.m in Sources */,
 				178AE38A2D55B74F00BDC51B /* FTPropertyTest.m in Sources */,
@@ -1610,6 +1618,7 @@
 				17F5C5232C60D62A007F2B2C /* FTSessionConfiguration.m in Sources */,
 				178377F82D84141A00C590AE /* SessionReplayPrivacyOverridesTests.m in Sources */,
 				17CA1A022F91A00100E2AE8A /* FTCALayerChangeAggregatorTests.m in Sources */,
+				17D6A7402FD7094C00E60B01 /* FTNodesFlattenerTests.m in Sources */,
 				178AE3BE2D56009A00BDC51B /* UIEvent+Mock.m in Sources */,
 				17593AE22906917700A15CD9 /* FTResourceDelegateTest.m in Sources */,
 				17F5C5242C60D62A007F2B2C /* FTURLProtocol.m in Sources */,
@@ -1623,6 +1632,7 @@
 				172931D22BF602D700AA9D53 /* FTSwizzlerConflictTest.m in Sources */,
 				179BF6512D3D47F0004AA5A6 /* FTReadWriteHelperTest.m in Sources */,
 				17B17151281042B7004002C9 /* FTThreadDispatchTest.m in Sources */,
+				17F5A0112FCB010100D17137 /* FTSerialTimerTest.m in Sources */,
 				171F9F6E2CF97E9300BEF0B9 /* FTTrackDataManagerTest.m in Sources */,
 				172C3595280FAC16002D139E /* FTSwizzlerTest.m in Sources */,
 				4A299B942514953300400931 /* FTPropertyTest.m in Sources */,

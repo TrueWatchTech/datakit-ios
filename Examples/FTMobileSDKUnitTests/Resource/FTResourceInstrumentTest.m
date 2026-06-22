@@ -93,6 +93,17 @@
 - (void)waitForURLSessionInterceptorQueue {
     dispatch_sync([FTURLSessionInterceptor shared].queue, ^{});
 }
+- (void)waitForTraceHandlerReleasedWithTask:(NSURLSessionTask *)task timeout:(NSTimeInterval)timeout {
+    NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:timeout];
+    while ([deadline timeIntervalSinceNow] > 0) {
+        [self waitForURLSessionInterceptorQueue];
+        if ([[FTURLSessionInterceptor shared] getTraceHandler:task] == nil) {
+            return;
+        }
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
+    }
+    [self waitForURLSessionInterceptorQueue];
+}
 - (NSMutableURLRequest *)adaptedURLRequestWithRequest:(id<FTRequestProtocol>)request {
     NSMutableURLRequest *urlRequest = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:@"https://example.com"]];
     if ([request respondsToSelector:@selector(adaptedRequest:)]) {
@@ -154,17 +165,24 @@
     __block NSURLSessionDataTask *dataTask;
     NSURLSession *session = [NSURLSession sharedSession];
     XCTAssertNotNil(session);
-    XCTestExpectation *expectation= [self expectationWithDescription:@"Async operation timeout"];
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Async operation timeout"];
+    id<OHHTTPStubsDescriptor> stubs = [OHHTTPStubs stubRequestsPassingTest:^BOOL(NSURLRequest *request) {
+        return [request.URL.absoluteString isEqualToString:self.url.absoluteString];
+    } withStubResponse:^OHHTTPStubsResponse*(NSURLRequest *request) {
+        NSData *data = [@"success" dataUsingEncoding:NSUTF8StringEncoding];
+        return [[OHHTTPStubsResponse responseWithData:data statusCode:200 headers:nil] requestTime:0.2 responseTime:0];
+    }];
 
-   dataTask = [session dataTaskWithURL:self.url completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+    dataTask = [session dataTaskWithURL:self.url completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         [expectation fulfill];
     }];
     [dataTask resume];
     [self waitForURLSessionInterceptorQueue];
     XCTAssertNotNil([[FTURLSessionInterceptor shared] getTraceHandler:dataTask]);
-    [self waitForExpectations:@[expectation]];
-    [self waitForURLSessionInterceptorQueue];
+    [self waitForExpectations:@[expectation] timeout:3];
+    [self waitForTraceHandlerReleasedWithTask:dataTask timeout:1];
     XCTAssertNil([[FTURLSessionInterceptor shared] getTraceHandler:dataTask]);
+    [OHHTTPStubs removeStub:stubs];
 }
 
 
@@ -459,7 +477,7 @@
     [dataTask resume];
     [self waitForURLSessionInterceptorQueue];
     XCTAssertNotNil([[FTURLSessionInterceptor shared] getTraceHandler:dataTask]);
-    [session invalidateAndCancel];
+    [dataTask cancel];
 }
 
 /** Tests that dataTaskWithRequest:completionHandler: returns a non-nil object. */
@@ -477,7 +495,7 @@
     XCTAssertNotNil(dataTask);
     [dataTask resume];
     [self waitForExpectationsWithTimeout:10.0 handler:nil];
-    [session invalidateAndCancel];
+    [dataTask cancel];
 }
 
 
@@ -496,9 +514,9 @@
     [self waitForURLSessionInterceptorQueue];
     XCTAssertNotNil([[FTURLSessionInterceptor shared] getTraceHandler:dataTask]);
     [self waitForExpectationsWithTimeout:10.0 handler:nil];
-    [self waitForURLSessionInterceptorQueue];
+    [self waitForTraceHandlerReleasedWithTask:dataTask timeout:1];
     XCTAssertNil([[FTURLSessionInterceptor shared] getTraceHandler:dataTask]);
-    [session invalidateAndCancel];
+    [dataTask cancel];
 }
 
 /** Validate that it works with NSMutableURLRequest URLs across data, upload, and download. */

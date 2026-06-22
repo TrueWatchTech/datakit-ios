@@ -39,7 +39,7 @@
     switch (semantics.subtreeStrategy) {
         case NodeSubtreeStrategyRecord:
             for (UIView *subView in view.subviews) {
-                PrivacyOverrides *privacy = [PrivacyOverrides mergeChild:subView.sessionReplayPrivacyOverrides parent:view.sessionReplayPrivacyOverrides];
+                PrivacyOverrides *privacy = [PrivacyOverrides mergeChild:subView.sessionReplayPrivacyOverrides parent:overrides];
                 [self recordRecursively:nodes  view:subView context:newContext overrides:privacy];
             }
             break;
