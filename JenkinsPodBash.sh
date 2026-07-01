@@ -15,10 +15,9 @@ if [[ $? -eq 0 ]];then
 
   sh UpdateSDKVersion.sh "$VERSION"
 
-  pod trunk push FTMobileSDK.podspec --verbose --allow-warnings
+  pod trunk push TrueWatchMobileSDK.podspec --verbose --allow-warnings
 
 else
   exit  1
 fi
-
 

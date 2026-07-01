@@ -1584,7 +1584,7 @@
 		1776BD3F2E179F5C00612A7F /* FTCrashDebug.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FTCrashDebug.c; sourceTree = "<group>"; };
 		1776BD482E179FA300612A7F /* FTCrashLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTCrashLogger.h; sourceTree = "<group>"; };
 		1776BD492E179FA300612A7F /* FTCrashLogger.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FTCrashLogger.c; sourceTree = "<group>"; };
-		1777C3DA2A36EA9400C0AA45 /* FTMobileSDK.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = FTMobileSDK.podspec; sourceTree = SOURCE_ROOT; };
+		1777C3DA2A36EA9400C0AA45 /* TrueWatchMobileSDK.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = TrueWatchMobileSDK.podspec; sourceTree = SOURCE_ROOT; };
 		1777C3DC2A36EAAE00C0AA45 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = SOURCE_ROOT; };
 		1777C3DE2A36EAB600C0AA45 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		1777C3E02A36EAD000C0AA45 /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = SOURCE_ROOT; };
@@ -2502,7 +2502,7 @@
 				1777C3E02A36EAD000C0AA45 /* Package.swift */,
 				1777C3DE2A36EAB600C0AA45 /* README.md */,
 				1777C3DC2A36EAAE00C0AA45 /* LICENSE */,
-				1777C3DA2A36EA9400C0AA45 /* FTMobileSDK.podspec */,
+				1777C3DA2A36EA9400C0AA45 /* TrueWatchMobileSDK.podspec */,
 				175B22BC2BB4366500621460 /* CHANGELOG.md */,
 				172C1DD42BC7EB6400412DB6 /* Info.plist */,
 			);

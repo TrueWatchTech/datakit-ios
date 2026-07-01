@@ -18,7 +18,7 @@ SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
 
 cd "$SCRIPT_DIR"
 
-PODSPEC="FTMobileSDK.podspec"
+PODSPEC="TrueWatchMobileSDK.podspec"
 VERSION_HEADER="FTMobileSDK/FTMobileAgent/Core/FTMobileAgentVersion.h"
 INFO_PLIST="FTMobileSDK/Info.plist"
 

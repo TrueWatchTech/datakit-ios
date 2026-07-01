@@ -4,7 +4,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build"
-PODSPEC="${SCRIPT_DIR}/FTMobileSDK.podspec"
+PODSPEC="${SCRIPT_DIR}/TrueWatchMobileSDK.podspec"
 FRAMEWORK_SCRIPT="${SCRIPT_DIR}/BuildSDKPackages.sh"
 SPM_VALIDATION_DIR="${BUILD_DIR}/SwiftPackageValidation"
 SPM_DERIVED_DATA="${BUILD_DIR}/SwiftPackageDerivedData"
@@ -43,7 +43,7 @@ Usage:
   bash VerifyDistributionPackages.sh [options]
 
 Checks:
-  cocoapods   pod lib lint FTMobileSDK.podspec
+  cocoapods   pod lib lint TrueWatchMobileSDK.podspec
   framework   BuildSDKPackages.sh, then validates build/SDK.zip
   spm         Swift Package manifest + iOS xcodebuild build for all products
 
@@ -51,7 +51,7 @@ Options:
   --only <list>            Comma-separated checks to run: cocoapods,framework,spm
   --skip <list>            Comma-separated checks to skip: cocoapods,framework,spm
   --fail-fast              Stop at the first failed check
-  --podspec <path>         Podspec path. Default: FTMobileSDK.podspec
+  --podspec <path>         Podspec path. Default: TrueWatchMobileSDK.podspec
   --spm-destination <dest> xcodebuild destination. Default: generic/platform=iOS
   --help, -h               Show this help
 
