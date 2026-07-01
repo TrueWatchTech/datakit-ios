@@ -2,7 +2,7 @@
 //  FTCrashUUIDConversion.h
 //
 //  Created by hulilei on 2024/11/18.
-//  Copyright © 2024 DataFlux-cn. All rights reserved.
+//  Copyright © 2024 TrueWatchTech. All rights reserved.
 //
 
 #ifndef FTCrashUUIDConversion_h

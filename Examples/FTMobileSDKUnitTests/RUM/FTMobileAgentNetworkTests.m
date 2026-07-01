@@ -3,7 +3,7 @@
 //  FTMobileSDKUnitTests
 //
 //  Created by hulilei on 2026/03/06.
-//  Copyright © 206 DataFlux-cn. All rights reserved.
+//  Copyright © 206 TrueWatchTech. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>

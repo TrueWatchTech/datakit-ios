@@ -3,7 +3,7 @@
 //  FTMobileAgent
 //
 //  Created by hulilei on 2022/12/23.
-//  Copyright © 2022 DataFlux-cn. All rights reserved.
+//  Copyright © 2022 TrueWatchTech. All rights reserved.
 //
 
 #import "FTSessionReplayTouches.h"

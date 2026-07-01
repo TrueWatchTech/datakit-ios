@@ -22,7 +22,7 @@ TrueWatchTech Application Monitoring can collect metrics data from various iOS a
 
 ## Open Source Code Usage
 
-* [FTSessionReplay](https://github.com/GuanceCloud/datakit-ios/tree/feature-sessionReplay/FTMobileSDK/FTSessionReplay)  Based on datadog [dd-sdk-ios-session-replay](https://github.com/DataDog/dd-sdk-ios/tree/develop/DatadogSessionReplay) secondary development
+* [FTSessionReplay](https://github.com/TrueWatchTech/datakit-ios/tree/feature-sessionReplay/FTMobileSDK/FTSessionReplay)  Based on datadog [dd-sdk-ios-session-replay](https://github.com/DataDog/dd-sdk-ios/tree/develop/DatadogSessionReplay) secondary development
 
 ## Third Party Licenses
 

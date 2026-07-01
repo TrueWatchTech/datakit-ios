@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2025/8/6.
-//  Copyright © 2025 DataFlux-cn. All rights reserved.
+//  Copyright © 2025 TrueWatchTech. All rights reserved.
 //
 
 #import "FTDefaultActionTrackingHandler.h"

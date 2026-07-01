@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2024/6/13.
-//  Copyright © 2024 DataFlux-cn. All rights reserved.
+//  Copyright © 2024 TrueWatchTech. All rights reserved.
 //
 
 #import "FTViewTreeRecordingContext.h"

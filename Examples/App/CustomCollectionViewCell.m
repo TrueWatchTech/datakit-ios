@@ -3,7 +3,7 @@
 //  App
 //
 //  Created by hulilei on 2026/3/16.
-//  Copyright © 2026 GuanceCloud. All rights reserved.
+//  Copyright © 2026 TrueWatchTech. All rights reserved.
 //
 
 #import "CustomCollectionViewCell.h"

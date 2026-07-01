@@ -3,7 +3,7 @@
 //  FTMobileSDKUnitTests
 //
 //  Created by hulilei on 2025/4/2.
-//  Copyright © 2025 GuanceCloud. All rights reserved.
+//  Copyright © 2025 TrueWatchTech. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>

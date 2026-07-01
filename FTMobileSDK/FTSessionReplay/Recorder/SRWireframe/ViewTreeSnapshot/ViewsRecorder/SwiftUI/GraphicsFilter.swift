@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2026/6/8.
-//  Copyright © 2026 DataFlux-cn. All rights reserved.
+//  Copyright © 2026 TrueWatchTech. All rights reserved.
 //
 
 #if os(iOS)

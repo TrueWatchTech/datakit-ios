@@ -2,7 +2,7 @@
 //  FTRemoteConfigError.h
 //
 //  Created by hulilei on 2025/12/24.
-//  Copyright © 2025 DataFlux-cn. All rights reserved.
+//  Copyright © 2025 TrueWatchTech. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

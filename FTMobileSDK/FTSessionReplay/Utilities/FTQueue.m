@@ -3,7 +3,7 @@
 //  FTMobileSDK
 //
 //  Created by hulilei on 2026/3/2.
-//  Copyright © 2026 DataFlux-cn. All rights reserved.
+//  Copyright © 2026 TrueWatchTech. All rights reserved.
 //
 
 #import "FTQueue.h"

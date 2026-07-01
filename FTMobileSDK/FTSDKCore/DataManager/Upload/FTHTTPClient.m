@@ -9,7 +9,7 @@
 #import "FTHTTPClient.h"
 #import "FTInternalConstants.h"
 
-NSErrorDomain const FTHTTPClientErrorDomain = @"com.guance.ft.httpclient";
+NSErrorDomain const FTHTTPClientErrorDomain = @"com.truewatch.ft.httpclient";
 
 @interface FTHTTPClient()
 @property (nonatomic, strong) NSURLSession *session;
