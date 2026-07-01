@@ -107,6 +107,7 @@ NSString * FTQueryStringFromParameters(NSDictionary *parameters,FTParameterType 
 - (NSString *)getRequestBodyWithEventArray:(NSArray *)events packageId:(NSString *)packageId enableIntegerCompatible:(BOOL)compatible{
     __block NSMutableString *requestDatas = [NSMutableString new];
     NSArray *eventsSnapshot = [events copy];
+    FTRecordModel *model = [eventsSnapshot firstObject];
     [eventsSnapshot enumerateObjectsUsingBlock:^(FTRecordModel *obj, NSUInteger idx, BOOL * _Nonnull stop) {
         @autoreleasepool {
             NSDictionary *item = [FTJSONUtil dictionaryWithJsonString:obj.data];
@@ -131,7 +132,7 @@ NSString * FTQueryStringFromParameters(NSDictionary *parameters,FTParameterType 
                 NSString *tagStr = FTQueryStringFromParameters(tagDict,FTParameterTypeTag,compatible);
                 NSString *fieldStr= FTQueryStringFromParameters(opdata[FT_FIELDS],FTParameterTypeField,compatible);
                 NSString *requestStr = [NSString stringWithFormat:@"%@,%@ %@ %lld",source,tagStr,fieldStr,time];
-                if (idx==0) {
+                if (requestDatas.length == 0) {
                     [requestDatas appendString:requestStr];
                 }else{
                     [requestDatas appendFormat:@"\n%@",requestStr];
@@ -141,7 +142,6 @@ NSString * FTQueryStringFromParameters(NSDictionary *parameters,FTParameterType 
             }
         }
     }];
-    FTRecordModel *model = [events firstObject];
     FTInnerLogDebug(@"[NETWORK]\nUpload Datas Type:%@\nLine RequestDatas:\n%@",model.op,requestDatas);
     return [requestDatas copy];
 }

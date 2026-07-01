@@ -10,6 +10,7 @@
 #import "UIViewController+FTAutoTrack.h"
 #import "FTInnerLog.h"
 #import "FTSwizzle.h"
+#import "FTSwizzler.h"
 #import "UIApplication+FTAutoTrack.h"
 #import "UIGestureRecognizer+FTAutoTrack.h"
 #import "UIScrollView+FTAutoTrack.h"
@@ -23,6 +24,56 @@
 #import "FTAppLaunchTracker.h"
 #import "FTDefaultUIKitViewTrackingHandler.h"
 #import "FTDefaultActionTrackingHandler.h"
+
+#if TARGET_OS_IOS || TARGET_OS_TV
+#define FT_HAS_SWIFTUI_VIEW_TRACKING 1
+#else
+#define FT_HAS_SWIFTUI_VIEW_TRACKING 0
+#endif
+
+#if TARGET_OS_IOS
+#define FT_HAS_SWIFTUI_ACTION_TRACKING 1
+#else
+#define FT_HAS_SWIFTUI_ACTION_TRACKING 0
+#endif
+
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+static BOOL FTViewControllerIsFromSwiftUIBundle(UIViewController *viewController) {
+    NSBundle *bundle = [NSBundle bundleForClass:viewController.class];
+    return [bundle.bundleURL.lastPathComponent isEqualToString:@"SwiftUI.framework"];
+}
+#else
+static BOOL FTViewControllerIsFromSwiftUIBundle(UIViewController *viewController) {
+    return NO;
+}
+#endif
+
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+API_AVAILABLE(ios(13.0), tvos(13.0))
+@interface FTSwiftUIViewNameExtractor : NSObject
+- (nullable NSString *)extractNameFromViewController:(UIViewController *)viewController;
+@end
+
+@protocol FTSwiftUIRUMViewHandling <NSObject>
+- (void)notifyOnAppearWithIdentity:(NSString *)identity name:(NSString *)name property:(nullable NSDictionary *)property loadTime:(NSNumber *)loadTime;
+- (void)notifyOnDisappearWithIdentity:(NSString *)identity;
+@end
+
+@interface FTSwiftUIRUMViewBridge : NSObject
+@property (class, nonatomic, weak, nullable) id<FTSwiftUIRUMViewHandling> handler;
+@end
+#endif
+
+#if FT_HAS_SWIFTUI_ACTION_TRACKING
+@protocol FTSwiftUIRUMActionHandling <NSObject>
+- (void)notifySwiftUITapActionWithName:(NSString *)name property:(nullable NSDictionary *)property;
+@end
+
+@interface FTSwiftUIRUMActionBridge : NSObject
+@property (class, nonatomic, weak, nullable) id<FTSwiftUIRUMActionHandling> handler;
+@end
+#endif
+
 @interface RUMView:NSObject
 @property (nonatomic, copy) NSString *viewName;
 @property (nonatomic, copy) NSString *identify;
@@ -33,6 +84,7 @@
 @property (nonatomic, copy) NSString *viewControllerUUID;
 
 - (instancetype)initWithViewController:(UIViewController *)viewController identify:(NSString *)identify;
+- (instancetype)initWithViewName:(NSString *)viewName identify:(NSString *)identify property:(nullable NSDictionary *)property loadTime:(NSNumber *)loadTime;
 - (void)resetView;
 @end
 @implementation RUMView
@@ -52,12 +104,31 @@
     }
     return self;
 }
+- (instancetype)initWithViewName:(NSString *)viewName identify:(NSString *)identify property:(NSDictionary *)property loadTime:(NSNumber *)loadTime{
+    self = [super init];
+    if(self){
+        _viewName = [viewName copy];
+        _identify = [identify copy];
+        _isUntrackedModal = NO;
+        _property = [property copy];
+        _viewControllerUUID = [FTBaseInfoHandler randomUUID];
+        _loadTime = loadTime ?: @0;
+    }
+    return self;
+}
 - (void)resetView{
     _viewControllerUUID = [FTBaseInfoHandler randomUUID];
     _loadTime = @0;
 }
 @end
-@interface FTAutoTrackHandler()<FTAppLifeCycleDelegate,FTUIViewControllerHandler,FTUIEventHandler,FTAppLaunchDataDelegate>
+@interface FTAutoTrackHandler()<FTAppLifeCycleDelegate,FTUIViewControllerHandler,FTUIEventHandler,FTAppLaunchDataDelegate
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+,FTSwiftUIRUMViewHandling
+#endif
+#if FT_HAS_SWIFTUI_ACTION_TRACKING
+,FTSwiftUIRUMActionHandling
+#endif
+>
 @property (nonatomic, strong) NSMutableArray<RUMView*> *stack;
 @property (nonatomic, assign) BOOL autoTrackView;
 @property (nonatomic, assign) BOOL autoTrackAction;
@@ -65,6 +136,11 @@
 /// Pass event object, pass collected view and action data to RUM
 @property (nonatomic, weak) id<FTRumDatasProtocol> addRumDatasDelegate;
 @property (nonatomic, strong, nullable) FTViewTrackingHandler uiKitViewTrackingHandler;
+@property (nonatomic, strong, nullable) id<FTSwiftUIViewTrackingHandler> swiftUIViewTrackingHandler;
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+@property (nonatomic, strong, nullable) FTSwiftUIViewNameExtractor *swiftUIViewNameExtractor API_AVAILABLE(ios(13.0), tvos(13.0));
+#endif
+
 @property (nonatomic, strong, nullable) FTActionTrackingHandler actionTrackingHandler;
 @end
 @implementation FTAutoTrackHandler
@@ -87,19 +163,34 @@
                    action:(BOOL)trackAction
       addRumDatasDelegate:(id<FTRumDatasProtocol>)delegate
               viewHandler:(FTViewTrackingHandler)viewHandler
+       swiftUIViewHandler:(id<FTSwiftUIViewTrackingHandler>)swiftUIViewHandler
             actionHandler:(FTActionTrackingHandler)actionHandler
            displayMonitor:(FTDisplayRateMonitor *)displayMonitor{
     _autoTrackView = trackView;
     _autoTrackAction = trackAction;
     _stack = [NSMutableArray new];
     _addRumDatasDelegate = delegate;
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+    [self bindSwiftUIRUMViewBridgeIfAvailable];
+#endif
+#if FT_HAS_SWIFTUI_ACTION_TRACKING
+    [self bindSwiftUIRUMActionBridgeIfAvailable];
+#endif
     if (trackView) {
         self.viewControllerHandler = self;
         [self hookViewControllerLifeCycle];
         self.uiKitViewTrackingHandler = viewHandler ? viewHandler : [FTDefaultUIKitViewTrackingHandler new];
+        self.swiftUIViewTrackingHandler = swiftUIViewHandler;
         [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:self];
     }else{
         self.viewControllerHandler = nil;
+        self.uiKitViewTrackingHandler = nil;
+        self.swiftUIViewTrackingHandler = nil;
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+        if (@available(iOS 13.0, tvOS 13.0, *)) {
+            self.swiftUIViewNameExtractor = nil;
+        }
+#endif
     }
     if (trackAction) {
         self.actionHandler = self;
@@ -168,6 +259,7 @@
         }
     }
 }
+
 #pragma mark ========== FTUIEventHandler ==========
 - (void)notify_sendAction:(UIView *)view{
 #if TARGET_OS_IOS
@@ -180,6 +272,17 @@
     }
 #endif
 }
+
+#if FT_HAS_SWIFTUI_ACTION_TRACKING
+- (void)notify_swiftUIActionWithName:(NSString *)actionName property:(NSDictionary *)property{
+    if (actionName.length == 0) {
+        return;
+    }
+    if (self.addRumDatasDelegate && [self.addRumDatasDelegate respondsToSelector:@selector(startAction:actionType:property:)]) {
+        [self.addRumDatasDelegate startAction:actionName actionType:FT_KEY_ACTION_TYPE_CLICK property:property];
+    }
+}
+#endif
 
 - (void)notify_sendActionWithPressType:(UIPressType)type view:(nonnull UIView *)view {
 #if TARGET_OS_TV
@@ -215,23 +318,83 @@
 }
 #pragma mark ========== FTUIViewControllerHandler ==========
 -(void)notify_viewDidAppear:(UIViewController *)viewController animated:(BOOL)animated{
-    // if User-defined 
-    if (self.uiKitViewTrackingHandler && [self.uiKitViewTrackingHandler respondsToSelector:@selector(rumViewForViewController:)]) {
+    // if User-defined
+    NSString *identify = [NSString stringWithFormat:@"%p", viewController];
+    for (RUMView *view in self.stack) {
+        if ([view.identify isEqualToString:identify]) {
+            [self addView:view];
+            return;
+        }
+    }
+
+    if (!FTViewControllerIsFromSwiftUIBundle(viewController) &&
+        self.uiKitViewTrackingHandler &&
+        [self.uiKitViewTrackingHandler respondsToSelector:@selector(rumViewForViewController:)]) {
         FTRUMView *rumView = [self.uiKitViewTrackingHandler rumViewForViewController:viewController];
         if (rumView) {
-            NSString *identify = [NSString stringWithFormat:@"%p", viewController];
+            RUMView *view = [[RUMView alloc]initWithViewController:viewController identify:identify];
+            view.viewName = rumView.viewName;
+            view.property = rumView.property;
+            view.isUntrackedModal = rumView.isUntrackedModal;
+            [self addView:view];
+            return;
+        }
+    }
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+    if (FTViewControllerIsFromSwiftUIBundle(viewController) &&
+        self.swiftUIViewTrackingHandler &&
+        [self.swiftUIViewTrackingHandler respondsToSelector:@selector(rumViewForExtractedViewName:)]) {
+        NSString *extractedViewName = [self extractSwiftUIViewNameFromViewController:viewController];
+        if (extractedViewName.length == 0) {
+            return;
+        }
+
+        FTRUMView *rumView = [self.swiftUIViewTrackingHandler rumViewForExtractedViewName:extractedViewName];
+        if (rumView) {
             RUMView *view = [[RUMView alloc]initWithViewController:viewController identify:identify];
             view.viewName = rumView.viewName;
             view.property = rumView.property;
             view.isUntrackedModal = rumView.isUntrackedModal;
             [self addView:view];
         }
-        return;
     }
+#endif
 }
 -(void)notify_viewDidDisappear:(UIViewController *)viewController animated:(BOOL)animated{
     [self removeView:viewController];
 }
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+#pragma mark ========== FTSwiftUIRUMViewHandling ==========
+- (void)notifyOnAppearWithIdentity:(NSString *)identity name:(NSString *)name property:(NSDictionary *)property loadTime:(NSNumber *)loadTime{
+    if (identity.length == 0 || name.length == 0) {
+        return;
+    }
+    for (RUMView *view in self.stack) {
+        if ([view.identify isEqualToString:identity]) {
+            [self addView:view];
+            return;
+        }
+    }
+
+    RUMView *view = [[RUMView alloc]initWithViewName:name identify:identity property:property loadTime:loadTime];
+    [self addView:view];
+}
+
+- (void)notifyOnDisappearWithIdentity:(NSString *)identity{
+    if (identity.length == 0) {
+        return;
+    }
+    [self removeViewWithIdentity:identity];
+}
+#endif
+
+#if FT_HAS_SWIFTUI_ACTION_TRACKING
+#pragma mark ========== FTSwiftUIRUMActionHandling ==========
+- (void)notifySwiftUITapActionWithName:(NSString *)name property:(NSDictionary *)property{
+    [self notify_swiftUIActionWithName:name property:property];
+}
+#endif
+
 - (void)addView:(RUMView *)view{
     // Ignore repeated startView events triggered by partially returning to the original page via side swipe
     if([[self.stack lastObject].identify isEqualToString:view.identify]){
@@ -253,6 +416,9 @@
 }
 - (void)removeView:(UIViewController *)viewController{
     NSString *identify = [NSString stringWithFormat:@"%p", viewController];
+    [self removeViewWithIdentity:identify];
+}
+- (void)removeViewWithIdentity:(NSString *)identify{
     if(![[self.stack lastObject].identify isEqualToString:identify]){
         [self.stack enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(RUMView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
             if([obj.identify isEqualToString:identify]){
@@ -297,9 +463,68 @@
     self.viewControllerHandler = nil;
     self.actionHandler = nil;
     self.uiKitViewTrackingHandler = nil;
+    self.swiftUIViewTrackingHandler = nil;
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+    if (@available(iOS 13.0, tvOS 13.0, *)) {
+        self.swiftUIViewNameExtractor = nil;
+    }
+    [self unbindSwiftUIRUMViewBridgeIfNeeded];
+#endif
+#if FT_HAS_SWIFTUI_ACTION_TRACKING
+    [self unbindSwiftUIRUMActionBridgeIfNeeded];
+#endif
     self.actionTrackingHandler = nil;
     self.autoTrackView = NO;
     self.autoTrackAction = NO;
+
     [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:self];
 }
+
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+- (void)bindSwiftUIRUMViewBridgeIfAvailable{
+    if (@available(iOS 13.0, tvOS 13.0, *)) {
+        FTSwiftUIRUMViewBridge.handler = self;
+    }
+}
+
+- (void)unbindSwiftUIRUMViewBridgeIfNeeded{
+    if (@available(iOS 13.0, tvOS 13.0, *)) {
+        if (FTSwiftUIRUMViewBridge.handler == self) {
+            FTSwiftUIRUMViewBridge.handler = nil;
+        }
+    }
+}
+#endif
+
+#if FT_HAS_SWIFTUI_ACTION_TRACKING
+- (void)bindSwiftUIRUMActionBridgeIfAvailable{
+    if (@available(iOS 13.0, *)) {
+        FTSwiftUIRUMActionBridge.handler = self;
+    }
+}
+
+- (void)unbindSwiftUIRUMActionBridgeIfNeeded{
+    if (@available(iOS 13.0, *)) {
+        if (FTSwiftUIRUMActionBridge.handler == self) {
+            FTSwiftUIRUMActionBridge.handler = nil;
+        }
+    }
+}
+#endif
+
+#if FT_HAS_SWIFTUI_VIEW_TRACKING
+- (nullable NSString *)extractSwiftUIViewNameFromViewController:(UIViewController *)viewController{
+    if (@available(iOS 13.0, tvOS 13.0, *)) {
+        return [self.swiftUIViewNameExtractor extractNameFromViewController:viewController];
+    }
+    return nil;
+}
+
+- (FTSwiftUIViewNameExtractor *)swiftUIViewNameExtractor API_AVAILABLE(ios(13.0), tvos(13.0)){
+    if (!_swiftUIViewNameExtractor) {
+        _swiftUIViewNameExtractor = [FTSwiftUIViewNameExtractor new];
+    }
+    return _swiftUIViewNameExtractor;
+}
+#endif
 @end

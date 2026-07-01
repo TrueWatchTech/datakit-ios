@@ -99,6 +99,7 @@ NSString * const FT_KEY_VIEW_ERROR_COUNT = @"view_error_count";
 NSString * const FT_KEY_VIEW_RESOURCE_COUNT = @"view_resource_count";
 NSString * const FT_KEY_VIEW_LONG_TASK_COUNT = @"view_long_task_count";
 NSString * const FT_KEY_VIEW_ACTION_COUNT = @"view_action_count";
+NSString * const FT_KEY_VIEW_LONG_TASK_RATE = @"view_long_task_rate";
 //Device Monitor
 NSString * const FT_CPU_TICK_COUNT_PER_SECOND = @"cpu_tick_count_per_second";
 NSString * const FT_CPU_TICK_COUNT = @"cpu_tick_count";
@@ -142,12 +143,15 @@ NSString * const FT_KEY_RESOURCE_REDIRECT_TIME = @"resource_redirect_time";
 NSString * const FT_KEY_RESOURCE_HTTP_PROTOCOL = @"resource_http_protocol";
 NSString * const FT_KEY_RESOURCE_REQUEST_SIZE = @"resource_request_size";
 NSString * const FT_KEY_RESOURCE_CONNECTION_REUSE = @"resource_connection_reuse";
+NSString * const FT_KEY_NETWORK_AVAILABLE = @"network_available";
 //trace link rum tag
 NSString * const FT_KEY_TRACEID  = @"trace_id";
 NSString * const FT_KEY_SPANID = @"span_id";
 //error filed
 NSString * const FT_KEY_ERROR_MESSAGE = @"error_message";
 NSString * const FT_KEY_ERROR_STACK = @"error_stack";
+NSString * const FT_KEY_FOREGROUND_CRASH_FREE_DURATION = @"foreground_crash_free_duration";
+NSString * const FT_KEY_BACKGROUND_CRASH_FREE_DURATION = @"background_crash_free_duration";
 //error tag
 NSString * const FT_KEY_ERROR_SOURCE = @"error_source";
 NSString * const FT_KEY_ERROR_TYPE = @"error_type";
@@ -172,6 +176,9 @@ NSString * const FT_KEY_LAUNCH_APP_INIT_TIME = @"app_application_init_time";
 NSString * const FT_KEY_LAUNCH_UIKITI_INIT_TIME = @"app_uikit_init_time";
 NSString * const FT_KEY_LAUNCH_PRE_RUNTIME_INIT_TIME = @"app_pre_runtime_init_time";
 NSString * const FT_KEY_LAUNCH_RUNTIME_INIT_TIME = @"app_runtime_init_time";
+NSString * const FT_KEY_APP_LAUNCH_TYPE = @"app_launch_type";
+NSString * const FT_APP_LAUNCH_TYPE_FOREGROUND = @"foreground";
+NSString * const FT_APP_LAUNCH_TYPE_BACKGROUND = @"background";
 //action tag
 NSString * const FT_KEY_ACTION_ID = @"action_id";
 NSString * const FT_KEY_ACTION_NAME = @"action_name";
@@ -223,4 +230,3 @@ NSString * const FT_USER_ID = @"userid";
 NSString * const FT_USER_NAME = @"user_name";
 NSString * const FT_USER_EMAIL = @"user_email";
 NSString * const FT_USER_EXTRA = @"user_extra";
-

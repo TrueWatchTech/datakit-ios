@@ -159,7 +159,7 @@ static FTTrackDataManager *sharedInstance = nil;
 }
 -(void)applicationWillResignActive{
     @try {
-        [self.dataCachePolicy insertCacheToDB];
+        [self.dataCachePolicy insertCacheToDBWithoutCallback];
     }
     @catch (NSException *exception) {
         FTInnerLogError(@"applicationWillResignActive exception %@",exception);
@@ -168,7 +168,7 @@ static FTTrackDataManager *sharedInstance = nil;
 #if FT_HAS_UIKIT
 - (void)applicationDidEnterBackground{
     @try {
-        [self.dataCachePolicy insertCacheToDB];
+        [self.dataCachePolicy insertCacheToDBWithoutCallback];
         [[FTTrackerEventDBTool sharedManager] close];
     }
     @catch (NSException *exception) {
@@ -178,7 +178,7 @@ static FTTrackDataManager *sharedInstance = nil;
 #else
 -(void)applicationWillTerminate{
     @try {
-        [self.dataCachePolicy insertCacheToDB];
+        [self.dataCachePolicy insertCacheToDBWithoutCallback];
         [[FTTrackerEventDBTool sharedManager] close];
     } @catch (NSException *exception) {
         FTInnerLogError(@"exception %@",exception);
@@ -195,10 +195,8 @@ static FTTrackDataManager *sharedInstance = nil;
 + (void)shutDown{
     @synchronized(sharedInstanceLock) {
         if (sharedInstance) {
-            [sharedInstance.dataUploadWorker cancelAsynchronously];
-            [sharedInstance.dataCachePolicy insertCacheToDB];
+            [sharedInstance.dataUploadWorker invalidateAndCancelPendingUploads];
             [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:sharedInstance];
-            [[FTTrackerEventDBTool sharedManager] close];
         }
         sharedInstance = nil;
     }

@@ -11,7 +11,7 @@
 #import "FTSRRecord.h"
 #import "FTViewAttributes.h"
 #import "FTFileWriter.h"
-#import "FTResourceWriter.h"
+#import "FTResourcesWriter.h"
 #import "FTSessionReplayCoreImports.h"
 
 @interface FTResourceProcessor()
@@ -46,6 +46,7 @@
                         resource.data = [obj calculateData];
                         resource.appId = context.applicationID;
                         resource.mimeType = obj.mimeType;
+                        resource.bindInfo = context.bindInfo;
                         [addResource addObject:resource];
                     }
                 }];

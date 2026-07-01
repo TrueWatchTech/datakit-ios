@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
 	s.name         = "FTMobileSDK"
-	s.version      = "1.6.2"
+	s.version      = "1.6.5"
 	s.summary      = "TrueWatchTech iOS Data Collection SDK"
 	#s.description  = ""
 	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
@@ -9,11 +9,16 @@ Pod::Spec.new do |s|
 	s.license      = { type: 'Apache', :file => 'LICENSE'}
 	s.authors             = { "hulilei" => "huuuu1016@gmail.com","Brandon Zhang" => "brandonzhangdev@gmail.com" }
 	s.default_subspec = 'FTMobileAgent'
+	s.swift_versions = ['5.0']
 
 	s.ios.deployment_target = '12.0'
 	s.osx.deployment_target = '10.14'
 	s.tvos.deployment_target = '12.0'
-	s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
+	s.libraries    = 'z'
+	s.pod_target_xcconfig = {
+		'DEFINES_MODULE' => 'YES',
+		'GCC_ENABLE_CPP_EXCEPTIONS' => 'YES'
+	}
 
 	#$JENKINS_DYNAMIC_VERSION replacing "#{s.version}" will cause an error during pod valid phase
 	s.source       = { :git => "https://github.com/TrueWatchTech/datakit-ios.git", :tag => s.version.to_s }
@@ -26,7 +31,7 @@ Pod::Spec.new do |s|
 		core_path='FTMobileSDK/FTMobileAgent/'
 		agent.ios.deployment_target = '12.0'
 		agent.tvos.deployment_target = '12.0'
-		agent.source_files =  'FTMobileSDK/FTMobileAgent/**/*{.h,.m}'
+		agent.source_files =  'FTMobileSDK/FTMobileAgent/**/*{.h,.m,.swift}'
 		agent.dependency  'FTMobileSDK/FTSDKCore'
 
 	end
@@ -105,7 +110,8 @@ Pod::Spec.new do |s|
 		c.subspec 'DataManager' do |bb|
 			bb.source_files =  ['FTMobileSDK/FTSDKCore/DataManager/*{.h,.m}',
 			'FTMobileSDK/FTSDKCore/DataManager/Upload/*{.h,.m}',
-			'FTMobileSDK/FTSDKCore/DataManager/Storage/**/*{.h,.m}']
+			'FTMobileSDK/FTSDKCore/DataManager/Storage/**/*{.h,.m}',
+			'FTMobileSDK/FTSDKCore/DataFilter/*{.h,.m}']
 			bb.dependency 'FTMobileSDK/FTSDKCore/BaseUtils/Thread'
 			bb.dependency 'FTMobileSDK/FTSDKCore/BaseUtils/Base'
 			bb.dependency 'FTMobileSDK/FTSDKCore/Protocol'
@@ -114,7 +120,7 @@ Pod::Spec.new do |s|
 	s.subspec 'FTSessionReplay' do |sr|
 		 sr.platform = :ios, '12.0'
 		 sr.public_header_files = 'FTMobileSDK/FTSessionReplay/Public/*.h'
-		 sr.source_files = 'FTMobileSDK/FTSessionReplay/**/*{.h,.m}'
+		 sr.source_files = 'FTMobileSDK/FTSessionReplay/**/*{.h,.m,.swift}'
 		 sr.dependency 'FTMobileSDK/FTSDKCore'
 		 sr.pod_target_xcconfig = {
 			 'HEADER_SEARCH_PATHS' => '$(inherited) $(PODS_TARGET_SRCROOT)'

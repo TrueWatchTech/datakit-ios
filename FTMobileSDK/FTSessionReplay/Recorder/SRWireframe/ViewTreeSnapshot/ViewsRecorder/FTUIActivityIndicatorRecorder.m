@@ -38,13 +38,12 @@
         FTUIActivityIndicatorBuilder *builder = [[FTUIActivityIndicatorBuilder alloc]init];
         builder.attributes = attributes;
         builder.wireframeID = [context.viewIDGenerator SRViewID:activityIndicator nodeRecorder:self];
-        builder.backgroundColor = activityIndicator.backgroundColor;
+        builder.backgroundColor = [FTSRColorSnapshot snapshotWithColor:activityIndicator.backgroundColor traitCollection:activityIndicator.traitCollection];
         NSMutableArray *records = [NSMutableArray arrayWithArray:@[builder]];
         NSMutableArray *resources = [NSMutableArray array];
         [self recordSubtree:activityIndicator records:records resources:resources context:context];
         FTSpecificElement *element = [[FTSpecificElement alloc]initWithSubtreeStrategy:NodeSubtreeStrategyIgnore];
         element.nodes = records;
-        element.resources = resources;
         return element;
     }else{
         return [FTInvisibleElement constant];
@@ -59,19 +58,18 @@
         viewTreeRecorder.nodeRecorders = @[imageViewRecorder];
         self.subtreeRecorder = viewTreeRecorder;
     }
-    [self.subtreeRecorder record:records resources:resources view:activityIndicator context:context];
+    [self.subtreeRecorder record:records view:activityIndicator context:context];
 }
 @end
 
 @implementation FTUIActivityIndicatorBuilder
 
 -(NSArray<FTSRWireframe *> *)buildWireframesWithBuilder:(FTSessionReplayWireframesBuilder *)builder;{
-    FTSRShapeWireframe *wireframe = [[FTSRShapeWireframe alloc]initWithIdentifier:self.wireframeID frame:self.wireframeRect clip:self.attributes.clip backgroundColor:[FTSRUtils colorHexString:self.backgroundColor.CGColor] cornerRadius:@(self.attributes.layerCornerRadius) opacity:@(self.attributes.alpha)];
+    FTSRShapeWireframe *wireframe = [[FTSRShapeWireframe alloc]initWithIdentifier:self.wireframeID frame:self.wireframeRect clip:self.attributes.clip backgroundColor:self.backgroundColor.hexString cornerRadius:@(self.attributes.layerCornerRadius) opacity:@(self.attributes.alpha)];
     return @[wireframe];
 }
 -(CGRect)wireframeRect{
     return self.attributes.frame;
 }
 @end
-
 

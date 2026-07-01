@@ -9,13 +9,13 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
-@class FTWindowObserver,FTSRContext,FTTouchSnapshot,FTSnapshotProcessor,FTResourceProcessor;
+@class FTWindowObserver,FTSRContext,FTTouchSnapshot,FTSnapshotProcessor;
 @protocol FTWriter,FTSRWireframesRecorder;
 @interface FTRecorder : NSObject
 @property (nonatomic, strong) FTSnapshotProcessor *snapshotProcessor;
-@property (nonatomic, strong) FTResourceProcessor *resourceProcessor;
--(instancetype)initWithWindowObserver:(FTWindowObserver *)observer snapshotProcessor:(FTSnapshotProcessor *)snapshotProcessor resourceProcessor:(nullable FTResourceProcessor *)resourceProcessor
-              additionalNodeRecorders:(NSArray<id <FTSRWireframesRecorder>>*)additionalNodeRecorders;
+-(instancetype)initWithWindowObserver:(FTWindowObserver *)observer snapshotProcessor:(FTSnapshotProcessor *)snapshotProcessor 
+              additionalNodeRecorders:(NSArray<id <FTSRWireframesRecorder>>*)additionalNodeRecorders
+                        enableSwiftUI:(BOOL)enableSwiftUI;
 ;
 -(void)taskSnapShot:(FTSRContext *)context touchSnapshot:(nullable FTTouchSnapshot *)touchSnapshot;
 @end

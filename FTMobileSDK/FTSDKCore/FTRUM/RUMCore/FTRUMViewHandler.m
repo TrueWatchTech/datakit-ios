@@ -24,6 +24,7 @@
 @property (nonatomic, strong) FTRUMActionHandler *actionHandler;
 @property (nonatomic, strong) NSMutableDictionary *resourceHandlers;
 @property (nonatomic, assign) NSInteger viewLongTaskCount;
+@property (nonatomic, assign) long long viewLongTaskDuration;
 @property (nonatomic, assign) NSInteger viewResourceCount;
 @property (nonatomic, assign) NSInteger viewErrorCount;
 @property (nonatomic, assign) NSInteger viewActionCount;
@@ -47,6 +48,7 @@
     if (self) {
         self.assistant = self;
         self.isActiveView = YES;
+        self.fallbackView = NO;
         self.updateTime = 0;
         self.view_id = model.view_id;
         self.view_name = model.view_name;
@@ -216,6 +218,12 @@
     self.resourceHandlers[model.identifier] =resourceHandler;
 }
 - (void)writeErrorData:(FTRUMDataModel *)model context:(NSDictionary *)context{
+    if (model.type == FTRUMDataLongTask) {
+        long long duration = [model.fields[FT_DURATION] longLongValue];
+        if (duration > 0) {
+            self.viewLongTaskDuration += duration;
+        }
+    }
     NSDictionary *sessionViewTag = [self.context getGlobalSessionViewActionTags];
     NSMutableDictionary *tags = [NSMutableDictionary new];
     [tags addEntriesFromDictionary:sessionViewTag];
@@ -247,20 +255,21 @@
     FTMonitorValue *memory = self.monitorItem.memory;
     FTMonitorValue *refreshRateInfo = self.monitorItem.refreshDisplay;
     NSMutableDictionary *fields = [NSMutableDictionary dictionary];
+    double viewLongTaskRate = self.viewLongTaskDuration > 0 ? self.viewLongTaskDuration / MAX(1.0, [nTimeSpent doubleValue]) : 0;
     [fields setValue:@(self.viewErrorCount) forKey:FT_KEY_VIEW_ERROR_COUNT];
     [fields setValue:@(self.viewResourceCount) forKey:FT_KEY_VIEW_RESOURCE_COUNT];
     [fields setValue:@(self.viewLongTaskCount) forKey:FT_KEY_VIEW_LONG_TASK_COUNT];
+    [fields setValue:@(viewLongTaskRate) forKey:FT_KEY_VIEW_LONG_TASK_RATE];
     [fields setValue:@(self.viewActionCount) forKey:FT_KEY_VIEW_ACTION_COUNT];
     [fields setValue:nTimeSpent forKey:FT_KEY_TIME_SPENT];
     [fields setValue:@(self.updateTime) forKey:FT_KEY_VIEW_UPDATE_TIME];
     [fields setValue:@(self.isActiveView) forKey:FT_KEY_IS_ACTIVE];
     [fields addEntriesFromDictionary:[self.context.sessionState sessionFields]];
-
-    [fields setValue:@(self.rumDependencies.sampledForErrorSession) forKey:FT_RUM_KEY_SAMPLED_FOR_ERROR_SESSION];
+    [fields setValue:@(self.context.sessionState.sampled_for_error_session) forKey:FT_RUM_KEY_SAMPLED_FOR_ERROR_SESSION];
     [fields addEntriesFromDictionary:self.rumDependencies.sessionReplaySampledFields];
     // session-replay
     if (self.rumDependencies.sessionHasReplay != nil) {
-        BOOL sessionHasReplay = self.sessionHasReplay || self.rumDependencies.sessionHasReplay;
+        BOOL sessionHasReplay = self.sessionHasReplay || self.rumDependencies.sessionHasReplay.boolValue;
         [fields setValue:@(sessionHasReplay) forKey:FT_SESSION_HAS_REPLAY];
         if (sessionHasReplay) {
             NSDictionary *dict = [self.rumDependencies.sessionReplayStats valueForKey:self.view_id];

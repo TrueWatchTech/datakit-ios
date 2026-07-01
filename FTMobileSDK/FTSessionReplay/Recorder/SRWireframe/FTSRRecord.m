@@ -290,6 +290,7 @@
                                              [FTSRBaseFrame class],
                                              [NSString class],
                                              [NSData class],
+                                             [NSDictionary class],
                                              nil];
                     
             FTEnrichedResource *resource = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowedClasses fromData:data error:&error];
@@ -330,6 +331,12 @@
     }
 
     return jsonData;
+}
+-(NSString *)getResourceName{
+    if ([self.mimeType isEqualToString:@"image/svg+xml"]) {
+        return [NSString stringWithFormat:@"%@.svg",_identifier];
+    }
+    return _identifier;
 }
 @end
 

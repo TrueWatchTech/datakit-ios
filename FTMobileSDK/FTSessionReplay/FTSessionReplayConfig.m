@@ -37,6 +37,7 @@ NSString * const FTImagePrivacyLevelStringMap[] = {
         _touchPrivacy = FTTouchPrivacyLevelHide;
         _textAndInputPrivacy = FTTextAndInputPrivacyLevelMaskAll;
         _privacy = FTSRPrivacyMask;
+        _enableSwiftUI = NO;
     }
     return self;
 }
@@ -89,12 +90,13 @@ NSString * const FTImagePrivacyLevelStringMap[] = {
     config.touchPrivacy = self.touchPrivacy;
     config.imagePrivacy = self.imagePrivacy;
     config.textAndInputPrivacy = self.textAndInputPrivacy;
+    config.enableSwiftUI = self.enableSwiftUI;
     config.additionalNodeRecorders = [self.additionalNodeRecorders copy];
     config.enableLinkRUMKeys = [self.enableLinkRUMKeys copy];
     return config;
 }
 -(NSString *)debugDescription{
-    return [NSString stringWithFormat:@"====== Config ======\n sampleRate:%d\n sessionReplayOnErrorSampleRate:%d\n textAndInputPrivacy:%@\n touchPrivacy:%@\n imagePrivacy:%@\n ================== ",self.sampleRate,self.sessionReplayOnErrorSampleRate,FTTextAndInputPrivacyLevelStringMap[self.textAndInputPrivacy],FTTouchPrivacyLevelStringMap[self.touchPrivacy],FTImagePrivacyLevelStringMap[self.imagePrivacy]];
+    return [NSString stringWithFormat:@"====== Config ======\n sampleRate:%d\n sessionReplayOnErrorSampleRate:%d\n textAndInputPrivacy:%@\n touchPrivacy:%@\n imagePrivacy:%@\n enableSwiftUI:%@\n ================== ",self.sampleRate,self.sessionReplayOnErrorSampleRate,FTTextAndInputPrivacyLevelStringMap[self.textAndInputPrivacy],FTTouchPrivacyLevelStringMap[self.touchPrivacy],FTImagePrivacyLevelStringMap[self.imagePrivacy],self.enableSwiftUI?@"YES":@"NO"];
 }
 #pragma mark remote
 -(void)mergeWithRemoteConfigModel:(FTRemoteConfigModel *)model{

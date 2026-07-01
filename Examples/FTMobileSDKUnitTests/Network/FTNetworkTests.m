@@ -22,6 +22,7 @@
 #import "FTMobileAgent+Private.h"
 #import "FTTrackDataManager+Test.h"
 #import "FTDataUploadWorker.h"
+#import "FTNetworkInfoManager.h"
 #define FT_SDK_COMPILED_FOR_TESTING
 
 typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
@@ -41,7 +42,6 @@ typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
 
 };
 @interface FTNetworkTests : XCTestCase
-@property (nonatomic, strong) XCTestExpectation *expectation;
 @end
 
 @implementation FTNetworkTests
@@ -53,6 +53,21 @@ typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
 - (void)tearDown{
     [OHHTTPStubs removeAllStubs];
     [FTMobileAgent shutDown];
+}
+- (void)waitForUploadWorkerIdleWithTimeout:(NSTimeInterval)timeout{
+    FTDataUploadWorker *worker = [FTTrackDataManager sharedInstance].dataUploadWorker;
+    dispatch_queue_t networkQueue = [worker valueForKey:@"networkQueue"];
+    NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:timeout];
+    while ([deadline timeIntervalSinceNow] > 0) {
+        dispatch_sync(networkQueue, ^{});
+        BOOL isUploading = [[worker valueForKey:@"isUploading"] boolValue];
+        BOOL hasPendingUpload = [[worker valueForKey:@"hasPendingUpload"] boolValue];
+        if (!isUploading && !hasPendingUpload) {
+            return;
+        }
+        [NSThread sleepForTimeInterval:0.01];
+    }
+    XCTFail(@"Upload worker did not become idle within %.2f seconds", timeout);
 }
 - (void)setRightConfigWithTestType:(FTNetworkTestsType)type{
     NSString *urlStr = @"http://www.test.com/some/url/string";
@@ -157,6 +172,8 @@ typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
         config.autoSync = (type == FTNetworkTestAutoSyncData);
         config.syncPageSize = pageSize>0?pageSize:10;
         config.enableSDKDebugLog = YES;
+        config.compressIntakeRequests = NO;
+        config.enableDataFilter = NO;
         [FTMobileAgent startWithConfigOptions:config];
         if(type == FTNetworkTestAutoSyncData){
             FTRumConfig *rum = [[FTRumConfig alloc]initWithAppid:@"Test"];
@@ -322,29 +339,11 @@ typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
     [[FTTrackDataManager sharedInstance] addTrackData:rumModel type:FTAddDataRUM];
     NSInteger count = [[FTTrackerEventDBTool sharedManager] getDatasCount];
     XCTAssertTrue(count == 21);
-    self.expectation = [self expectationWithDescription:@"Async operation timeout"];
-    NSLog(@"addObserver: current isUploading = %@",[[FTTrackDataManager sharedInstance].dataUploadWorker valueForKey:@"isUploading"]);
-    [[FTTrackDataManager sharedInstance].dataUploadWorker addObserver:self forKeyPath:@"isUploading" options:NSKeyValueObservingOptionNew context:nil];
     [[FTTrackDataManager sharedInstance] flushSyncData];
 
-    [self waitForExpectationsWithTimeout:30 handler:^(NSError *error) {
-        NSLog(@"isUploading = %@",[[FTTrackDataManager sharedInstance].dataUploadWorker valueForKey:@"isUploading"]);
-        XCTAssertNil(error);
-    }];
+    [self waitForUploadWorkerIdleWithTimeout:30];
     NSInteger newCount = [[FTTrackerEventDBTool sharedManager] getDatasCount];
     XCTAssertTrue(newCount == 0);
-    [[FTTrackDataManager sharedInstance].dataUploadWorker removeObserver:self forKeyPath:@"isUploading"];
-}
-
--(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context{
-    if([keyPath isEqualToString:@"isUploading"]){
-        FTTrackDataManager *manager = object;
-        NSNumber *isUploading = [manager valueForKey:@"isUploading"];
-        if(!isUploading.boolValue){
-            [self.expectation fulfill];
-            self.expectation = nil;
-        }
-    }
 }
 - (void)testPageSize_default{
     [self pageSize:FTNetworkTestPageSizeMedium];
@@ -415,7 +414,6 @@ typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
     }
     NSInteger count = [[FTTrackerEventDBTool sharedManager] getDatasCount];
     XCTAssertTrue(count == 100);
-    self.expectation = [self expectationWithDescription:@"Async operation timeout"];
     FTHTTPClient *httpClient = [[FTTrackDataManager sharedInstance].dataUploadWorker valueForKey:@"httpClient"];
     NSURLSession *session = [httpClient valueForKey:@"session"];
     switch (type) {
@@ -434,15 +432,11 @@ typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
         default:
             break;
     }
-    [[FTTrackDataManager sharedInstance].dataUploadWorker addObserver:self forKeyPath:@"isUploading" options:NSKeyValueObservingOptionNew context:nil];
     [[FTTrackDataManager sharedInstance] flushSyncData];
 
-    [self waitForExpectationsWithTimeout:30 handler:^(NSError *error) {
-        XCTAssertNil(error);
-    }];
+    [self waitForUploadWorkerIdleWithTimeout:30];
     NSInteger newCount = [[FTTrackerEventDBTool sharedManager] getDatasCount];
     XCTAssertTrue(newCount == 0);
-    [[FTTrackDataManager sharedInstance].dataUploadWorker removeObserver:self forKeyPath:@"isUploading"];
 }
 - (void)testSyncSleepTime_Max{
     [self syncSleepTime:100];
@@ -454,37 +448,38 @@ typedef NS_ENUM(NSInteger, FTNetworkTestsType) {
     [self syncSleepTime:0];
 }
 - (void)syncSleepTime:(int)time{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:@"http://www.test.com/some/url/string"];
+    NSString *urlStr = [NSString stringWithFormat:@"http://www.test.com/some/url/syncSleep/%d", time];
+    NSString *rumUrl = [urlStr stringByAppendingString:@"/v1/write/rum"];
+    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:urlStr];
+    config.syncPageSize = 10;
     config.syncSleepTime = time;
     config.autoSync = NO;
     [FTMobileAgent startWithConfigOptions:config];
+    XCTAssertEqualObjects([FTNetworkInfoManager sharedInstance].datakitUrl, urlStr);
     __block NSTimeInterval duration = 0;
-    __block NSTimeInterval end = 0;
+    __block NSTimeInterval previousRequestTime = 0;
     [OHHTTPStubs stubRequestsPassingTest:^BOOL(NSURLRequest *request) {
-        if(end>0){
-            duration = ([NSDate timeIntervalSinceReferenceDate] - end)*1000;
-            end = 0;
+        if (![request.URL.absoluteString isEqualToString:rumUrl]) {
+            return NO;
         }
+        NSTimeInterval requestTime = [NSDate timeIntervalSinceReferenceDate];
+        if(previousRequestTime>0){
+            duration = MAX(duration, (requestTime - previousRequestTime)*1000);
+        }
+        previousRequestTime = requestTime;
         return YES;
     } withStubResponse:^OHHTTPStubsResponse*(NSURLRequest *request) {
-        end = [NSDate timeIntervalSinceReferenceDate];
         return [OHHTTPStubsResponse responseWithData:[NSData data] statusCode:200 headers:nil];
     }];
     for (int i = 0 ; i<20; i++) {
-       FTRecordModel *logModel = [FTModelHelper createLogModel:[NSString stringWithFormat:@"%d",i]];
-        [[FTTrackDataManager sharedInstance] addTrackData:logModel type:FTAddDataRUM];
+        FTRecordModel *rumModel = [FTModelHelper createRumModel];
+        [[FTTrackDataManager sharedInstance] addTrackData:rumModel type:FTAddDataRUM];
     }
-    self.expectation = [self expectationWithDescription:@"Async operation timeout"];
-       
-    [[FTTrackDataManager sharedInstance].dataUploadWorker addObserver:self forKeyPath:@"isUploading" options:NSKeyValueObservingOptionNew context:nil];
     [[FTTrackDataManager sharedInstance] flushSyncData];
 
-    [self waitForExpectationsWithTimeout:30 handler:^(NSError *error) {
-        XCTAssertNil(error);
-    }];
+    [self waitForUploadWorkerIdleWithTimeout:30];
     NSInteger newCount = [[FTTrackerEventDBTool sharedManager] getDatasCount];
     XCTAssertTrue(newCount == 0);
-    XCTAssertTrue(duration>time);
-    [[FTTrackDataManager sharedInstance].dataUploadWorker removeObserver:self forKeyPath:@"isUploading"];
+    XCTAssertTrue(duration>time, @"duration: %.3f, syncSleepTime: %d", duration, time);
 }
 @end

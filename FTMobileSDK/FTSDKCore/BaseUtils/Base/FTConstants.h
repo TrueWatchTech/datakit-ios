@@ -103,6 +103,7 @@ extern NSString * const FT_KEY_VIEW_UPDATE_TIME;
 extern NSString * const FT_KEY_VIEW_RESOURCE_COUNT;
 extern NSString * const FT_KEY_VIEW_LONG_TASK_COUNT;
 extern NSString * const FT_KEY_VIEW_ACTION_COUNT;
+extern NSString * const FT_KEY_VIEW_LONG_TASK_RATE;
 #pragma mark --- monitor field
 /// View page average CPU tick count per second
 extern NSString * const FT_CPU_TICK_COUNT_PER_SECOND;
@@ -155,6 +156,7 @@ extern NSString * const FT_KEY_RESOURCE_REDIRECT_TIME;
 extern NSString * const FT_KEY_RESOURCE_HTTP_PROTOCOL;
 extern NSString * const FT_KEY_RESOURCE_REQUEST_SIZE;
 extern NSString * const FT_KEY_RESOURCE_CONNECTION_REUSE;
+extern NSString * const FT_KEY_NETWORK_AVAILABLE;
 #pragma mark --- trace link tag
 extern NSString * const FT_KEY_TRACEID;
 extern NSString * const FT_KEY_SPANID;
@@ -167,6 +169,8 @@ extern NSString * const FT_KEY_ERROR_SITUATION;
 #pragma mark --- field
 extern NSString * const FT_KEY_ERROR_MESSAGE;
 extern NSString * const FT_KEY_ERROR_STACK;
+extern NSString * const FT_KEY_FOREGROUND_CRASH_FREE_DURATION;
+extern NSString * const FT_KEY_BACKGROUND_CRASH_FREE_DURATION;
 #pragma mark --- error monitor tag
 extern NSString * const FT_MEMORY_TOTAL;
 extern NSString * const FT_MEMORY_USE;
@@ -200,6 +204,9 @@ extern NSString * const FT_KEY_LAUNCH_APP_INIT_TIME;
 extern NSString * const FT_KEY_LAUNCH_UIKITI_INIT_TIME;
 extern NSString * const FT_KEY_LAUNCH_PRE_RUNTIME_INIT_TIME;
 extern NSString * const FT_KEY_LAUNCH_RUNTIME_INIT_TIME;
+extern NSString * const FT_KEY_APP_LAUNCH_TYPE;
+extern NSString * const FT_APP_LAUNCH_TYPE_FOREGROUND;
+extern NSString * const FT_APP_LAUNCH_TYPE_BACKGROUND;
 
 #pragma mark ========== Session Replay ==========
 extern NSString * const FT_SESSION_HAS_REPLAY;
@@ -236,8 +243,3 @@ extern NSString * const FT_USER_ID;
 extern NSString * const FT_USER_EMAIL;
 extern NSString * const FT_USER_NAME;
 extern NSString * const FT_USER_EXTRA;
-
-
-
-
-

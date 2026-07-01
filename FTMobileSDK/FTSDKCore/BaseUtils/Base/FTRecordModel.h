@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 NS_ASSUME_NONNULL_BEGIN
+
 /// Data storage model
 @interface FTRecordModel : NSObject
 
@@ -17,6 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) NSString *data;
 /// Data type, \RUM\Logging
 @property (nonatomic, copy) NSString *op;
+/// Whether this data has been checked by SDK remote DataFilter before being stored.
+@property (nonatomic, assign) BOOL remoteFilterChecked;
 
 /// Store database generated primary key
 @property (nonatomic, copy) NSString * _id;
@@ -28,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 ///   - tags: tag type data
 ///   - fields: field type data
 ///   - tm: time when data was collected (nanosecond timestamp)
--(instancetype)initWithSource:(NSString *)source op:(NSString *)op tags:(NSDictionary *)tags fields:(NSDictionary *)fields tm:(long long)tm;
+-(instancetype)initWithSource:(NSString *)source op:(NSString *)op tags:(nullable NSDictionary *)tags fields:(nullable NSDictionary *)fields tm:(long long)tm;
 @end
 
 NS_ASSUME_NONNULL_END

@@ -11,7 +11,6 @@
 #import "FTSRUtils.h"
 #import "FTViewAttributes.h"
 @interface FTSessionReplayWireframesBuilder()
-@property (nonatomic, strong) NSArray<id<FTSRResource>> *resources;
 @property (nonatomic, strong) NSMutableSet<NSNumber *> *webViewSlotIDs;
 @property (nonatomic, strong) NSMutableDictionary *linkRUMKeysInfo;
 @end
@@ -19,7 +18,7 @@
 -(instancetype)initWithResources:(NSArray<id <FTSRResource>>*)resources webViewSlotIDs:( NSSet<NSNumber *> *)webViewSlotIDs{
     self = [super init];
     if (self) {
-        _resources = resources;
+        _resources = resources ? [NSMutableArray arrayWithArray:resources]: [NSMutableArray new];
         _webViewSlotIDs = [NSMutableSet setWithSet:webViewSlotIDs];
         _linkRUMKeysInfo = [NSMutableDictionary new];
     }
@@ -37,12 +36,25 @@
     wireframe.clip = [[FTSRContentClip alloc]initWithFrame:attributes.frame clip:attributes.clip];
     wireframe.slotId = [NSString stringWithFormat:@"%lld",identifier];
     wireframe.isVisible = @(YES);
-    wireframe.shapeStyle = [[FTSRShapeStyle alloc]initWithBackgroundColor:[FTSRUtils colorHexString:attributes.backgroundColor.CGColor] cornerRadius:@(attributes.layerCornerRadius) opacity:@(attributes.alpha)];
+    wireframe.shapeStyle = [[FTSRShapeStyle alloc]initWithBackgroundColor:attributes.backgroundColor.hexString cornerRadius:@(attributes.layerCornerRadius) opacity:@(attributes.alpha)];
     [self.webViewSlotIDs removeObject:@(identifier)];
     if (linkRUMKeysInfo.count>0) {
         [self.linkRUMKeysInfo addEntriesFromDictionary:linkRUMKeysInfo];
     }
     return wireframe;
+}
+
+- (FTSRImageWireframe *)createImageWireframeWithID:(int64_t)identifier resource:(id<FTSRResource>)resource frame:(CGRect)frame clip:(CGRect)clip{
+    FTSRImageWireframe *imageWireframe = [[FTSRImageWireframe alloc]initWithIdentifier:identifier frame:frame];
+    imageWireframe.resourceId = [resource calculateIdentifier];
+    imageWireframe.clip = [[FTSRContentClip alloc]initWithFrame:frame clip:clip];
+    [self.resources addObject:resource];
+    return imageWireframe;
+}
+- (void)addResources:(NSArray<id <FTSRResource>>*)resources{
+    if (resources && resources.count>0) {
+        [self.resources addObjectsFromArray:resources];
+    }
 }
 - (NSArray <FTSRWireframe*> *)hiddenWebViewWireframes{
     if (self.webViewSlotIDs.count == 0) {
@@ -65,5 +77,4 @@
     return [_webViewSlotIDs copy];
 }
 @end
-
 

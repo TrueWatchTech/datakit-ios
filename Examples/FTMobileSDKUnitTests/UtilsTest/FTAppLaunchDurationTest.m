@@ -15,6 +15,9 @@
 #import "FTActionTrackingHandler.h"
 #import "FTDisplayRateMonitor.h"
 #import "FTDateUtil.h"
+#if TARGET_OS_IOS
+#import <mach/task_policy.h>
+#endif
 
 typedef void(^LaunchBlock)( NSNumber * _Nullable duration, FTLaunchType type,NSDictionary *_Nullable fields);
 typedef void(^LaunchDataBlock)(NSString *source, NSDictionary *tags, NSDictionary *fields);
@@ -30,6 +33,10 @@ typedef void(^LaunchDataBlock)(NSString *source, NSDictionary *tags, NSDictionar
 
 @end
 
+#if TARGET_OS_IOS && (defined(DEBUG) || defined(FTSDKUNITTEST))
+void FTClearLaunchTaskRole(void);
+#endif
+
 @implementation FTAppLaunchDurationTest
 
 - (void)setUp {
@@ -39,6 +46,9 @@ typedef void(^LaunchDataBlock)(NSString *source, NSDictionary *tags, NSDictionar
     // Put teardown code here. This method is called after the invocation of each test method in the class.
     self.launchBlock = nil;
     self.launchTracker = nil;
+#if TARGET_OS_IOS && (defined(DEBUG) || defined(FTSDKUNITTEST))
+    FTClearLaunchTaskRole();
+#endif
 }
 - (void)testLaunchCold{
     XCTestExpectation *expectation= [self expectationWithDescription:@"LaunchBlock timeout"];
@@ -92,7 +102,7 @@ typedef void(^LaunchDataBlock)(NSString *source, NSDictionary *tags, NSDictionar
     self.launchBlock = nil;
 }
 #if TARGET_OS_IOS
-#ifdef DEBUG
+#if defined(DEBUG) || defined(FTSDKUNITTEST)
 - (void)testLaunchPrewarm{
     XCTestExpectation *expectation= [self expectationWithDescription:@"Async operation timeout"];
     self.launchBlock = ^(NSNumber * _Nullable duration, FTLaunchType type,NSDictionary *fields) {
@@ -112,18 +122,18 @@ typedef void(^LaunchDataBlock)(NSString *source, NSDictionary *tags, NSDictionar
     FTSetIsActivePrewarm(NO);
 }
 #endif
-- (void)testLaunchWarmDataNotHasViewData{
+- (void)testLaunchWarmDataHasViewData{
     [self launchData:FTLaunchWarm];
 }
 #endif
-- (void)testLaunchColdDataNotHasViewData{
+- (void)testLaunchColdDataHasViewData{
     [self launchData:FTLaunchCold];
 }
 - (void)testLaunchHotData{
     [self launchData:FTLaunchHot];
 }
 #pragma mark ---- test launch fields ---
-#ifdef DEBUG
+#if defined(DEBUG) || defined(FTSDKUNITTEST)
 NSDate *FTGetApplicationDidBecomeActive(void);
 void FTSetApplicationDidBecomeActive(NSDate *date);
 NSDate *FTGetModuleInitializationTimestamp(void);
@@ -131,6 +141,10 @@ void FTSetModuleInitializationTimestamp(NSDate *date);
 NSDate *FTGetRuntimeInit(void);
 void FTSetRuntimeInit(NSDate *date);
 void FTSetIsActivePrewarm(BOOL active);
+#if TARGET_OS_IOS
+void FTSetLaunchTaskRole(NSInteger role);
+void FTClearLaunchTaskRole(void);
+#endif
 
 - (void)testLaunchTimeSequence_ProcessStart_RuntimeInit_ModuleInit_AppActive_ShouldBeAscendingOrder{
     NSDate *processStartTimestamp = [FTDateUtil processStartTimestamp];
@@ -142,6 +156,48 @@ void FTSetIsActivePrewarm(BOOL active);
     XCTAssertTrue([runtimeInit compare:moduleInitializationTimestamp] == NSOrderedAscending);
     XCTAssertTrue([moduleInitializationTimestamp compare:applicationDidBecomeActive] == NSOrderedAscending);
 }
+
+#if TARGET_OS_IOS
+- (void)testLaunchColdAppLaunchTypeWhenTaskRoleIsForegroundApplication{
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Async operation timeout"];
+    FTSetLaunchTaskRole(TASK_FOREGROUND_APPLICATION);
+    NSDate *applicationDidBecomeActive = FTGetApplicationDidBecomeActive();
+    if (!applicationDidBecomeActive) {
+        FTSetApplicationDidBecomeActive([NSDate date]);
+    }
+    [FTAppLaunchTracker setSdkStartDate:[NSDate date]];
+    self.launchBlock = ^(NSNumber * _Nullable duration, FTLaunchType type, NSDictionary *fields) {
+        XCTAssertTrue(type == FTLaunchCold);
+        XCTAssertEqualObjects(fields[FT_KEY_APP_LAUNCH_TYPE], FT_APP_LAUNCH_TYPE_FOREGROUND);
+        [expectation fulfill];
+    };
+    FTAppLaunchTracker *launchTracker = [[FTAppLaunchTracker alloc] initWithDelegate:self displayMonitor:[FTDisplayRateMonitor new]];
+    [self waitForExpectations:@[expectation] timeout:2];
+    self.launchTracker = launchTracker;
+    FTClearLaunchTaskRole();
+    FTSetApplicationDidBecomeActive(applicationDidBecomeActive);
+}
+
+- (void)testLaunchColdAppLaunchTypeWhenTaskRoleIsNotForegroundApplication{
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Async operation timeout"];
+    FTSetLaunchTaskRole(TASK_BACKGROUND_APPLICATION);
+    NSDate *applicationDidBecomeActive = FTGetApplicationDidBecomeActive();
+    if (!applicationDidBecomeActive) {
+        FTSetApplicationDidBecomeActive([NSDate date]);
+    }
+    [FTAppLaunchTracker setSdkStartDate:[NSDate date]];
+    self.launchBlock = ^(NSNumber * _Nullable duration, FTLaunchType type, NSDictionary *fields) {
+        XCTAssertTrue(type == FTLaunchCold);
+        XCTAssertEqualObjects(fields[FT_KEY_APP_LAUNCH_TYPE], FT_APP_LAUNCH_TYPE_BACKGROUND);
+        [expectation fulfill];
+    };
+    FTAppLaunchTracker *launchTracker = [[FTAppLaunchTracker alloc] initWithDelegate:self displayMonitor:[FTDisplayRateMonitor new]];
+    [self waitForExpectations:@[expectation] timeout:2];
+    self.launchTracker = launchTracker;
+    FTClearLaunchTaskRole();
+    FTSetApplicationDidBecomeActive(applicationDidBecomeActive);
+}
+#endif
 
 - (void)testLaunchWhenSDKInitAfterApplicationDidBecomeActive_cold{
     XCTestExpectation *expectation= [self expectationWithDescription:@"Async operation timeout"];
@@ -164,6 +220,7 @@ void FTSetIsActivePrewarm(BOOL active);
     [self waitForExpectations:@[expectation] timeout:2];
     FTSetApplicationDidBecomeActive(applicationDidBecomeActive);
 }
+#if TARGET_OS_IOS
 - (void)testLaunchWhenSDKInitAfterApplicationDidBecomeActive_prewarm{
     XCTestExpectation *expectation= [self expectationWithDescription:@"Async operation timeout"];
     FTSetIsActivePrewarm(YES);
@@ -186,6 +243,7 @@ void FTSetIsActivePrewarm(BOOL active);
     FTSetIsActivePrewarm(NO);
     FTSetApplicationDidBecomeActive(applicationDidBecomeActive);
 }
+#endif
 - (void)testLaunchWhenSDKInitBeforeApplicationDidBecomeActive_cold{
     XCTestExpectation *expectation= [self expectationWithDescription:@"Async operation timeout"];
     NSDate *applicationDidBecomeActive = FTGetApplicationDidBecomeActive();
@@ -217,6 +275,7 @@ void FTSetIsActivePrewarm(BOOL active);
     [self waitForExpectations:@[expectation] timeout:10];
     FTSetApplicationDidBecomeActive(applicationDidBecomeActive);
 }
+#if TARGET_OS_IOS
 - (void)testLaunchWhenSDKInitBeforeApplicationDidBecomeActive_prewarm{
     
     XCTestExpectation *expectation= [self expectationWithDescription:@"Async operation timeout"];
@@ -241,6 +300,7 @@ void FTSetIsActivePrewarm(BOOL active);
     FTSetIsActivePrewarm(NO);
     FTSetApplicationDidBecomeActive(applicationDidBecomeActive);
 }
+#endif
 #endif
 - (void)launchData:(FTLaunchType)type{
     FTRUMDependencies *dependencies = [[FTRUMDependencies alloc]init];
@@ -274,12 +334,12 @@ void FTSetIsActivePrewarm(BOOL active);
                     break;
                 case FTLaunchWarm:
                     XCTAssertTrue([tags[FT_KEY_ACTION_TYPE] isEqualToString:FT_LAUNCH_WARM]);
-                    XCTAssertFalse([tags.allKeys containsObject:FT_KEY_VIEW_ID]);
+                    XCTAssertTrue([tags.allKeys containsObject:FT_KEY_VIEW_ID]);
                     XCTAssertTrue([tags.allKeys containsObject:FT_APP_ID]);
                     break;
                 case FTLaunchCold:
                     XCTAssertTrue([tags[FT_KEY_ACTION_TYPE] isEqualToString:FT_LAUNCH_COLD]);
-                    XCTAssertFalse([tags.allKeys containsObject:FT_KEY_VIEW_ID]);
+                    XCTAssertTrue([tags.allKeys containsObject:FT_KEY_VIEW_ID]);
                     XCTAssertTrue([tags.allKeys containsObject:FT_APP_ID]);
                     break;
             }

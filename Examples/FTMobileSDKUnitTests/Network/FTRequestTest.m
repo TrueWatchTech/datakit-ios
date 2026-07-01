@@ -23,7 +23,6 @@
 #import "FTBaseInfoHandler.h"
 #import "FTTestUtils.h"
 @interface FTRequestTest : XCTestCase
-@property (nonatomic, strong) XCTestExpectation *expectation;
 @end
 
 @implementation FTRequestTest
@@ -104,17 +103,6 @@
     XCTAssertTrue([FTTestUtils base36ToDecimal:newRumSerialNum] - [FTTestUtils base36ToDecimal:currentRumSerialNum] == 1);
     XCTAssertTrue([FTTestUtils base36ToDecimal:newtLogSerialNum] - [FTTestUtils base36ToDecimal:currentLogSerialNum] == 1);
 }
--(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context{
-    if([keyPath isEqualToString:@"isUploading"]){
-        FTTrackDataManager *manager = object;
-        NSNumber *isUploading = [manager valueForKey:@"isUploading"];
-        if(!isUploading.boolValue){
-            [self.expectation fulfill];
-            self.expectation = nil;
-        }
-    }
-}
-
 - (void)testWrongFormat{
     [self mockHttp];
     FTRecordModel *model = [FTModelHelper createWrongFormatRumModel];
@@ -122,6 +110,38 @@
     NSMutableURLRequest *urlRequest = [[NSMutableURLRequest alloc]initWithURL:request.absoluteURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:30.0];
     NSMutableURLRequest *mRequest = [request adaptedRequest:urlRequest];
     XCTAssertTrue([mRequest.HTTPBody isEqual: [@"" dataUsingEncoding:NSUTF8StringEncoding]]);
+}
+- (void)testRumRequestPackageIdCountUsesDeduplicatedViewEvents{
+    [FTNetworkInfoManager sharedInstance].setCompressionIntakeRequests(NO);
+    NSDictionary *tags = @{
+        FT_KEY_VIEW_ID:@"same_view_id",
+        FT_KEY_VIEW_NAME:@"view",
+        FT_RUM_KEY_SESSION_ID:[FTBaseInfoHandler randomUUID],
+        FT_RUM_KEY_SESSION_TYPE:@"user",
+    };
+    FTRecordModel *oldView = [[FTRecordModel alloc]initWithSource:FT_RUM_SOURCE_VIEW op:FT_DATA_TYPE_RUM tags:tags fields:@{@"value":@"old"} tm:1];
+    oldView._id = @"1";
+    FTRecordModel *newView = [[FTRecordModel alloc]initWithSource:FT_RUM_SOURCE_VIEW op:FT_DATA_TYPE_RUM tags:tags fields:@{@"value":@"new"} tm:2];
+    newView._id = @"2";
+
+    FTRequest *request = [FTRequest createRequestWithEvents:@[oldView,newView] type:FT_DATA_TYPE_RUM];
+    NSMutableURLRequest *urlRequest = [[NSMutableURLRequest alloc]initWithURL:[NSURL URLWithString:@"http://www.test.com/v1/write/rum"] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:30.0];
+    NSMutableURLRequest *mRequest = [request adaptedRequest:urlRequest];
+
+    NSString *packageHeader = [mRequest.allHTTPHeaderFields valueForKey:FT_HTTP_HEADER_X_PKG_ID];
+    XCTAssertTrue([packageHeader hasPrefix:@"rumm-"]);
+    NSString *packageId = [packageHeader substringFromIndex:[@"rumm-" length]];
+    NSArray *packageIdParts = [packageId componentsSeparatedByString:@"."];
+    XCTAssertTrue(packageIdParts.count == 4);
+    XCTAssertTrue([packageIdParts[2] isEqualToString:@"1"]);
+
+    NSString *bodyStr = [[NSString alloc]initWithData:mRequest.HTTPBody encoding:NSUTF8StringEncoding];
+    NSArray *lines = [bodyStr componentsSeparatedByString:@"\n"];
+    XCTAssertTrue(lines.count == 1);
+    NSString *expectedDataIdPrefix = [NSString stringWithFormat:@"sdk_data_id=%@.",packageId];
+    XCTAssertTrue([bodyStr containsString:expectedDataIdPrefix]);
+    XCTAssertFalse([bodyStr containsString:@"value=\"old\""]);
+    XCTAssertTrue([bodyStr containsString:@"value=\"new\""]);
 }
 - (void)testSdkDataID_RUM{
     [self sdkDataIDTest:YES];
@@ -176,6 +196,7 @@
 - (void)testDatakitUrl{
     NSString *datakitUrlStr = @"http://www.test.com/some/url/string";
     FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakitUrlStr];
+    config.compressIntakeRequests = NO;
     [FTMobileAgent startWithConfigOptions:config];
     FTRecordModel *model = [FTModelHelper createRumModel];
     FTRequest *request = [FTRequest createRequestWithEvents:@[model] type:FT_DATA_TYPE_RUM];
@@ -186,6 +207,7 @@
     NSString *datawayUrlStr = @"http://www.test.com/some/url/string";
     NSString *clientToken = @"clientToken";
     FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatawayUrl:datawayUrlStr clientToken:clientToken];
+    config.compressIntakeRequests = NO;
     [FTMobileAgent startWithConfigOptions:config];
     FTRecordModel *model = [FTModelHelper createRumModel];
     FTRequest *request = [FTRequest createRequestWithEvents:@[model] type:FT_DATA_TYPE_RUM];
@@ -200,6 +222,7 @@
     NSString *clientToken = @"clientToken";
 
     FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakitUrlStr];
+    config.compressIntakeRequests = YES;
     config.datawayUrl = datawayUrlStr;
     config.clientToken = clientToken;
     [FTMobileAgent startWithConfigOptions:config];
@@ -281,6 +304,7 @@
     NSString *datakitUrlStr = @"http://www.test.com/datakit/url/string";
     FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakitUrlStr];
     config.enableSDKDebugLog = YES;
+    config.compressIntakeRequests = NO;
     [FTMobileAgent startWithConfigOptions:config];
     FTRecordModel *model = [FTModelHelper createRumModel];
     NSDate *beforeDate = [NSDate date];
