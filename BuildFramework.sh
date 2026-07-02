@@ -1,22 +1,22 @@
 #!/bin/bash
 
 # Usage Examples (Command → Output XCFramework Name):
-#   bash BuildFramework.sh FTMobileSDK                          → FTMobileSDK.xcframework
-#   bash BuildFramework.sh FTMobileSDK-dynamic                  → FTMobileSDK-Dynamic.xcframework
-#   bash BuildFramework.sh FTMobileSDK --disable-swizzling-resource  → FTMobileSDK-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh FTMobileSDK-dynamic --disable-swizzling-resource → FTMobileSDK-Dynamic-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh FTMobileExtension                    → FTMobileExtension.xcframework
-#   bash BuildFramework.sh FTMobileExtension --disable-swizzling-resource → FTMobileExtension-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh FTSessionReplay                      → FTSessionReplay.xcframework
-#   bash BuildFramework.sh FTSessionReplay-dynamic              → FTSessionReplay-Dynamic.xcframework
+#   bash BuildFramework.sh GuanceSDK                            → GuanceSDK.xcframework
+#   bash BuildFramework.sh GuanceSDK-dynamic                    → GuanceSDK-Dynamic.xcframework
+#   bash BuildFramework.sh GuanceSDK --disable-swizzling-resource  → GuanceSDK-DisableSwizzlingResource.xcframework
+#   bash BuildFramework.sh GuanceSDK-dynamic --disable-swizzling-resource → GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework
+#   bash BuildFramework.sh GuanceWidgetExtension                    → GuanceWidgetExtension.xcframework
+#   bash BuildFramework.sh GuanceWidgetExtension --disable-swizzling-resource → GuanceWidgetExtension-DisableSwizzlingResource.xcframework
+#   bash BuildFramework.sh GuanceSessionReplay                      → GuanceSessionReplay.xcframework
+#   bash BuildFramework.sh GuanceSessionReplay-dynamic              → GuanceSessionReplay-Dynamic.xcframework
 
 # Parameter Notes:
 #   -dynamic: Build dynamic library (default: static library)
 #   --disable-swizzling-resource: Disable URLSession method swizzling (avoids swizzling conflicts)
 
 # SDK Usage Scenarios:
-#   Main Project: FTMobileSDK (static/dynamic)
-#   Widget Extension: FTMobileExtension (static only) / FTMobileSDK-dynamic (dynamic, shared with main project)
+#   Main Project: GuanceSDK (static/dynamic)
+#   Widget Extension: GuanceWidgetExtension (static only) / GuanceSDK-dynamic (dynamic, shared with main project)
 
 # Output Path: Packaged SDK is saved to the "build" folder in the current directory
 
@@ -24,6 +24,7 @@ set -euo pipefail
 # ======================== CORE ========================
 SWIZZLING_MACRO="FT_DISABLE_SWIZZLING_RESOURCE"
 CONFIGURATION="Release"
+PROJECT="${PROJECT:-Guance.xcodeproj}"
 
 LIB_TYPE="static"
 SCHEME_NAME=""
@@ -50,14 +51,19 @@ show_help() {
   echo "  3. Combine two archives to generate XCFramework (dynamic libraries link dSYM files)"
   echo ""
   echo "Examples:"
-  echo " bash $0 FTMobileSDK-dynamic --disable-swizzling-resource # dynamic + disable swizzling"
-  echo " bash $0 FTMobileSDK # static"
+  echo " bash $0 GuanceSDK-dynamic --disable-swizzling-resource # dynamic + disable swizzling"
+  echo " bash $0 GuanceSDK # static"
+  echo " bash $0 GuanceSessionReplay # static Session Replay"
+  echo " bash $0 GuanceSessionReplay-dynamic # dynamic Session Replay"
 }
 
 # Check xcodebuild environment
 check_env() {
   if ! command -v xcodebuild &> /dev/null; then
     error "❌ xcodebuild not found. Please install Xcode and configure command line tools"
+  fi
+  if [[ ! -d "${PROJECT}" ]]; then
+    error "❌ Xcode project not found: ${PROJECT}"
   fi
   info "✅ Environment check passed"
 }
@@ -116,6 +122,7 @@ build_archive() {
   
   # Execute compilation (fully aligned with your xcodebuild parameters)
   xcodebuild archive \
+    -project "${PROJECT}" \
     -scheme "${scheme}" \
     -configuration "${CONFIGURATION}" \
     -archivePath "${archive_path}" \
@@ -236,7 +243,7 @@ main() {
 
   # Verify Scheme is mandatory
   if [[ -z "${scheme}" ]]; then
-    error "❌ Missing Scheme name! Example: $0 FTMobileSDK-dynamic"
+    error "❌ Missing Scheme name! Example: $0 GuanceSDK-dynamic"
   fi
 
   # Step 1: Environment check + clean up old artifacts

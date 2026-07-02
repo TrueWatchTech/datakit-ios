@@ -69,6 +69,11 @@ function exitWithMessage(){
     exit ${2}
 }
 
+function printUsage(){
+    echo "Usage: dSYMUpload.sh <sdk_url> <rum_app_id> <version> <env> <dataway_token> <dSYMBOL_src_dir> <dSYMBOL_dest_dir>"
+    echo "   or: dSYMUpload.sh -dSYMFolderPath <dSYMBOL_src_dir> -z"
+}
+
 # Upload bSYMBOL file
 function dSYMUpload(){
     P_BSYMBOL_ZIP_FILE="$1"
@@ -299,7 +304,14 @@ fi
 if [ $BuildInXcode = "T" ]; then
 runInXcode
 else
-echo "\nUsage: dSYMUpload.sh <sdk_url> <rum_app_id> <app_version> <app_env> <dataway_token> <dSYMBOL_src_dir> <dSYMBOL_dest_dir>\n or dSYMUpload.sh -dSYMFolderPath <dSYMBOL_src_dir> -z"
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    printUsage
+    exit 0
+fi
+
+if [ $# -eq 0 ]; then
+    printUsage
+fi
 
 max_args=6
 if [ $# -ge $max_args ]; then

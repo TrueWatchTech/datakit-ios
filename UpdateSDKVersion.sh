@@ -18,9 +18,9 @@ SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
 
 cd "$SCRIPT_DIR"
 
-PODSPEC="FTMobileSDK.podspec"
-VERSION_HEADER="FTMobileSDK/FTMobileAgent/Core/FTMobileAgentVersion.h"
-INFO_PLIST="FTMobileSDK/Info.plist"
+PODSPEC="GuanceSDK.podspec"
+VERSION_HEADER="Sources/Agent/Core/FTMobileAgentVersion.h"
+INFO_PLIST="Sources/Info.plist"
 
 for file in "$PODSPEC" "$VERSION_HEADER" "$INFO_PLIST"; do
   if [ ! -f "$file" ]; then

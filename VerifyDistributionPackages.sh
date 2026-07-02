@@ -4,7 +4,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build"
-PODSPEC="${SCRIPT_DIR}/FTMobileSDK.podspec"
+PODSPEC="${SCRIPT_DIR}/GuanceSDK.podspec"
 FRAMEWORK_SCRIPT="${SCRIPT_DIR}/BuildSDKPackages.sh"
 SPM_VALIDATION_DIR="${BUILD_DIR}/SwiftPackageValidation"
 SPM_DERIVED_DATA="${BUILD_DIR}/SwiftPackageDerivedData"
@@ -12,11 +12,20 @@ SPM_HOME="${BUILD_DIR}/SwiftPackageHome"
 SPM_MODULE_CACHE="${BUILD_DIR}/SwiftPackageModuleCache"
 SPM_DESTINATION="generic/platform=iOS"
 XCODEBUILD_OPTIONS="${XCODEBUILD_OPTIONS--quiet}"
+FRAMEWORK_ZIPS=(
+  "GuanceSDK.xcframework.zip"
+  "GuanceSessionReplay.xcframework.zip"
+  "GuanceWidgetExtension.xcframework.zip"
+  "GuanceWidgetExtension-DisableSwizzlingResource.xcframework.zip"
+  "GuanceSDK-DisableSwizzlingResource.xcframework.zip"
+  "GuanceSDK-Dynamic.xcframework.zip"
+  "GuanceSessionReplay-Dynamic.xcframework.zip"
+  "GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework.zip"
+)
 SPM_SCHEMES=(
-  "FTMobileSDK"
-  "FTMobileExtension"
-  "FTSDKCore"
-  "FTSessionReplay"
+  "GuanceSDK"
+  "GuanceWidgetExtension"
+  "GuanceSessionReplay"
 )
 
 RUN_COCOAPODS=1
@@ -43,15 +52,15 @@ Usage:
   bash VerifyDistributionPackages.sh [options]
 
 Checks:
-  cocoapods   pod lib lint FTMobileSDK.podspec
-  framework   BuildSDKPackages.sh, then validates build/SDK.zip
+  cocoapods   pod lib lint GuanceSDK.podspec
+  framework   BuildSDKPackages.sh, then validates generated .xcframework.zip files
   spm         Swift Package manifest + iOS xcodebuild build for all products
 
 Options:
   --only <list>            Comma-separated checks to run: cocoapods,framework,spm
   --skip <list>            Comma-separated checks to skip: cocoapods,framework,spm
   --fail-fast              Stop at the first failed check
-  --podspec <path>         Podspec path. Default: FTMobileSDK.podspec
+  --podspec <path>         Podspec path. Default: GuanceSDK.podspec
   --spm-destination <dest> xcodebuild destination. Default: generic/platform=iOS
   --help, -h               Show this help
 
@@ -171,13 +180,18 @@ validate_framework_package() {
 
   bash "${FRAMEWORK_SCRIPT}"
 
-  local sdk_zip="${BUILD_DIR}/SDK.zip"
-  if [[ ! -s "${sdk_zip}" ]]; then
-    error "SDK zip was not generated: ${sdk_zip}"
-    return 1
-  fi
+  local zip_name
+  for zip_name in "${FRAMEWORK_ZIPS[@]}"; do
+    local zip_path="${BUILD_DIR}/${zip_name}"
+    local xcframework_name="${zip_name%.zip}"
 
-  zipinfo -1 "${sdk_zip}" > /dev/null
+    if [[ ! -s "${zip_path}" ]]; then
+      error "Framework zip was not generated: ${zip_path}"
+      return 1
+    fi
+
+    zipinfo -1 "${zip_path}" "${xcframework_name}/Info.plist" > /dev/null || return 1
+  done
 }
 
 prepare_spm_validation_dir() {
@@ -186,7 +200,7 @@ prepare_spm_validation_dir() {
   mkdir -p "${SPM_VALIDATION_DIR}" "${SPM_HOME}" "${SPM_MODULE_CACHE}"
 
   cp "${SCRIPT_DIR}/Package.swift" "${SPM_VALIDATION_DIR}/Package.swift"
-  ln -s "${SCRIPT_DIR}/FTMobileSDK" "${SPM_VALIDATION_DIR}/FTMobileSDK"
+  ln -s "${SCRIPT_DIR}/Sources" "${SPM_VALIDATION_DIR}/Sources"
 }
 
 validate_swift_package() {
