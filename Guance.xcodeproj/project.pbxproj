@@ -1183,6 +1183,7 @@
 		A1F0B00A2F61000100A0A001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 171C21BE2B9183D500C67AD6 /* PrivacyInfo.xcprivacy */; };
 		A1F0B00B2F61000100A0A001 /* GuanceSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A88425A239E5754001B44C3 /* GuanceSDK.framework */; };
 		A1F0B0A12F61000100A0A001 /* FTSessionReplay.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0B0A02F61000100A0A001 /* FTSessionReplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A1F0B0B12F61000100A0A001 /* GuanceSessionReplay.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0B0B02F61000100A0A001 /* GuanceSessionReplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A1F0B1002FA9000100A0A001 /* FTUIHostingViewRecorder.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0B1022FA9000100A0A001 /* FTUIHostingViewRecorder.h */; };
 		A1F0B1012FA9000100A0A001 /* FTUIHostingViewRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = A1F0B1032FA9000100A0A001 /* FTUIHostingViewRecorder.m */; };
 		A1F0B1052FA9000100A0A001 /* FTSwiftUIReflection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F0B1042FA9000100A0A001 /* FTSwiftUIReflection.swift */; };
@@ -1804,6 +1805,7 @@
 		98B0592948E762F22C2AAC36 /* FTFilterParser.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = FTFilterParser.h; sourceTree = "<group>"; };
 		A1F0B0012F61000100A0A001 /* GuanceSessionReplay.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GuanceSessionReplay.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1F0B0A02F61000100A0A001 /* FTSessionReplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTSessionReplay.h; sourceTree = "<group>"; };
+		A1F0B0B02F61000100A0A001 /* GuanceSessionReplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GuanceSessionReplay.h; sourceTree = "<group>"; };
 		A1F0B1022FA9000100A0A001 /* FTUIHostingViewRecorder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTUIHostingViewRecorder.h; sourceTree = "<group>"; };
 		A1F0B1032FA9000100A0A001 /* FTUIHostingViewRecorder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTUIHostingViewRecorder.m; sourceTree = "<group>"; };
 		A1F0B1042FA9000100A0A001 /* FTSwiftUIReflection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FTSwiftUIReflection.swift; sourceTree = "<group>"; };
@@ -1915,6 +1917,7 @@
 		17018C712F50253200688324 /* Public */ = {
 			isa = PBXGroup;
 			children = (
+				A1F0B0B02F61000100A0A001 /* GuanceSessionReplay.h */,
 				A1F0B0A02F61000100A0A001 /* FTSessionReplay.h */,
 				17018C6D2F50253200688324 /* FTRumSessionReplay.h */,
 				17018C6E2F50253200688324 /* FTSessionReplayConfig.h */,
@@ -3633,6 +3636,7 @@
 				17018D912F50253200688324 /* FTSRNodeWireframesBuilder.h in Headers */,
 				17018D922F50253200688324 /* FTUILabelRecorder.h in Headers */,
 				17018D932F50253200688324 /* FTUnsupportedViewRecorder.h in Headers */,
+				A1F0B0B12F61000100A0A001 /* GuanceSessionReplay.h in Headers */,
 				A1F0B0A12F61000100A0A001 /* FTSessionReplay.h in Headers */,
 				17018D942F50253200688324 /* FTSessionReplayFeature.h in Headers */,
 				17018D952F50253200688324 /* FTResourcesWriter.h in Headers */,
