@@ -1,4 +1,4 @@
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 #import <TargetConditionals.h>
 
-#if defined(GUANCE_COCOAPODS) && (TARGET_OS_IOS || TARGET_OS_TV)
+#if defined(FT_COCOAPODS) && (TARGET_OS_IOS || TARGET_OS_TV)
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>

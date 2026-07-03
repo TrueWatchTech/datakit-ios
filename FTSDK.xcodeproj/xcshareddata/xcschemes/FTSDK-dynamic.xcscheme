@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4A884259239E5754001B44C3"
-               BuildableName = "GuanceSDK.framework"
+               BuildableName = "TrueWatchSDK.framework"
                BlueprintName = "FTSDK"
                ReferencedContainer = "container:FTSDK.xcodeproj">
             </BuildableReference>
@@ -51,7 +51,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4A884259239E5754001B44C3"
-            BuildableName = "GuanceSDK.framework"
+            BuildableName = "TrueWatchSDK.framework"
             BlueprintName = "FTSDK"
             ReferencedContainer = "container:FTSDK.xcodeproj">
          </BuildableReference>

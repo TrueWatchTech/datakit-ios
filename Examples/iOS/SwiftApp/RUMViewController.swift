@@ -3,7 +3,7 @@
 //  SwiftApp
 //
 //  Created by hulilei on 2023/2/27.
-//  Copyright 2023 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2023 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 //
 
 import UIKit
-import GuanceSDK
+import TrueWatchSDK
 struct RUMResource {
     var key:String
     var data:Data?

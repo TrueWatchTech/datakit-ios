@@ -826,7 +826,7 @@
 		17E4CC3D29CD42E4005C2D99 /* FTExternalDataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E4CBD029CD42E4005C2D99 /* FTExternalDataManager.m */; };
 		17E4CC4E29CD42EB005C2D99 /* FTExtensionManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E4CC4829CD42EB005C2D99 /* FTExtensionManager.m */; };
 		17E4CC4F29CD42EB005C2D99 /* FTExtensionConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E4CC4929CD42EB005C2D99 /* FTExtensionConfig.m */; };
-		17E4CC5029CD42EB005C2D99 /* GuanceWidgetExtension.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E4CC4A29CD42EB005C2D99 /* GuanceWidgetExtension.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		17E4CC5029CD42EB005C2D99 /* TrueWatchWidgetExtension.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E4CC4A29CD42EB005C2D99 /* TrueWatchWidgetExtension.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E4CC5129CD42EB005C2D99 /* FTExtensionConfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E4CC4B29CD42EB005C2D99 /* FTExtensionConfig.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E4CC5229CD42EB005C2D99 /* FTExtensionManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E4CC4C29CD42EB005C2D99 /* FTExtensionManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E5ED8E2DD2095000E5A971 /* FTDataModifier.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E5ED8C2DD2095000E5A971 /* FTDataModifier.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -839,7 +839,7 @@
 		17F59C672DF2EACB003FCB84 /* FTLoggerConfig+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 17F59C652DF2EACB003FCB84 /* FTLoggerConfig+Private.h */; };
 		17F5A0032FCB000100D17137 /* FTSerialTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5A0022FCB000100D17137 /* FTSerialTimer.m */; };
 		17F5A0052FCB000100D17137 /* FTSerialTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5A0022FCB000100D17137 /* FTSerialTimer.m */; };
-		17F6A0102FE0000100A0A001 /* GuanceSDK.h in Headers */ = {isa = PBXBuildFile; fileRef = 17F6A00F2FE0000100A0A001 /* GuanceSDK.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		17F6A0102FE0000100A0A001 /* TrueWatchSDK.h in Headers */ = {isa = PBXBuildFile; fileRef = 17F6A00F2FE0000100A0A001 /* TrueWatchSDK.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17F6A0302FE0000100A0A001 /* FTAutoTrack.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F6A0222FE0000100A0A001 /* FTAutoTrack.m */; };
 		17F6A0312FE0000100A0A001 /* NSApplication+FTAutotrack.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F6A0252FE0000100A0A001 /* NSApplication+FTAutotrack.m */; };
 		17F6A0322FE0000100A0A001 /* NSWindow+FTAutoTrack.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F6A0272FE0000100A0A001 /* NSWindow+FTAutoTrack.m */; };
@@ -853,9 +853,9 @@
 		7B004179A5CB5FA66C1858B2 /* FTSwiftUIViewNameExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC7A3EB51D767D3CD90D051 /* FTSwiftUIViewNameExtractor.swift */; };
 		7B00417AA5CB5FA66C1858B2 /* FTSwiftUIRUMBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B00417BA5CB5FA66C1858B2 /* FTSwiftUIRUMBridge.swift */; };
 		A1F0B00A2F61000100A0A001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 171C21BE2B9183D500C67AD6 /* PrivacyInfo.xcprivacy */; };
-		A1F0B00B2F61000100A0A001 /* GuanceSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A88425A239E5754001B44C3 /* GuanceSDK.framework */; };
+		A1F0B00B2F61000100A0A001 /* TrueWatchSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A88425A239E5754001B44C3 /* TrueWatchSDK.framework */; };
 		A1F0B0A12F61000100A0A001 /* FTSessionReplay.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0B0A02F61000100A0A001 /* FTSessionReplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		A1F0B0B12F61000100A0A001 /* GuanceSessionReplay.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0B0B02F61000100A0A001 /* GuanceSessionReplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A1F0B0B12F61000100A0A001 /* TrueWatchSessionReplay.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0B0B02F61000100A0A001 /* TrueWatchSessionReplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A1F0B1002FA9000100A0A001 /* FTUIHostingViewRecorder.h in Headers */ = {isa = PBXBuildFile; fileRef = A1F0B1022FA9000100A0A001 /* FTUIHostingViewRecorder.h */; };
 		A1F0B1012FA9000100A0A001 /* FTUIHostingViewRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = A1F0B1032FA9000100A0A001 /* FTUIHostingViewRecorder.m */; };
 		A1F0B1052FA9000100A0A001 /* FTSwiftUIReflection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F0B1042FA9000100A0A001 /* FTSwiftUIReflection.swift */; };
@@ -1257,11 +1257,11 @@
 		1776BD3F2E179F5C00612A7F /* FTCrashDebug.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FTCrashDebug.c; sourceTree = "<group>"; };
 		1776BD482E179FA300612A7F /* FTCrashLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTCrashLogger.h; sourceTree = "<group>"; };
 		1776BD492E179FA300612A7F /* FTCrashLogger.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FTCrashLogger.c; sourceTree = "<group>"; };
-		1777C3DA2A36EA9400C0AA45 /* GuanceSDK.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = GuanceSDK.podspec; sourceTree = SOURCE_ROOT; };
+		1777C3DA2A36EA9400C0AA45 /* TrueWatchSDK.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = TrueWatchSDK.podspec; sourceTree = SOURCE_ROOT; };
 		1777C3DC2A36EAAE00C0AA45 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = SOURCE_ROOT; };
 		1777C3DE2A36EAB600C0AA45 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		1777C3E02A36EAD000C0AA45 /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = SOURCE_ROOT; };
-		177AEB5D2A3819C90045D2BA /* GuanceSDKCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GuanceSDKCore.h; path = include/GuanceSDKCore.h; sourceTree = "<group>"; };
+		177AEB5D2A3819C90045D2BA /* TrueWatchSDKCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TrueWatchSDKCore.h; path = include/TrueWatchSDKCore.h; sourceTree = "<group>"; };
 		178649302A1DB58400521187 /* FTLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTLogger.h; sourceTree = "<group>"; };
 		178649312A1DB58400521187 /* FTLogger.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTLogger.m; sourceTree = "<group>"; };
 		178CDAC32F0F7A7200EE98D0 /* FTCrash.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTCrash.m; sourceTree = "<group>"; };
@@ -1445,7 +1445,7 @@
 		17E4CBD129CD42E4005C2D99 /* FTExternalDataManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FTExternalDataManager.h; sourceTree = "<group>"; };
 		17E4CC4829CD42EB005C2D99 /* FTExtensionManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FTExtensionManager.m; sourceTree = "<group>"; };
 		17E4CC4929CD42EB005C2D99 /* FTExtensionConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FTExtensionConfig.m; sourceTree = "<group>"; };
-		17E4CC4A29CD42EB005C2D99 /* GuanceWidgetExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GuanceWidgetExtension.h; sourceTree = "<group>"; };
+		17E4CC4A29CD42EB005C2D99 /* TrueWatchWidgetExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TrueWatchWidgetExtension.h; sourceTree = "<group>"; };
 		17E4CC4B29CD42EB005C2D99 /* FTExtensionConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FTExtensionConfig.h; sourceTree = "<group>"; };
 		17E4CC4C29CD42EB005C2D99 /* FTExtensionManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FTExtensionManager.h; sourceTree = "<group>"; };
 		17E5ED8C2DD2095000E5A971 /* FTDataModifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTDataModifier.h; sourceTree = "<group>"; };
@@ -1454,7 +1454,7 @@
 		17F59C652DF2EACB003FCB84 /* FTLoggerConfig+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FTLoggerConfig+Private.h"; sourceTree = "<group>"; };
 		17F5A0012FCB000100D17137 /* FTSerialTimer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTSerialTimer.h; sourceTree = "<group>"; };
 		17F5A0022FCB000100D17137 /* FTSerialTimer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FTSerialTimer.m; sourceTree = "<group>"; };
-		17F6A00F2FE0000100A0A001 /* GuanceSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GuanceSDK.h; path = Sources/GuanceSDK.h; sourceTree = "<group>"; };
+		17F6A00F2FE0000100A0A001 /* TrueWatchSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TrueWatchSDK.h; path = Sources/TrueWatchSDK.h; sourceTree = "<group>"; };
 		17F6A0212FE0000100A0A001 /* FTAutoTrack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTAutoTrack.h; sourceTree = "<group>"; };
 		17F6A0222FE0000100A0A001 /* FTAutoTrack.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTAutoTrack.m; sourceTree = "<group>"; };
 		17F6A0232FE0000100A0A001 /* FTAutoTrackProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTAutoTrackProtocol.h; sourceTree = "<group>"; };
@@ -1474,16 +1474,16 @@
 		17FFE8432D5E1F9200039827 /* FTAutoTrackHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTAutoTrackHandler.m; sourceTree = "<group>"; };
 		2EFAC0E0A501565008FBFBF9 /* FTFilterParser.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = FTFilterParser.m; sourceTree = "<group>"; };
 		47F6EC0BF533F374653792EA /* FTDataFilterManager.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = FTDataFilterManager.h; sourceTree = "<group>"; };
-		4A6C541E255E6464009771B8 /* GuanceWidgetExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GuanceWidgetExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		4A88425A239E5754001B44C3 /* GuanceSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GuanceSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A6C541E255E6464009771B8 /* TrueWatchWidgetExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TrueWatchWidgetExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A88425A239E5754001B44C3 /* TrueWatchSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TrueWatchSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5002DCB49C4918ECDA43D078 /* FTDataFilterPullRequest.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = FTDataFilterPullRequest.m; sourceTree = "<group>"; };
 		7B004177A5CB5FA66C1858B2 /* FTSwiftUIRUMViewModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FTSwiftUIRUMViewModifier.swift; sourceTree = "<group>"; };
 		7B00417BA5CB5FA66C1858B2 /* FTSwiftUIRUMBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FTSwiftUIRUMBridge.swift; sourceTree = "<group>"; };
 		987CA8291956A4AD8FE10C01 /* FTDataFilterManager.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = FTDataFilterManager.m; sourceTree = "<group>"; };
 		98B0592948E762F22C2AAC36 /* FTFilterParser.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = FTFilterParser.h; sourceTree = "<group>"; };
-		A1F0B0012F61000100A0A001 /* GuanceSessionReplay.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GuanceSessionReplay.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1F0B0012F61000100A0A001 /* TrueWatchSessionReplay.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TrueWatchSessionReplay.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1F0B0A02F61000100A0A001 /* FTSessionReplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTSessionReplay.h; sourceTree = "<group>"; };
-		A1F0B0B02F61000100A0A001 /* GuanceSessionReplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GuanceSessionReplay.h; sourceTree = "<group>"; };
+		A1F0B0B02F61000100A0A001 /* TrueWatchSessionReplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TrueWatchSessionReplay.h; sourceTree = "<group>"; };
 		A1F0B1022FA9000100A0A001 /* FTUIHostingViewRecorder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FTUIHostingViewRecorder.h; sourceTree = "<group>"; };
 		A1F0B1032FA9000100A0A001 /* FTUIHostingViewRecorder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTUIHostingViewRecorder.m; sourceTree = "<group>"; };
 		A1F0B1042FA9000100A0A001 /* FTSwiftUIReflection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FTSwiftUIReflection.swift; sourceTree = "<group>"; };
@@ -1552,7 +1552,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1F0B00B2F61000100A0A001 /* GuanceSDK.framework in Frameworks */,
+				A1F0B00B2F61000100A0A001 /* TrueWatchSDK.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1593,7 +1593,7 @@
 		17018C712F50253200688324 /* Public */ = {
 			isa = PBXGroup;
 			children = (
-				A1F0B0B02F61000100A0A001 /* GuanceSessionReplay.h */,
+				A1F0B0B02F61000100A0A001 /* TrueWatchSessionReplay.h */,
 				A1F0B0A02F61000100A0A001 /* FTSessionReplay.h */,
 				17018C6D2F50253200688324 /* FTRumSessionReplay.h */,
 				17018C6E2F50253200688324 /* FTSessionReplayConfig.h */,
@@ -2200,14 +2200,14 @@
 		1777C3E42A36ED2800C0AA45 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				17F6A00F2FE0000100A0A001 /* GuanceSDK.h */,
+				17F6A00F2FE0000100A0A001 /* TrueWatchSDK.h */,
 				A1F0C1002F62000100A0A001 /* FTSDK.h */,
 				17563F9B2AAAC4D00077C067 /* FTMobileSDK.h */,
 				1777C3E02A36EAD000C0AA45 /* Package.swift */,
 				A1F0C2012F63000100A0A001 /* Base.xcconfig */,
 				1777C3DE2A36EAB600C0AA45 /* README.md */,
 				1777C3DC2A36EAAE00C0AA45 /* LICENSE */,
-				1777C3DA2A36EA9400C0AA45 /* GuanceSDK.podspec */,
+				1777C3DA2A36EA9400C0AA45 /* TrueWatchSDK.podspec */,
 				175B22BC2BB4366500621460 /* CHANGELOG.md */,
 				172C1DD42BC7EB6400412DB6 /* Info.plist */,
 			);
@@ -2380,7 +2380,7 @@
 		17E4CB5E29CD42DF005C2D99 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				177AEB5D2A3819C90045D2BA /* GuanceSDKCore.h */,
+				177AEB5D2A3819C90045D2BA /* TrueWatchSDKCore.h */,
 				172113B52DF19005006189C2 /* RemoteConfig */,
 				17678E3629D28C4D00C1DA98 /* Logger */,
 				1763BD6B29DFF04F009EE026 /* DataManager */,
@@ -2545,7 +2545,7 @@
 				17E4CC4829CD42EB005C2D99 /* FTExtensionManager.m */,
 				17E4CC4B29CD42EB005C2D99 /* FTExtensionConfig.h */,
 				17E4CC4929CD42EB005C2D99 /* FTExtensionConfig.m */,
-				17E4CC4A29CD42EB005C2D99 /* GuanceWidgetExtension.h */,
+				17E4CC4A29CD42EB005C2D99 /* TrueWatchWidgetExtension.h */,
 			);
 			name = WidgetExtension;
 			path = Sources/WidgetExtension;
@@ -2597,9 +2597,9 @@
 		4A88425B239E5754001B44C3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4A88425A239E5754001B44C3 /* GuanceSDK.framework */,
-				4A6C541E255E6464009771B8 /* GuanceWidgetExtension.framework */,
-				A1F0B0012F61000100A0A001 /* GuanceSessionReplay.framework */,
+				4A88425A239E5754001B44C3 /* TrueWatchSDK.framework */,
+				4A6C541E255E6464009771B8 /* TrueWatchWidgetExtension.framework */,
+				A1F0B0012F61000100A0A001 /* TrueWatchSessionReplay.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2737,7 +2737,7 @@
 				174BC87C2BFC9F8A00478EE1 /* NSDictionary+FTCopyProperties.h in Headers */,
 				1776069C29D1375800D17137 /* NSString+FTAdd.h in Headers */,
 				177606B829D137E900D17137 /* FTExternalResourceProtocol.h in Headers */,
-				17E4CC5029CD42EB005C2D99 /* GuanceWidgetExtension.h in Headers */,
+				17E4CC5029CD42EB005C2D99 /* TrueWatchWidgetExtension.h in Headers */,
 				1776BD372E179EC100612A7F /* FTCrashMonitor.h in Headers */,
 				17E4CC5229CD42EB005C2D99 /* FTExtensionManager.h in Headers */,
 				1776067629D1370000D17137 /* FTConstants.h in Headers */,
@@ -2879,7 +2879,7 @@
 				17A421DB2EDDB0F100416673 /* FTCrashMonitor_MachException.h in Headers */,
 				1763BD9429DFF04F009EE026 /* FTRequest.h in Headers */,
 				17AB76DB29D432DE008FBBF5 /* FTMonitorUtils.h in Headers */,
-				17F6A0102FE0000100A0A001 /* GuanceSDK.h in Headers */,
+				17F6A0102FE0000100A0A001 /* TrueWatchSDK.h in Headers */,
 				A1F0C1012F62000100A0A001 /* FTSDK.h in Headers */,
 				17563F9C2AAAC4D00077C067 /* FTMobileSDK.h in Headers */,
 				17A421BC2EDDAC6300416673 /* FTCrashExceptionHandlingPlan.h in Headers */,
@@ -3123,7 +3123,7 @@
 				17018D912F50253200688324 /* FTSRNodeWireframesBuilder.h in Headers */,
 				17018D922F50253200688324 /* FTUILabelRecorder.h in Headers */,
 				17018D932F50253200688324 /* FTUnsupportedViewRecorder.h in Headers */,
-				A1F0B0B12F61000100A0A001 /* GuanceSessionReplay.h in Headers */,
+				A1F0B0B12F61000100A0A001 /* TrueWatchSessionReplay.h in Headers */,
 				A1F0B0A12F61000100A0A001 /* FTSessionReplay.h in Headers */,
 				17018D942F50253200688324 /* FTSessionReplayFeature.h in Headers */,
 				17018D952F50253200688324 /* FTResourcesWriter.h in Headers */,
@@ -3183,7 +3183,7 @@
 			);
 			name = FTWidgetExtension;
 			productName = FTWidgetExtension;
-			productReference = 4A6C541E255E6464009771B8 /* GuanceWidgetExtension.framework */;
+			productReference = 4A6C541E255E6464009771B8 /* TrueWatchWidgetExtension.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		4A884259239E5754001B44C3 /* FTSDK */ = {
@@ -3201,7 +3201,7 @@
 			);
 			name = FTSDK;
 			productName = FTSDK;
-			productReference = 4A88425A239E5754001B44C3 /* GuanceSDK.framework */;
+			productReference = 4A88425A239E5754001B44C3 /* TrueWatchSDK.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		A1F0B0062F61000100A0A001 /* FTSessionReplay */ = {
@@ -3219,7 +3219,7 @@
 			);
 			name = FTSessionReplay;
 			productName = FTSessionReplay;
-			productReference = A1F0B0012F61000100A0A001 /* GuanceSessionReplay.framework */;
+			productReference = A1F0B0012F61000100A0A001 /* TrueWatchSessionReplay.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -3738,7 +3738,7 @@
 				GCC_INPUT_FILETYPE = automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Guance. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 TrueWatch. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3775,7 +3775,7 @@
 				GCC_INPUT_FILETYPE = automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Guance. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 TrueWatch. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3934,7 +3934,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = Sources/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Guance. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 TrueWatch. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3984,7 +3984,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = Sources/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Guance. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 TrueWatch. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4028,7 +4028,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)";
 				INFOPLIST_FILE = Sources/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Guance. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 TrueWatch. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4066,7 +4066,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)";
 				INFOPLIST_FILE = Sources/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Guance. All rights reserved.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 TrueWatch. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (

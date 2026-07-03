@@ -18,7 +18,7 @@ SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
 
 cd "$SCRIPT_DIR"
 
-PODSPEC="GuanceSDK.podspec"
+PODSPEC="TrueWatchSDK.podspec"
 VERSION_HEADER="Sources/Agent/Core/FTSDKVersion.h"
 INFO_PLIST="Sources/Info.plist"
 

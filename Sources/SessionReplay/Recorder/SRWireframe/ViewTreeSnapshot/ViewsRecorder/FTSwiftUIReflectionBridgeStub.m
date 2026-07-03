@@ -3,13 +3,13 @@
  * This file contains software derived from software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2019-Present Datadog, Inc.
  *
- * Modifications Copyright 2021 Shanghai Guance Information Technology Co., Ltd.
+ * Modifications Copyright 2021 TRUEWATCH TECHNOLOGY INC PTE. LTD.
  * This file has been translated/adapted to Objective-C with project-specific changes.
  */
 
 #import <TargetConditionals.h>
 
-#if TARGET_OS_IOS && defined(GUANCE_COCOAPODS)
+#if TARGET_OS_IOS && defined(FT_COCOAPODS)
 
 #import "FTSwiftUIReflectionBridge.h"
 

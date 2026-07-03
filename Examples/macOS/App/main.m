@@ -3,7 +3,7 @@
 //  Example
 //
 //  Created by hulilei on 2021/8/31.
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "GuanceSDKExampleImports.h"
+#import "TrueWatchSDKExampleImports.h"
 // Configure preprocessor definitions in Target -> Build Settings -> GCC_PREPROCESSOR_DEFINITIONS
 #if PRE
 #define Track_id       @"0000000001"

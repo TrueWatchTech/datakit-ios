@@ -4,7 +4,7 @@
 //
 //  Created by hulilei on 2026/4/8.
 //
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 #pragma once
 
 #if defined(SWIFT_PACKAGE)
-@import _GuanceSDKCore;
+@import _TrueWatchSDKCore;
 #else
 #import "Sources/Core/BaseUtils/Base/FTBaseInfoHandler.h"
 #import "Sources/Core/BaseUtils/Base/FTConstants.h"

@@ -3,7 +3,7 @@
 //  FTMobileSDKUnitTests
 //
 //  Created by hulilei on 2022/11/10.
-//  Copyright 2022 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2022 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #import <KIF/KIF.h>
 #import "FTMobileAgent.h"
 #import "FTMobileAgent+Private.h"
-#import "GuanceWidgetExtension.h"
+#import "TrueWatchWidgetExtension.h"
 #import "FTExtensionDataManager.h"
 #import "FTMobileConfig+Private.h"
 #import "FTLoggerConfig+Private.h"

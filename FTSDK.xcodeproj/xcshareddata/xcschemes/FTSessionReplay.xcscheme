@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A1F0B0062F61000100A0A001"
-               BuildableName = "GuanceSessionReplay.framework"
+               BuildableName = "TrueWatchSessionReplay.framework"
                BlueprintName = "FTSessionReplay"
                ReferencedContainer = "container:FTSDK.xcodeproj">
             </BuildableReference>
@@ -50,7 +50,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A1F0B0062F61000100A0A001"
-            BuildableName = "GuanceSessionReplay.framework"
+            BuildableName = "TrueWatchSessionReplay.framework"
             BlueprintName = "FTSessionReplay"
             ReferencedContainer = "container:FTSDK.xcodeproj">
          </BuildableReference>

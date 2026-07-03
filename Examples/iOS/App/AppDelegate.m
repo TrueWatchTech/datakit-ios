@@ -3,7 +3,7 @@
 //  FTMobileAgent
 //
 //  Created by hulilei on 2019/11/29.
-//  Copyright 2021 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2021 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
 //
 
 #import "AppDelegate.h"
-#import <GuanceSDK/GuanceSDK.h>
-#import <GuanceSessionReplay/GuanceSessionReplay.h>
+#import <TrueWatchSDK/TrueWatchSDK.h>
+#import <TrueWatchSessionReplay/TrueWatchSessionReplay.h>
 #import "DemoViewController.h"
 #import "RootTabbarVC.h"
 //Target -> Build Settings -> GCC_PREPROCESSOR_DEFINITIONS for configuration preset definitions

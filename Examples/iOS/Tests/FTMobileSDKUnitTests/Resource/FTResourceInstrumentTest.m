@@ -3,7 +3,7 @@
 //  FTMobileSDKUnitTests
 //
 //  Created by hulilei on 2024/5/20.
-//  Copyright 2024 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2024 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 //
 
 #import <XCTest/XCTest.h>
-#import "GuanceSDK.h"
+#import "TrueWatchSDK.h"
 #import "FTTrackerEventDBTool.h"
 #import "NSDate+FTUtil.h"
 #import "TestSessionDelegate.h"

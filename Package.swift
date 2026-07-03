@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "GuanceSDK",
+    name: "TrueWatchSDK",
     platforms: [
         .iOS(.v12),
         .macOS(.v10_14),
@@ -12,44 +12,44 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "GuanceSDK",
+            name: "TrueWatchSDK",
             targets: [
-                "GuanceSDK",
-                "GuanceSDKSwiftUI",
+                "TrueWatchSDK",
+                "TrueWatchSDKSwiftUI",
             ]
         ),
         .library(
-            name: "GuanceWidgetExtension",
-            targets: ["GuanceWidgetExtension"]
+            name: "TrueWatchWidgetExtension",
+            targets: ["TrueWatchWidgetExtension"]
         ),
         .library(
-            name: "GuanceSessionReplay",
+            name: "TrueWatchSessionReplay",
             targets: [
-                "GuanceSessionReplay",
-                "GuanceSessionReplaySwiftUI",
+                "TrueWatchSessionReplay",
+                "TrueWatchSessionReplaySwiftUI",
             ]
         ),
     ],
     dependencies: [],
     targets: [
-        // MARK: - GuanceSDK
+        // MARK: - TrueWatchSDK
         .target(
-            name: "GuanceSDK",
+            name: "TrueWatchSDK",
             dependencies: [
-                "_GuanceSDKObjC",
-                "GuanceSDKSwiftUI",
+                "_TrueWatchSDKObjC",
+                "TrueWatchSDKSwiftUI",
             ],
             path: "Sources/SwiftPM",
-            sources: ["GuanceSDK.swift"]
+            sources: ["TrueWatchSDK.swift"]
         ),
         .target(
-            name: "_GuanceSDKObjC",
+            name: "_TrueWatchSDKObjC",
             dependencies: [
-                "_GuanceSDKCore",
+                "_TrueWatchSDKCore",
                 "_AgentExtension",
                 "_AgentExternalData",
                 "_AgentConfig",
-                "GuanceSDKSwiftUI",
+                "TrueWatchSDKSwiftUI",
             ],
             path: "Sources",
             sources: [
@@ -64,7 +64,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "GuanceSDKSwiftUI",
+            name: "TrueWatchSDKSwiftUI",
             path: "Sources/Agent/SwiftUI"
         ),
         .target(
@@ -147,7 +147,7 @@ let package = Package(
             path: "Sources/Core/BaseUtils/Thread"
         ),
 
-        // MARK: - GuanceWidgetExtension
+        // MARK: - TrueWatchWidgetExtension
         .target(
             name: "_AgentExtension",
             dependencies: ["_FTBaseUtils_Base"],
@@ -155,7 +155,7 @@ let package = Package(
             publicHeadersPath: "."
         ),
         .target(
-            name: "GuanceWidgetExtension",
+            name: "TrueWatchWidgetExtension",
             dependencies: [
                 "_AgentExtension",
                 "_FTRUM",
@@ -171,9 +171,9 @@ let package = Package(
             publicHeadersPath: "."
         ),
 
-        // MARK: - GuanceSDKCore
+        // MARK: - TrueWatchSDKCore
         .target(
-            name: "_GuanceSDKCore",
+            name: "_TrueWatchSDKCore",
             dependencies: [
                 "_FTRUM",
                 "_FTURLSessionAutoInstrumentation",
@@ -199,10 +199,10 @@ let package = Package(
             ]
         ),
 
-        // MARK: - GuanceSessionReplay
+        // MARK: - TrueWatchSessionReplay
         .target(
-            name: "GuanceSessionReplay",
-            dependencies: ["_GuanceSDKCore"],
+            name: "TrueWatchSessionReplay",
+            dependencies: ["_TrueWatchSDKCore"],
             path: "Sources/SessionReplay",
             exclude: [
                 "Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder/SwiftUI",
@@ -230,7 +230,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "GuanceSessionReplaySwiftUI",
+            name: "TrueWatchSessionReplaySwiftUI",
             path: "Sources/SessionReplay/Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder/SwiftUI"
         ),
     ]

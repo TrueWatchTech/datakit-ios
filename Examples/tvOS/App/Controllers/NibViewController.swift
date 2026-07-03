@@ -1,4 +1,4 @@
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 import Foundation
 import UIKit
-import GuanceSDK
+import TrueWatchSDK
 class NibViewController: UIViewController {
     
     @IBOutlet var button: UIButton!

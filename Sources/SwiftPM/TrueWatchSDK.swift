@@ -1,4 +1,4 @@
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,17 +13,5 @@
 //  limitations under the License.
 //
 
-#ifndef GuanceSessionReplay_h
-#define GuanceSessionReplay_h
-
-#import <Foundation/Foundation.h>
-
-//! Project version number for GuanceSessionReplay.
-FOUNDATION_EXPORT double GuanceSessionReplayVersionNumber;
-
-//! Project version string for GuanceSessionReplay.
-FOUNDATION_EXPORT const unsigned char GuanceSessionReplayVersionString[];
-
-#import "FTSessionReplay.h"
-
-#endif /* GuanceSessionReplay_h */
+@_exported import _TrueWatchSDKObjC
+@_exported import TrueWatchSDKSwiftUI

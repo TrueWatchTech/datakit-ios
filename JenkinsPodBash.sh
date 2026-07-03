@@ -32,7 +32,7 @@ if [[ "$DRY_RUN" == "1" ]]; then
   echo "Would set remote github to $REPO_URL"
   echo "Would run: git push github $VERSION"
   echo "Would run: sh UpdateSDKVersion.sh $VERSION"
-  echo "Would run: pod trunk push GuanceSDK.podspec --verbose --allow-warnings"
+  echo "Would run: pod trunk push TrueWatchSDK.podspec --verbose --allow-warnings"
   exit 0
 fi
 
@@ -46,7 +46,7 @@ if git push github "$VERSION"; then
 
   sh UpdateSDKVersion.sh "$VERSION"
 
-  pod trunk push GuanceSDK.podspec --verbose --allow-warnings
+  pod trunk push TrueWatchSDK.podspec --verbose --allow-warnings
 
 else
   exit  1

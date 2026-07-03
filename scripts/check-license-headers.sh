@@ -23,7 +23,7 @@ Usage:
   bash scripts/check-license-headers.sh
 
 Checks self-owned .h, .m, .mm, and .swift files under Sources/ and Examples/
-for the Guance copyright header and Apache License 2.0 boilerplate.
+for the TrueWatch copyright header and Apache License 2.0 boilerplate.
 EOF
 }
 
@@ -78,15 +78,15 @@ list_files() {
 }
 
 has_complete_header() {
-  perl -0ne 'exit(m{^//  Copyright [0-9]{4} Shanghai Guance Information Technology Co\., Ltd\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
+  perl -0ne 'exit(m{^//  Copyright [0-9]{4} Shanghai TrueWatch Information Technology Co\., Ltd\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
 }
 
-has_guance_copyright() {
-  grep -Eq '^//  Copyright [0-9]{4} Shanghai Guance Information Technology Co\., Ltd\.$' "$1"
+has_truewatch_copyright() {
+  grep -Eq '^//  Copyright [0-9]{4} Shanghai TrueWatch Information Technology Co\., Ltd\.$' "$1"
 }
 
 has_legacy_header_text() {
-  sed -n '1,40p' "$1" | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (DataFlux-cn|GuanceCloud|hll)|All rights reserved\.'
+  sed -n '1,40p' "$1" | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (DataFlux-cn|TrueWatchCloud|hll)|All rights reserved\.'
 }
 
 check_file() {
@@ -99,8 +99,8 @@ check_file() {
     failed=1
   fi
 
-  if ! has_guance_copyright "${abs_path}"; then
-    error "${rel_path}: missing Guance copyright header"
+  if ! has_truewatch_copyright "${abs_path}"; then
+    error "${rel_path}: missing TrueWatch copyright header"
     failed=1
   fi
 

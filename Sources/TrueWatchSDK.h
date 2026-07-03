@@ -1,4 +1,4 @@
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,18 +13,18 @@
 //  limitations under the License.
 //
 
-#ifndef GuanceSDK_h
-#define GuanceSDK_h
+#ifndef TrueWatchSDK_h
+#define TrueWatchSDK_h
 
 #import <Foundation/Foundation.h>
 
-//! Project version number for GuanceSDK.
-FOUNDATION_EXPORT double GuanceSDKVersionNumber;
+//! Project version number for TrueWatchSDK.
+FOUNDATION_EXPORT double TrueWatchSDKVersionNumber;
 
-//! Project version string for GuanceSDK.
-FOUNDATION_EXPORT const unsigned char GuanceSDKVersionString[];
+//! Project version string for TrueWatchSDK.
+FOUNDATION_EXPORT const unsigned char TrueWatchSDKVersionString[];
 
 #import "FTSDK.h"
 #import "FTMobileSDK.h"
 
-#endif /* GuanceSDK_h */
+#endif /* TrueWatchSDK_h */

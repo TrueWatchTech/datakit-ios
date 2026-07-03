@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Usage Examples (Command → Output XCFramework Name):
-#   bash BuildFramework.sh GuanceSDK                                  → GuanceSDK.xcframework
-#   bash BuildFramework.sh GuanceSDK --dynamic                        → GuanceSDK-Dynamic.xcframework
-#   bash BuildFramework.sh GuanceSDK --disable-swizzling-resource     → GuanceSDK-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh GuanceSDK --dynamic --disable-swizzling-resource → GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh GuanceWidgetExtension                      → GuanceWidgetExtension.xcframework
-#   bash BuildFramework.sh GuanceSessionReplay                        → GuanceSessionReplay.xcframework
-#   bash BuildFramework.sh GuanceSessionReplay --dynamic              → GuanceSessionReplay-Dynamic.xcframework
+#   bash BuildFramework.sh TrueWatchSDK                                  → TrueWatchSDK.xcframework
+#   bash BuildFramework.sh TrueWatchSDK --dynamic                        → TrueWatchSDK-Dynamic.xcframework
+#   bash BuildFramework.sh TrueWatchSDK --disable-swizzling-resource     → TrueWatchSDK-DisableSwizzlingResource.xcframework
+#   bash BuildFramework.sh TrueWatchSDK --dynamic --disable-swizzling-resource → TrueWatchSDK-Dynamic-DisableSwizzlingResource.xcframework
+#   bash BuildFramework.sh TrueWatchWidgetExtension                      → TrueWatchWidgetExtension.xcframework
+#   bash BuildFramework.sh TrueWatchSessionReplay                        → TrueWatchSessionReplay.xcframework
+#   bash BuildFramework.sh TrueWatchSessionReplay --dynamic              → TrueWatchSessionReplay-Dynamic.xcframework
 
 # Parameter Notes:
 #   --dynamic: Build dynamic library (default: static library)
@@ -48,9 +48,9 @@ show_help() {
   local sdk_product_name
   local session_replay_product_name
   local widget_extension_product_name
-  sdk_product_name="$(read_xcconfig_value_or_default SDK_PRODUCT_NAME GuanceSDK)"
-  session_replay_product_name="$(read_xcconfig_value_or_default SESSION_REPLAY_PRODUCT_NAME GuanceSessionReplay)"
-  widget_extension_product_name="$(read_xcconfig_value_or_default WIDGET_EXTENSION_PRODUCT_NAME GuanceWidgetExtension)"
+  sdk_product_name="$(read_xcconfig_value_or_default SDK_PRODUCT_NAME TrueWatchSDK)"
+  session_replay_product_name="$(read_xcconfig_value_or_default SESSION_REPLAY_PRODUCT_NAME TrueWatchSessionReplay)"
+  widget_extension_product_name="$(read_xcconfig_value_or_default WIDGET_EXTENSION_PRODUCT_NAME TrueWatchWidgetExtension)"
 
   echo "Usage:"
   echo "  bash $0 <PRODUCT_NAME> [--dynamic] [--disable-swizzling-resource]"

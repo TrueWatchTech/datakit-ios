@@ -1,4 +1,4 @@
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,5 +13,12 @@
 //  limitations under the License.
 //
 
-@_exported import _GuanceSDKObjC
-@_exported import GuanceSDKSwiftUI
+#import "FTMobileAgent.h"
+#import "FTSDKConfig.h"
+#import "FTRumConfig.h"
+#import "FTLoggerConfig.h"
+#import "FTLogger.h"
+#import "FTTraceManager.h"
+#import "FTExternalDataManager.h"
+#import "FTResourceContentModel.h"
+#import "FTResourceMetricsModel.h"

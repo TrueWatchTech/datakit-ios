@@ -1,4 +1,4 @@
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,12 +13,17 @@
 //  limitations under the License.
 //
 
-#import "FTMobileAgent.h"
-#import "FTSDKConfig.h"
-#import "FTRumConfig.h"
-#import "FTLoggerConfig.h"
-#import "FTLogger.h"
-#import "FTTraceManager.h"
-#import "FTExternalDataManager.h"
-#import "FTResourceContentModel.h"
-#import "FTResourceMetricsModel.h"
+#ifndef TrueWatchSessionReplay_h
+#define TrueWatchSessionReplay_h
+
+#import <Foundation/Foundation.h>
+
+//! Project version number for TrueWatchSessionReplay.
+FOUNDATION_EXPORT double TrueWatchSessionReplayVersionNumber;
+
+//! Project version string for TrueWatchSessionReplay.
+FOUNDATION_EXPORT const unsigned char TrueWatchSessionReplayVersionString[];
+
+#import "FTSessionReplay.h"
+
+#endif /* TrueWatchSessionReplay_h */

@@ -3,7 +3,7 @@
 //  ft-sdk-iosTest
 //
 //  Created by hulilei on 2019/11/28.
-//  Copyright 2021 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2021 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 
 #import "DemoViewController.h"
 #import "UITestVC.h"
-#import <GuanceSDK/GuanceSDK.h>
+#import <TrueWatchSDK/TrueWatchSDK.h>
 //Test crash collection
 #import "TestLongTaskVC.h"
 #import "TestWKWebViewVC.h"

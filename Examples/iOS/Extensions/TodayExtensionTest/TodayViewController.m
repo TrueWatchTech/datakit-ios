@@ -3,7 +3,7 @@
 //  TodayExtensionTest
 //
 //  Created by hulilei on 2020/11/17.
-//  Copyright 2021 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2021 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@
 
 #import "TodayViewController.h"
 #import <NotificationCenter/NotificationCenter.h>
-#import "GuanceWidgetExtension.h"
-#import <GuanceWidgetExtension/FTMobileConfig.h>
-#import <GuanceWidgetExtension/FTExternalDataManager.h>
+#import "TrueWatchWidgetExtension.h"
+#import <TrueWatchWidgetExtension/FTMobileConfig.h>
+#import <TrueWatchWidgetExtension/FTExternalDataManager.h>
 @interface TodayViewController () <NCWidgetProviding>
 
 @end

@@ -3,7 +3,7 @@
 //  Example
 //
 //  Created by hulilei on 2023/4/3.
-//  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 //
 
 #import "LoggingViewController.h"
-#import "../GuanceSDKExampleImports.h"
+#import "../TrueWatchSDKExampleImports.h"
 @interface LoggingViewController ()<NSTableViewDataSource,NSTableViewDelegate>
 @property (strong) IBOutlet NSTableView *mTableView;
 @property (nonatomic, strong) NSArray *datas;

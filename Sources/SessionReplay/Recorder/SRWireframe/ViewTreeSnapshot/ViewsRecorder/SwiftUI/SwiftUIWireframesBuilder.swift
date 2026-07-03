@@ -9,7 +9,7 @@
  * This file contains software derived from software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2019-Present Datadog, Inc.
  *
- * Modifications Copyright 2021 Shanghai Guance Information Technology Co., Ltd.
+ * Modifications Copyright 2021 TRUEWATCH TECHNOLOGY INC PTE. LTD.
  * This file has been adapted in Swift with project-specific changes.
  */
 

@@ -4,7 +4,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build"
-PODSPEC="${SCRIPT_DIR}/GuanceSDK.podspec"
+PODSPEC="${SCRIPT_DIR}/TrueWatchSDK.podspec"
 FRAMEWORK_SCRIPT="${SCRIPT_DIR}/BuildSDKPackages.sh"
 SPM_VALIDATION_DIR="${BUILD_DIR}/SwiftPackageValidation"
 SPM_DERIVED_DATA="${BUILD_DIR}/SwiftPackageDerivedData"
@@ -14,19 +14,19 @@ SPM_DESTINATION="${SPM_DESTINATION:-}"
 SPM_PLATFORMS="${SPM_PLATFORMS:-ios,macos,tvos}"
 XCODEBUILD_OPTIONS="${XCODEBUILD_OPTIONS--quiet}"
 FRAMEWORK_ZIPS=(
-  "GuanceSDK.xcframework.zip"
-  "GuanceSessionReplay.xcframework.zip"
-  "GuanceWidgetExtension.xcframework.zip"
-  "GuanceWidgetExtension-DisableSwizzlingResource.xcframework.zip"
-  "GuanceSDK-DisableSwizzlingResource.xcframework.zip"
-  "GuanceSDK-Dynamic.xcframework.zip"
-  "GuanceSessionReplay-Dynamic.xcframework.zip"
-  "GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework.zip"
+  "TrueWatchSDK.xcframework.zip"
+  "TrueWatchSessionReplay.xcframework.zip"
+  "TrueWatchWidgetExtension.xcframework.zip"
+  "TrueWatchWidgetExtension-DisableSwizzlingResource.xcframework.zip"
+  "TrueWatchSDK-DisableSwizzlingResource.xcframework.zip"
+  "TrueWatchSDK-Dynamic.xcframework.zip"
+  "TrueWatchSessionReplay-Dynamic.xcframework.zip"
+  "TrueWatchSDK-Dynamic-DisableSwizzlingResource.xcframework.zip"
 )
 SPM_SCHEMES=(
-  "GuanceSDK"
-  "GuanceWidgetExtension"
-  "GuanceSessionReplay"
+  "TrueWatchSDK"
+  "TrueWatchWidgetExtension"
+  "TrueWatchSessionReplay"
 )
 SPM_SCHEME_PLATFORMS=(
   "ios,macos,tvos"
@@ -58,7 +58,7 @@ Usage:
   bash VerifyDistributionPackages.sh [options]
 
 Checks:
-  cocoapods   pod lib lint GuanceSDK.podspec
+  cocoapods   pod lib lint TrueWatchSDK.podspec
   framework   BuildSDKPackages.sh, then validates generated .xcframework.zip files
   spm         Swift Package manifest + xcodebuild builds for each product's supported platforms
 
@@ -66,7 +66,7 @@ Options:
   --only <list>            Comma-separated checks to run: cocoapods,framework,spm
   --skip <list>            Comma-separated checks to skip: cocoapods,framework,spm
   --fail-fast              Stop at the first failed check
-  --podspec <path>         Podspec path. Default: GuanceSDK.podspec
+  --podspec <path>         Podspec path. Default: TrueWatchSDK.podspec
   --spm-platforms <list>   Comma-separated platforms to validate: ios,macos,tvos
                            Default: ios,macos,tvos
   --spm-destination <dest> xcodebuild destination override. When set, SPM builds

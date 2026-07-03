@@ -11,17 +11,17 @@ DYNAMIC_DIR="${STAGING_DIR}/SDK-Dynamic"
 SDK_ZIP="${BUILD_DIR}/SDK.zip"
 
 STATIC_XCFRAMEWORKS=(
-  "GuanceSDK.xcframework"
-  "GuanceSessionReplay.xcframework"
-  "GuanceWidgetExtension.xcframework"
-  "GuanceWidgetExtension-DisableSwizzlingResource.xcframework"
-  "GuanceSDK-DisableSwizzlingResource.xcframework"
+  "TrueWatchSDK.xcframework"
+  "TrueWatchSessionReplay.xcframework"
+  "TrueWatchWidgetExtension.xcframework"
+  "TrueWatchWidgetExtension-DisableSwizzlingResource.xcframework"
+  "TrueWatchSDK-DisableSwizzlingResource.xcframework"
 )
 
 DYNAMIC_XCFRAMEWORKS=(
-  "GuanceSDK-Dynamic.xcframework"
-  "GuanceSessionReplay-Dynamic.xcframework"
-  "GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework"
+  "TrueWatchSDK-Dynamic.xcframework"
+  "TrueWatchSessionReplay-Dynamic.xcframework"
+  "TrueWatchSDK-Dynamic-DisableSwizzlingResource.xcframework"
 )
 
 PACKAGE_XCFRAMEWORKS=(
@@ -30,14 +30,14 @@ PACKAGE_XCFRAMEWORKS=(
 )
 
 INTERMEDIATE_DIRS=(
-  "GuanceSDK"
-  "GuanceSDK-Dynamic"
-  "GuanceSDK-DisableSwizzlingResource"
-  "GuanceSDK-Dynamic-DisableSwizzlingResource"
-  "GuanceSessionReplay"
-  "GuanceSessionReplay-Dynamic"
-  "GuanceWidgetExtension"
-  "GuanceWidgetExtension-DisableSwizzlingResource"
+  "TrueWatchSDK"
+  "TrueWatchSDK-Dynamic"
+  "TrueWatchSDK-DisableSwizzlingResource"
+  "TrueWatchSDK-Dynamic-DisableSwizzlingResource"
+  "TrueWatchSessionReplay"
+  "TrueWatchSessionReplay-Dynamic"
+  "TrueWatchWidgetExtension"
+  "TrueWatchWidgetExtension-DisableSwizzlingResource"
 )
 
 info() {
@@ -165,19 +165,19 @@ validate_zip() {
 
 build_dynamic_package() {
   build_and_copy "FTSDK-dynamic" \
-    "GuanceSDK-Dynamic" \
+    "TrueWatchSDK-Dynamic" \
     "${DYNAMIC_DIR}" \
-    "GuanceSDK-Dynamic.xcframework"
+    "TrueWatchSDK-Dynamic.xcframework"
 
   build_and_copy "FTSessionReplay-dynamic" \
-    "GuanceSessionReplay-Dynamic" \
+    "TrueWatchSessionReplay-Dynamic" \
     "${DYNAMIC_DIR}" \
-    "GuanceSessionReplay-Dynamic.xcframework"
+    "TrueWatchSessionReplay-Dynamic.xcframework"
 
   build_and_copy "FTSDK-dynamic" \
-    "GuanceSDK-Dynamic-DisableSwizzlingResource" \
+    "TrueWatchSDK-Dynamic-DisableSwizzlingResource" \
     "${DYNAMIC_DIR}" \
-    "GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework" \
+    "TrueWatchSDK-Dynamic-DisableSwizzlingResource.xcframework" \
     --disable-swizzling-resource
 
   validate_package_dir "${DYNAMIC_DIR}" \
@@ -186,30 +186,30 @@ build_dynamic_package() {
 
 build_static_package() {
   build_and_copy "FTSDK" \
-    "GuanceSDK" \
+    "TrueWatchSDK" \
     "${STATIC_DIR}" \
-    "GuanceSDK.xcframework"
+    "TrueWatchSDK.xcframework"
 
   build_and_copy "FTSessionReplay" \
-    "GuanceSessionReplay" \
+    "TrueWatchSessionReplay" \
     "${STATIC_DIR}" \
-    "GuanceSessionReplay.xcframework"
+    "TrueWatchSessionReplay.xcframework"
 
   build_and_copy "FTWidgetExtension" \
-    "GuanceWidgetExtension" \
+    "TrueWatchWidgetExtension" \
     "${STATIC_DIR}" \
-    "GuanceWidgetExtension.xcframework"
+    "TrueWatchWidgetExtension.xcframework"
 
   build_and_copy "FTWidgetExtension" \
-    "GuanceWidgetExtension-DisableSwizzlingResource" \
+    "TrueWatchWidgetExtension-DisableSwizzlingResource" \
     "${STATIC_DIR}" \
-    "GuanceWidgetExtension-DisableSwizzlingResource.xcframework" \
+    "TrueWatchWidgetExtension-DisableSwizzlingResource.xcframework" \
     --disable-swizzling-resource
 
   build_and_copy "FTSDK" \
-    "GuanceSDK-DisableSwizzlingResource" \
+    "TrueWatchSDK-DisableSwizzlingResource" \
     "${STATIC_DIR}" \
-    "GuanceSDK-DisableSwizzlingResource.xcframework" \
+    "TrueWatchSDK-DisableSwizzlingResource.xcframework" \
     --disable-swizzling-resource
 
   validate_package_dir "${STATIC_DIR}" \

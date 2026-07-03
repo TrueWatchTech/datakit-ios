@@ -3,7 +3,7 @@
 //  App
 //
 //  Created by hulilei on 2022/9/23.
-//  Copyright 2022 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2022 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 //
 
 import Foundation
-import GuanceWidgetExtension
+import TrueWatchWidgetExtension
 class InheritHttpEngine:FTURLSessionDelegate, @unchecked Sendable {
 
     var session:URLSession?

@@ -3,7 +3,7 @@
 //  App
 //
 //  Created by hulilei on 2023/4/12.
-//  Copyright 2023 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2023 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #import "LoggerVC.h"
 #import "TableViewCellItem.h"
 #import "App-Swift.h"
-#import <GuanceSDK/GuanceSDK.h>
+#import <TrueWatchSDK/TrueWatchSDK.h>
 @interface LoggerVC()<UITableViewDelegate,UITableViewDataSource>
 @property (nonatomic, strong) UITableView *mtableView;
 @property (nonatomic, strong) NSMutableArray<TableViewCellItem*> *dataSource;
