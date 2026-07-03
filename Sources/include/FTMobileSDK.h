@@ -1,1 +1,1 @@
-../Agent/Core/FTMobileSDK.h
+../FTMobileSDK.h
