@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import GuanceSDK
 
 final class FTTestInteraction: XCTestCase {
     var tracerManager:FTTracer?

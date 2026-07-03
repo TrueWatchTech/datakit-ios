@@ -218,7 +218,7 @@ typedef NS_ENUM(NSInteger, SampleState) {
     config.autoSync = NO;
     config.enableSDKDebugLog = YES;
     FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:self.appid];
-    rumConfig.samplerate = sampleRate;
+    rumConfig.sampleRate = sampleRate;
     rumConfig.sessionOnErrorSampleRate = sessionOnErrorSampleRate;
     [FTMobileAgent startWithConfigOptions:config];
     [[FTMobileAgent sharedInstance] startRumWithConfigOptions:rumConfig];

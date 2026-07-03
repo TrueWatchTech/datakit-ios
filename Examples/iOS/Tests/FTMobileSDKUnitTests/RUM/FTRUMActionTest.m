@@ -50,7 +50,7 @@
     config.autoSync = NO;
     FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:self.appid];
     rumConfig.enableTraceUserAction = YES;
-    [FTMobileAgent startWithConfigOptions:config];
+    [FTSDKAgent startWithConfigOptions:config];
     [[FTMobileAgent sharedInstance] startRumWithConfigOptions:rumConfig];
     [[FTTrackerEventDBTool sharedManager] deleteAllDatas];
 }

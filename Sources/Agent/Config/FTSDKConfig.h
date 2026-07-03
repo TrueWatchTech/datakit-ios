@@ -66,7 +66,9 @@ typedef FTTraceContext*_Nullable(^FTTraceInterceptor)(NSURLRequest *_Nonnull req
 /// Disable new initialization
 + (instancetype)new NS_UNAVAILABLE;
 /// Sampling configuration, property values: 0 to 100, 100 means 100% collection, no data sample compression.
-@property (nonatomic, assign) int samplerate;
+@property (nonatomic, assign) int sampleRate;
+/// Deprecated. Use `sampleRate`.
+@property (nonatomic, assign) int samplerate DEPRECATED_MSG_ATTRIBUTE("Use sampleRate.");
 /// Set network request information collection to use link tracing type, default is DDtrace
 @property (nonatomic, assign) FTNetworkTraceType networkTraceType;
 /// Support custom trace through URLRequest, after confirming interception, returns TraceContext, returns nil if not intercepted

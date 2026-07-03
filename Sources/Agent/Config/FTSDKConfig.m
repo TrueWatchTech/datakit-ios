@@ -17,6 +17,12 @@
 #import "NSDictionary+FTCopyProperties.h"
 
 @implementation FTTraceConfig
+- (int)sampleRate {
+    return _samplerate;
+}
+- (void)setSampleRate:(int)sampleRate {
+    _samplerate = sampleRate;
+}
 -(instancetype)init{
     self = [super init];
     if (self) {
@@ -27,7 +33,7 @@
 }
 - (instancetype)copyWithZone:(NSZone *)zone {
     FTTraceConfig *options = [[[self class] allocWithZone:zone] init];
-    options.samplerate = self.samplerate;
+    options.sampleRate = self.sampleRate;
     options.enableLinkRumData = self.enableLinkRumData;
     options.networkTraceType = self.networkTraceType;
     options.enableAutoTrace = self.enableAutoTrace;
@@ -38,6 +44,7 @@
     if(dict){
         if (self = [self init]) {
             if ([dict ft_hasValidValueForKey:@"samplerate"]) _samplerate = [dict[@"samplerate"] intValue];
+            if ([dict ft_hasValidValueForKey:@"sampleRate"]) _samplerate = [dict[@"sampleRate"] intValue];
             if ([dict ft_hasValidValueForKey:@"enableLinkRumData"]) _enableLinkRumData = [dict[@"enableLinkRumData"] boolValue];
             if ([dict ft_hasValidValueForKey:@"networkTraceType"]) _networkTraceType =(FTNetworkTraceType)[dict[@"networkTraceType"] intValue];
             if ([dict ft_hasValidValueForKey:@"enableAutoTrace"]) _enableAutoTrace = [dict[@"enableAutoTrace"] boolValue];
@@ -50,7 +57,7 @@
 }
 -(NSDictionary *)convertToDictionary{
     NSMutableDictionary *dict = [NSMutableDictionary new];
-    [dict setValue:@(self.samplerate) forKey:@"samplerate"];
+    [dict setValue:@(self.sampleRate) forKey:@"sampleRate"];
     [dict setValue:@(self.enableLinkRumData) forKey:@"enableLinkRumData"];
     [dict setValue:@(self.networkTraceType) forKey:@"networkTraceType"];
     [dict setValue:@(self.enableAutoTrace) forKey:@"enableAutoTrace"];

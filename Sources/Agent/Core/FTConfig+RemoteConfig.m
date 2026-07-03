@@ -49,7 +49,7 @@
     @try {
         
         if (model.logSampleRate != nil) {
-            self.samplerate = [model.logSampleRate doubleValue] * 100;
+            self.sampleRate = [model.logSampleRate doubleValue] * 100;
         }
         if (model.logEnableCustomLog != nil) {
             self.enableCustomLog = [model.logEnableCustomLog boolValue];
@@ -68,7 +68,7 @@
 -(void)mergeWithRemoteConfigModel:(FTRemoteConfigModel *)model{
     @try {
         if (model.rumSampleRate != nil) {
-            self.samplerate = [model.rumSampleRate doubleValue] * 100;
+            self.sampleRate = [model.rumSampleRate doubleValue] * 100;
         }
         if (model.rumSessionOnErrorSampleRate != nil) {
             self.sessionOnErrorSampleRate = [model.rumSessionOnErrorSampleRate doubleValue] * 100;
@@ -115,7 +115,7 @@
 -(void)mergeWithRemoteConfigModel:(FTRemoteConfigModel *)model{
     @try {
         if (model.traceSampleRate != nil) {
-            self.samplerate = [model.traceSampleRate doubleValue] * 100;
+            self.sampleRate = [model.traceSampleRate doubleValue] * 100;
         }
         if (model.traceEnableAutoTrace != nil) {
             self.enableAutoTrace = [model.traceEnableAutoTrace boolValue];

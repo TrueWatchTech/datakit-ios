@@ -7,11 +7,10 @@
 //
 
 #import "AppDelegate.h"
-#import <GuanceSDK/FTMobileAgent.h>
+#import <GuanceSDK/GuanceSDK.h>
+#import <GuanceSessionReplay/GuanceSessionReplay.h>
 #import "DemoViewController.h"
 #import "RootTabbarVC.h"
-#import "GuanceSDK/FTLog.h"
-#import <GuanceSessionReplay/FTRumSessionReplay.h>
 //Target -> Build Settings -> GCC_PREPROCESSOR_DEFINITIONS for configuration preset definitions
 #if PREPROD
 #define STATIC_TAG     @"preprod"

@@ -35,7 +35,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Log discard strategy
 @property (nonatomic, assign) FTLogCacheDiscard  discardType;
 /// Sampling configuration, property values: 0 to 100, 100 means 100% collection, no data sample compression.
-@property (nonatomic, assign) int samplerate;
+@property (nonatomic, assign) int sampleRate;
+/// Deprecated. Use `sampleRate`.
+@property (nonatomic, assign) int samplerate DEPRECATED_MSG_ATTRIBUTE("Use sampleRate.");
 /// Whether to associate logger data with rum
 @property (nonatomic, assign) BOOL enableLinkRumData;
 /// Whether to upload custom logs

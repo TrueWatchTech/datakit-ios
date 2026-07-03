@@ -104,7 +104,9 @@ typedef BOOL (^FTSessionTaskErrorFilter)(NSError *_Nonnull error);
 /// User access monitoring application ID unique identifier, automatically generated when creating monitoring in the user access monitoring console.
 @property (nonatomic, copy) NSString *appid;
 /// Sampling configuration, property values: 0 to 100, 100 means 100% collection, no data sample compression.
-@property (nonatomic, assign) int samplerate;
+@property (nonatomic, assign) int sampleRate;
+/// Deprecated. Use `sampleRate`.
+@property (nonatomic, assign) int samplerate DEPRECATED_MSG_ATTRIBUTE("Use sampleRate.");
 /// Collect sessions that have errors
 /// When the feature is enabled, if a Session that was not originally selected by the sampling rate encounters an error, the SDK will collect data from these originally uncollected Sessions
 @property (nonatomic, assign) int sessionOnErrorSampleRate;

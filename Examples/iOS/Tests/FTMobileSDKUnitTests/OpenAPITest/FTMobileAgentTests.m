@@ -23,7 +23,7 @@
 #import "FTGlobalRumManager.h"
 #import "FTRUMManager.h"
 #import "FTModelHelper.h"
-#import "FTMobileConfig+Private.h"
+#import "FTSDKConfig+Private.h"
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"
 #import "FTNetworkMock.h"
@@ -34,7 +34,7 @@
 #import "FTDefaultActionTrackingHandler.h"
 #import "FTDefaultUIKitViewTrackingHandler.h"
 @interface FTMobileAgentTests : KIFTestCase
-@property (nonatomic, strong) FTMobileConfig *config;
+@property (nonatomic, strong) FTSDKConfig *config;
 @property (nonatomic, copy) NSString *url;
 @property (nonatomic, copy) NSString *appid;
 
@@ -75,7 +75,7 @@
     XCTFail(@"Upload worker did not become idle within %.2f seconds", timeout);
 }
 - (void)setRightSDKConfig{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     [FTMobileAgent startWithConfigOptions:config];
@@ -175,7 +175,7 @@
 }
 #pragma mark ========== Configuration ==========
 -(void)testServiceName{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     config.service = @"testSetServiceName";
@@ -209,7 +209,7 @@
     XCTAssertTrue([rumserviceName isEqualToString:@"testSetServiceName"]);
 }
 - (void)testDefaultEnvProperty{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.autoSync = NO;
     config.enableSDKDebugLog = YES;
     config.env = @"";
@@ -243,7 +243,7 @@
     XCTAssertTrue([rumEnv isEqualToString:FTEnvStringMap[FTEnvProd]]);
 }
 - (void)testEnvProperty{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     config.env = @"testCustomEnv";
@@ -277,7 +277,7 @@
     XCTAssertTrue([rumEnv isEqualToString:@"testCustomEnv"]);
 }
 - (void)testGlobalContext{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     config.globalContext = @{@"testGlobalContext":@"testGlobalContext"};
@@ -298,7 +298,7 @@
 }
 - (void)testGlobalContext_mutable{
     NSMutableDictionary *context = @{@"testGlobalContext_mutable":@"testGlobalContext_mutable"}.mutableCopy;
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     config.globalContext = context;
@@ -307,7 +307,7 @@
     XCTAssertTrue([context[@"testGlobalContext_mutable"] isEqualToString:@"testGlobalContext"]);
 }
 - (void)testAddPkgInfo{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     XCTAssertNil([config pkgInfo]);
@@ -316,7 +316,7 @@
     XCTAssertFalse([config pkgInfo] == [config pkgInfo]);
 }
 - (void)testAppendGlobalContext{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     config.globalContext = @{@"testGlobalContext":@"testGlobalContext"};
@@ -339,7 +339,7 @@
     [FTMobileAgent shutDown];
 }
 - (void)testSyncSleepTimeScope{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.syncSleepTime = -1;
     XCTAssertTrue(config.syncSleepTime == 0);
     config.syncSleepTime = 150;
@@ -350,7 +350,7 @@
     XCTAssertTrue(config.syncSleepTime == 5000);
 }
 - (void)testSyncPageSizeScope{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     XCTAssertTrue(config.syncPageSize == 10);
     config.syncPageSize = -1;
     XCTAssertTrue(config.syncPageSize == 5);
@@ -364,12 +364,12 @@
     XCTAssertTrue(config.syncPageSize == 10);
 }
 - (void)testCompressIntakeRequestsDefaultEnabled{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     XCTAssertTrue(config.compressIntakeRequests);
 }
 - (void)testAutoSync_NO{
     [FTNetworkMock networkOHHTTPStubs];
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     [FTMobileAgent startWithConfigOptions:config];
@@ -398,7 +398,7 @@
 }
 - (void)testAutoSync_YES{
     [FTNetworkMock networkOHHTTPStubs];
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = YES;
     [FTMobileAgent startWithConfigOptions:config];
@@ -420,7 +420,7 @@
 }
 #pragma mark ========== copy ==========
 - (void)testSDKConfigCopy{
-    FTMobileConfig *datakitConfig = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *datakitConfig = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     datakitConfig.enableSDKDebugLog = YES;
     datakitConfig.globalContext = @{@"aa":@"bb"};
     datakitConfig.service = @"testsdk";
@@ -441,7 +441,7 @@
     datakitConfig.remoteConfigMiniUpdateInterval = -1;
     XCTAssertTrue(datakitConfig.remoteConfigMiniUpdateInterval == 0);
     datakitConfig.remoteConfiguration = YES;
-    FTMobileConfig *copyConfig = [datakitConfig copy];
+    FTSDKConfig *copyConfig = [datakitConfig copy];
     XCTAssertTrue(copyConfig.enableSDKDebugLog == datakitConfig.enableSDKDebugLog);
     XCTAssertTrue([copyConfig.datakitUrl isEqualToString:datakitConfig.datakitUrl]);
     XCTAssertTrue([copyConfig.env isEqualToString:datakitConfig.env]);
@@ -453,14 +453,14 @@
     XCTAssertTrue(copyConfig.enableLimitWithDbSize == datakitConfig.enableLimitWithDbSize);
     XCTAssertTrue(copyConfig.remoteConfiguration == datakitConfig.remoteConfiguration);
     XCTAssertTrue(copyConfig.remoteConfigMiniUpdateInterval == datakitConfig.remoteConfigMiniUpdateInterval);
-    FTMobileConfig *datawayConfig = [[FTMobileConfig alloc]initWithDatawayUrl:self.url clientToken:@"clientToken"];
-    FTMobileConfig *copy = [datawayConfig copy];
+    FTSDKConfig *datawayConfig = [[FTSDKConfig alloc]initWithDatawayUrl:self.url clientToken:@"clientToken"];
+    FTSDKConfig *copy = [datawayConfig copy];
     XCTAssertTrue([copy.datawayUrl isEqualToString:datawayConfig.datawayUrl]);
     XCTAssertTrue([copy.clientToken isEqualToString:datawayConfig.clientToken]);
 }
 - (void)testRUMConfigCopy{
     FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:@"app_id1111"];
-    rumConfig.samplerate = 50;
+    rumConfig.sampleRate = 50;
     rumConfig.enableTraceUserAction = YES;
     rumConfig.enableTraceUserView = YES;
     rumConfig.enableTraceUserResource = YES;
@@ -489,7 +489,7 @@
     rumConfig.sessionOnErrorSampleRate = 50;
     FTRumConfig *copyRumConfig = [rumConfig copy];
     XCTAssertTrue(copyRumConfig.sessionOnErrorSampleRate == 50);
-    XCTAssertTrue(copyRumConfig.samplerate == rumConfig.samplerate);
+    XCTAssertTrue(copyRumConfig.sampleRate == rumConfig.sampleRate);
     XCTAssertTrue(copyRumConfig.enableTraceUserAction == rumConfig.enableTraceUserAction);
     XCTAssertTrue(copyRumConfig.enableTraceUserView == rumConfig.enableTraceUserView);
     XCTAssertTrue(copyRumConfig.enableTraceUserResource == rumConfig.enableTraceUserResource);
@@ -521,7 +521,7 @@
     FTRumConfig *newRum = [[FTRumConfig alloc]initWithDictionary:dict];
     XCTAssertTrue(rumConfig.enableTrackAppANR == newRum.enableTrackAppANR);
     XCTAssertTrue(rumConfig.enableTraceUserView == newRum.enableTraceUserView);
-    XCTAssertTrue(rumConfig.samplerate == newRum.samplerate);
+    XCTAssertTrue(rumConfig.sampleRate == newRum.sampleRate);
     XCTAssertTrue(rumConfig.enableTrackAppCrash == newRum.enableTrackAppCrash);
     XCTAssertTrue(rumConfig.enableTraceUserAction == newRum.enableTraceUserAction);
     XCTAssertTrue(rumConfig.enableTrackAppFreeze == newRum.enableTrackAppFreeze);
@@ -536,12 +536,12 @@
     FTTraceConfig *traceConfig = [[FTTraceConfig alloc]init];
     traceConfig.enableAutoTrace = YES;
     traceConfig.enableLinkRumData = YES;
-    traceConfig.samplerate = 50;
+    traceConfig.sampleRate = 50;
     traceConfig.networkTraceType = FTNetworkTraceTypeTraceparent;
     FTTraceConfig *copyTraceConfig = [traceConfig copy];
     XCTAssertTrue(copyTraceConfig.enableAutoTrace == traceConfig.enableAutoTrace);
     XCTAssertTrue(copyTraceConfig.enableLinkRumData == traceConfig.enableLinkRumData);
-    XCTAssertTrue(copyTraceConfig.samplerate == traceConfig.samplerate);
+    XCTAssertTrue(copyTraceConfig.samplerate == traceConfig.sampleRate);
     XCTAssertTrue(copyTraceConfig.networkTraceType == traceConfig.networkTraceType);
     XCTAssertTrue([copyTraceConfig.debugDescription isEqualToString:traceConfig.debugDescription]);
 }
@@ -552,13 +552,13 @@
     FTTraceConfig *newTrace = [[FTTraceConfig alloc]initWithDictionary:dict];
     XCTAssertTrue(traceConfig.enableAutoTrace == newTrace.enableAutoTrace);
     XCTAssertTrue(traceConfig.networkTraceType == newTrace.networkTraceType);
-    XCTAssertTrue(traceConfig.samplerate == newTrace.samplerate);
+    XCTAssertTrue(traceConfig.sampleRate == newTrace.sampleRate);
     XCTAssertTrue(traceConfig.enableLinkRumData == newTrace.enableLinkRumData);
 }
 - (void)testLoggerConfigCopy{
     FTLoggerConfig *loggerConfig = [[FTLoggerConfig alloc]init];
     loggerConfig.enableCustomLog = YES;
-    loggerConfig.samplerate = 50;
+    loggerConfig.sampleRate = 50;
     loggerConfig.discardType = FTDiscard;
     loggerConfig.enableLinkRumData = YES;
     loggerConfig.logLevelFilter = @[@(FTStatusOk)];
@@ -566,7 +566,7 @@
     loggerConfig.globalContext = @{@"aa":@"bb"};
     FTLoggerConfig *copyLoggerConfig = [loggerConfig copy];
     XCTAssertTrue(copyLoggerConfig.enableCustomLog == loggerConfig.enableCustomLog);
-    XCTAssertTrue(copyLoggerConfig.samplerate == loggerConfig.samplerate);
+    XCTAssertTrue(copyLoggerConfig.sampleRate == loggerConfig.sampleRate);
     XCTAssertTrue(copyLoggerConfig.discardType == loggerConfig.discardType);
     XCTAssertTrue(copyLoggerConfig.enableLinkRumData == loggerConfig.enableLinkRumData);
     XCTAssertTrue([copyLoggerConfig.logLevelFilter isEqual: loggerConfig.logLevelFilter]);
@@ -590,7 +590,7 @@
     XCTAssertTrue(loggerConfig.printCustomLogToConsole == newLogger.printCustomLogToConsole);
 }
 - (void)testShutDown{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     [FTMobileAgent startWithConfigOptions:config];
@@ -707,8 +707,8 @@
     }
 }
 
-- (void)testFTMobileConfigDebugDescription {
-    FTMobileConfig *config = [[FTMobileConfig alloc] initWithDatakitUrl:@"https://datakit.example.com"];
+- (void)testFTSDKConfigDebugDescription {
+    FTSDKConfig *config = [[FTSDKConfig alloc] initWithDatakitUrl:@"https://datakit.example.com"];
     
     config.env = @"test-env";
     config.datawayUrl = @"https://dataway.example.com";
@@ -763,7 +763,7 @@
     config.viewTrackingHandler = [[FTDefaultUIKitViewTrackingHandler alloc]init];
     config.swiftUIViewTrackingHandler = [[FTDefaultSwiftUIViewTrackingHandler alloc]init];
     config.actionTrackingHandler = [[FTDefaultActionTrackingHandler alloc]init];
-    [self verifyDebugDescriptionContainsAllProperties:config];
+    [self verifyDebugDescriptionContainsAllProperties:config filters:@[@"samplerate"]];
 }
 
 - (void)testFTLoggerConfigDebugDescription {
@@ -778,7 +778,7 @@
     config.logLevelFilter = @[@(FTStatusInfo), @(FTStatusError)];
     config.globalContext = @{@"logger-key": @"logger-value"};
     
-    [self verifyDebugDescriptionContainsAllProperties:config];
+    [self verifyDebugDescriptionContainsAllProperties:config filters:@[@"samplerate"]];
 }
 
 - (void)testFTTraceConfigDebugDescription {
@@ -791,7 +791,7 @@
     config.traceInterceptor = ^FTTraceContext * _Nullable(NSURLRequest * _Nonnull request) {
         return nil;
     };
-    [self verifyDebugDescriptionContainsAllProperties:config];
+    [self verifyDebugDescriptionContainsAllProperties:config filters:@[@"samplerate"]];
 }
 
 @end

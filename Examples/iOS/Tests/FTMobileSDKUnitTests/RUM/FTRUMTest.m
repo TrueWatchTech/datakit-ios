@@ -12,6 +12,7 @@
 #import "FTMobileAgent.h"
 #import "FTBaseInfoHandler.h"
 #import "FTConstants.h"
+#import "FTMobileSDK.h"
 #import "FTMobileAgent+Private.h"
 #import "NSDate+FTUtil.h"
 #import "NSString+FTAdd.h"
@@ -1434,7 +1435,7 @@
     XCTAssertTrue(hasResourceData == YES);
 }
 - (void)testNotTraceLinkRumData{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:self.appid];
     rumConfig.enableTraceUserAction = YES;
@@ -1488,7 +1489,7 @@
     XCTAssertTrue([[tags valueForKey:@"track_id"] isEqualToString:@"testGlobalTrack"]);
 }
 - (void)testRUMGlobalContext_mutable{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     [FTMobileAgent startWithConfigOptions:config];
 
     NSMutableDictionary *context = @{@"testRUMGlobalContext_mutable":@"testRUMGlobalContext_mutable"}.mutableCopy;

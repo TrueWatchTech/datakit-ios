@@ -16,6 +16,12 @@
 #import "NSDictionary+FTCopyProperties.h"
 
 @implementation FTRumConfig
+- (int)sampleRate {
+    return _samplerate;
+}
+- (void)setSampleRate:(int)sampleRate {
+    _samplerate = sampleRate;
+}
 - (instancetype)init{
     return [self initWithAppid:@""];
 }
@@ -44,7 +50,7 @@
 - (instancetype)copyWithZone:(NSZone *)zone {
     FTRumConfig *options = [[[self class] allocWithZone:zone] init];
     options.enableTrackAppCrash = self.enableTrackAppCrash;
-    options.samplerate = self.samplerate;
+    options.sampleRate = self.sampleRate;
     options.enableTrackAppFreeze = self.enableTrackAppFreeze;
     options.enableTrackAppANR = self.enableTrackAppANR;
     options.enableTraceUserAction = self.enableTraceUserAction;
@@ -78,6 +84,7 @@
         if (self = [self init]) {
             if ([dict ft_hasValidValueForKey:@"enableTrackAppCrash"]) _enableTrackAppCrash = [dict[@"enableTrackAppCrash"] boolValue];
             if ([dict ft_hasValidValueForKey:@"samplerate"]) _samplerate = [dict[@"samplerate"] intValue];
+            if ([dict ft_hasValidValueForKey:@"sampleRate"]) _samplerate = [dict[@"sampleRate"] intValue];
             if ([dict ft_hasValidValueForKey:@"enableTrackAppFreeze"]) _enableTrackAppFreeze = [dict[@"enableTrackAppFreeze"] boolValue];
             if ([dict ft_hasValidValueForKey:@"freezeDurationMs"]) self.freezeDurationMs = [dict[@"freezeDurationMs"] intValue];
             if ([dict ft_hasValidValueForKey:@"enableTrackAppANR"]) _enableTrackAppANR = [dict[@"enableTrackAppANR"] boolValue];
@@ -118,7 +125,7 @@
 -(NSDictionary *)convertToDictionary{
     NSMutableDictionary *dict = [NSMutableDictionary new];
     [dict setValue:@(self.enableTrackAppCrash) forKey:@"enableTrackAppCrash"];
-    [dict setValue:@(self.samplerate) forKey:@"samplerate"];
+    [dict setValue:@(self.sampleRate) forKey:@"sampleRate"];
     [dict setValue:@(self.enableTrackAppFreeze) forKey:@"enableTrackAppFreeze"];
     [dict setValue:@(self.freezeDurationMs) forKey:@"freezeDurationMs"];
     [dict setValue:@(self.enableTrackAppANR) forKey:@"enableTrackAppANR"];

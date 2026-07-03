@@ -9,6 +9,8 @@
 import XCTest
 import OHHTTPStubs
 import KIF
+import GuanceSDK
+
 final class FTResourceTest: XCTestCase {
 
     override func setUpWithError() throws {
@@ -25,7 +27,7 @@ final class FTResourceTest: XCTestCase {
         let dic = ProcessInfo().environment
         let url = dic["ACCESS_SERVER_URL"]
         let appid = dic["APP_ID"]
-        let config:FTMobileConfig = FTMobileConfig(datakitUrl: url!)
+        let config:FTSDKConfig = FTSDKConfig(datakitUrl: url!)
         config.enableSDKDebugLog = true
         config.autoSync = false
         FTMobileAgent.start(withConfigOptions: config)

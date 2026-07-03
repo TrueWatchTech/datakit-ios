@@ -8,7 +8,7 @@
 
 #import "ManualRumAndTraceDataAdd.h"
 #import "TableViewCellItem.h"
-#import <GuanceSDK/FTMobileAgent.h>
+#import <GuanceSDK/GuanceSDK.h>
 #import <objc/runtime.h>
 
 static const void * const kURLSessionTaskKey = &kURLSessionTaskKey;

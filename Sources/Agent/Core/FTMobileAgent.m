@@ -145,8 +145,8 @@ static FTMobileAgent *sharedInstance = nil;
     [self.sdkConfig mergeWithRemoteConfigModel:model];
     [self.rumConfig mergeWithRemoteConfigModel:model];
     [self.traceConfig mergeWithRemoteConfigModel:model];
-    [[FTGlobalRumManager sharedInstance] updateSampleRate:self.rumConfig.samplerate sessionOnErrorSampleRate:self.rumConfig.sessionOnErrorSampleRate];
-    [[FTURLSessionInstrumentation sharedInstance] updateTraceSampleRate:self.traceConfig.samplerate];
+    [[FTGlobalRumManager sharedInstance] updateSampleRate:self.rumConfig.sampleRate sessionOnErrorSampleRate:self.rumConfig.sessionOnErrorSampleRate];
+    [[FTURLSessionInstrumentation sharedInstance] updateTraceSampleRate:self.traceConfig.sampleRate];
     [FTNetworkInfoManager sharedInstance].setCompressionIntakeRequests(self.sdkConfig.compressIntakeRequests);
     [[FTTrackDataManager sharedInstance] updateAutoSync:self.sdkConfig.autoSync syncPageSize:self.sdkConfig.syncPageSize syncSleepTime:self.sdkConfig.syncSleepTime];
     [self.loggerConfig mergeWithRemoteConfigModel:[FTRemoteConfigManager sharedInstance].lastRemoteModel];
@@ -208,7 +208,7 @@ static FTMobileAgent *sharedInstance = nil;
 }
 - (void)applyRUMConfig:(FTRumConfig *)rumConfig{
     FTInnerLogInfo(@"[RUM] APPID:%@",rumConfig.appid);
-    [[FTPresetProperty sharedInstance] setRUMAppID:rumConfig.appid sampleRate:rumConfig.samplerate sessionOnErrorSampleRate:rumConfig.sessionOnErrorSampleRate rumGlobalContext:rumConfig.globalContext];
+    [[FTPresetProperty sharedInstance] setRUMAppID:rumConfig.appid sampleRate:rumConfig.sampleRate sessionOnErrorSampleRate:rumConfig.sessionOnErrorSampleRate rumGlobalContext:rumConfig.globalContext];
     [[FTTrackDataManager sharedInstance] setRUMCacheLimitCount:rumConfig.rumCacheLimitCount discardNew:rumConfig.rumDiscardType == FTRUMDiscard];
     [[FTGlobalRumManager sharedInstance] setRumConfig:rumConfig writer:[FTTrackDataManager sharedInstance].dataWriterWorker];
     [[FTURLSessionInstrumentation sharedInstance]setEnableAutoRumTrace:rumConfig.enableTraceUserResource
@@ -235,7 +235,7 @@ static FTMobileAgent *sharedInstance = nil;
 - (void)applyTraceConfig:(FTTraceConfig *)traceConfig{
     [[FTURLSessionInstrumentation sharedInstance] setTraceEnableAutoTrace:traceConfig.enableAutoTrace
                                                         enableLinkRumData:traceConfig.enableLinkRumData
-                                                               sampleRate:traceConfig.samplerate
+                                                               sampleRate:traceConfig.sampleRate
                                                                 traceType:(NetworkTraceType)traceConfig.networkTraceType
                                                          traceInterceptor:traceConfig.traceInterceptor
                                                               serviceName:self.sdkConfig.service

@@ -9,6 +9,7 @@
 #ifndef FTMobileAgent_h
 #define FTMobileAgent_h
 
+#import "FTMobileConfig.h"
 #import "FTSDKAgent.h"
 
 #endif /* FTMobileAgent_h */

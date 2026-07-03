@@ -11,7 +11,6 @@
 #import "FTTrackDataManager.h"
 #import "FTTrackerEventDBTool.h"
 #import "FTConstants.h"
-@import GuanceSDK;
 #import "FTMobileAgent+Private.h"
 @interface FTTraceTests : XCTestCase
 @property (nonatomic, copy) NSString *url;

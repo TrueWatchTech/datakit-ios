@@ -13,6 +13,12 @@
 #import "NSDictionary+FTCopyProperties.h"
 
 @implementation FTLoggerConfig
+- (int)sampleRate {
+    return _samplerate;
+}
+- (void)setSampleRate:(int)sampleRate {
+    _samplerate = sampleRate;
+}
 -(instancetype)init{
     self = [super init];
     if (self) {
@@ -26,7 +32,7 @@
 }
 - (instancetype)copyWithZone:(NSZone *)zone {
     FTLoggerConfig *options = [[[self class] allocWithZone:zone] init];
-    options.samplerate = self.samplerate;
+    options.sampleRate = self.sampleRate;
     options.enableLinkRumData = self.enableLinkRumData;
     options.enableCustomLog = self.enableCustomLog;
     options.logLevelFilter = [self.logLevelFilter copy];
@@ -40,6 +46,7 @@
     if(dict){
         if (self = [self init]) {
             if ([dict ft_hasValidValueForKey:@"samplerate"]) _samplerate = [dict[@"samplerate"] intValue];
+            if ([dict ft_hasValidValueForKey:@"sampleRate"]) _samplerate = [dict[@"sampleRate"] intValue];
             if ([dict ft_hasValidValueForKey:@"enableLinkRumData"]) _enableLinkRumData = [dict[@"enableLinkRumData"] boolValue];
             if ([dict ft_hasValidValueForKey:@"enableCustomLog"]) _enableCustomLog = [dict[@"enableCustomLog"] boolValue];
             if ([dict ft_hasValidValueForKey:@"logLevelFilter"]) _logLevelFilter = [dict[@"logLevelFilter"] copy];
@@ -58,7 +65,7 @@
 }
 -(NSDictionary *)convertToDictionary{
     NSMutableDictionary *dict = [NSMutableDictionary new];
-    [dict setValue:@(self.samplerate) forKey:@"samplerate"];
+    [dict setValue:@(self.sampleRate) forKey:@"sampleRate"];
     [dict setValue:@(self.enableLinkRumData) forKey:@"enableLinkRumData"];
     [dict setValue:@(self.enableCustomLog) forKey:@"enableCustomLog"];
     [dict setValue:self.logLevelFilter forKey:@"logLevelFilter"];

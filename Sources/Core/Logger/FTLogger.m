@@ -141,7 +141,7 @@ void *FTLoggerQueueIdentityKey = &FTLoggerQueueIdentityKey;
         FTInnerLogInfo(@"[Logging][Not Filtered] %@",content);
         return;
     }
-    if (![FTBaseInfoHandler randomSampling:config.samplerate]){
+    if (![FTBaseInfoHandler randomSampling:config.sampleRate]){
         FTInnerLogInfo(@"[Logging][Not Sampled] %@",content);
         return;
     }

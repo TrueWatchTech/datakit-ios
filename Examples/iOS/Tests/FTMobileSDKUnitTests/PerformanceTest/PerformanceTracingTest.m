@@ -27,11 +27,11 @@
     NSProcessInfo *processInfo = [NSProcessInfo processInfo];
     NSString *url = [processInfo environment][@"ACCESS_SERVER_URL"];
     
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:url];
     FTTraceConfig *traceConfig = [[FTTraceConfig alloc]init];
     traceConfig.networkTraceType = type;
-    [FTMobileAgent startWithConfigOptions:config];
-    [[FTMobileAgent sharedInstance] startTraceWithConfigOptions:traceConfig];
+    [FTSDKAgent startWithConfigOptions:config];
+    [[FTSDKAgent sharedInstance] startTraceWithConfigOptions:traceConfig];
 }
 - (void)testDDtraceGetTraceHeaderPerformance{
     // This is an example of a performance test case.

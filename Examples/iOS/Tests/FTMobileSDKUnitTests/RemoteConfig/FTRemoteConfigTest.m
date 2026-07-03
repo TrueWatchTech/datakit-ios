@@ -10,7 +10,7 @@
 #import <TargetConditionals.h>
 #import "FTRemoteConfigurationRequest.h"
 #import "FTMobileAgent.h"
-#import "FTMobileConfig+Private.h"
+#import "FTSDKConfig+Private.h"
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"
 #import "FTConstants.h"
@@ -70,7 +70,7 @@
     NSString *dataWay = @"http://dataway-test.com";
     NSString *token = @"rum-token";
     NSString *appId = @"appid-test";
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakit];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:datakit];
     [FTMobileAgent startWithConfigOptions:config];
     FTRumConfig *rum = [[FTRumConfig alloc]initWithAppid:appId];
     [[FTMobileAgent sharedInstance] startRumWithConfigOptions:rum];
@@ -87,7 +87,7 @@
     XCTAssertTrue([queryItems.firstObject.value isEqualToString:appId]);
     [FTMobileAgent shutDown];
     
-    FTMobileConfig *datawayConfig = [[FTMobileConfig alloc]initWithDatawayUrl:dataWay clientToken:token];
+    FTSDKConfig *datawayConfig = [[FTSDKConfig alloc]initWithDatawayUrl:dataWay clientToken:token];
     [FTMobileAgent startWithConfigOptions:datawayConfig];
     [[FTMobileAgent sharedInstance] startRumWithConfigOptions:rum];
     
@@ -129,7 +129,7 @@
     } withOriginalRemoteDict:nil];
     NSString *datakit = @"http://datakit-test.com";
     NSString *appId = @"appid-test";
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakit];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:datakit];
     config.enableSDKDebugLog = YES;
     config.remoteConfiguration = YES;
     config.enableDataFilter = NO;
@@ -159,8 +159,8 @@
         FT_R_SYNC_SLEEP_TIME:@(100)
     };
     NSString *datakit = @"http://datakit-test.com";
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakit];
-    FTMobileConfig *copyConfig = [config copy];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:datakit];
+    FTSDKConfig *copyConfig = [config copy];
     [copyConfig mergeWithRemoteConfigModel:[[FTRemoteConfigModel alloc] initWithDict:testBaseDict]];
     XCTAssertTrue(config.autoSync == YES && copyConfig.autoSync == NO);
     XCTAssertTrue([config.env isEqualToString:@"prod"] && [copyConfig.env isEqualToString:@"test"]);
@@ -213,7 +213,7 @@
     
     [copyTrace mergeWithRemoteConfigModel:[[FTRemoteConfigModel alloc] initWithDict:testTraceDict]];
 
-    XCTAssertTrue(trace.samplerate != copyTrace.samplerate && copyTrace.samplerate == 40);
+    XCTAssertTrue(trace.sampleRate != copyTrace.sampleRate && copyTrace.sampleRate == 40);
     XCTAssertTrue(trace.networkTraceType != copyTrace.networkTraceType && copyTrace.networkTraceType == FTNetworkTraceTypeJaeger);
     XCTAssertTrue(trace.enableAutoTrace != copyTrace.enableAutoTrace && copyTrace.enableAutoTrace == YES);
     
@@ -228,7 +228,7 @@
     
     [copyLogger mergeWithRemoteConfigModel:[[FTRemoteConfigModel alloc] initWithDict:testLoggerDict]];
 
-    XCTAssertTrue(logger.samplerate != copyLogger.samplerate && copyLogger.samplerate == 80);
+    XCTAssertTrue(logger.sampleRate != copyLogger.sampleRate && copyLogger.sampleRate == 80);
     XCTAssertTrue(logger.enableCustomLog != copyLogger.enableCustomLog && copyLogger.enableCustomLog == YES);
     XCTAssertTrue(![logger.logLevelFilter isEqual:copyLogger.logLevelFilter]);
     NSArray *array = @[@"info",@"error"];
@@ -242,7 +242,7 @@
     FTSessionReplayConfig *srConfig = [[FTSessionReplayConfig alloc]init];
     FTSessionReplayConfig *copySrConfig = [srConfig copy];
     [copySrConfig mergeWithRemoteConfigModel:[[FTRemoteConfigModel alloc] initWithDict:testSRDict]];
-    XCTAssertTrue(srConfig.sampleRate != copySrConfig.sampleRate && copyLogger.samplerate == 80);
+    XCTAssertTrue(srConfig.sampleRate != copySrConfig.sampleRate && copyLogger.sampleRate == 80);
     XCTAssertTrue(srConfig.sessionReplayOnErrorSampleRate != copySrConfig.sessionReplayOnErrorSampleRate && copySrConfig.sessionReplayOnErrorSampleRate == 50);
 #endif
 
@@ -257,8 +257,8 @@
         FT_R_SYNC_SLEEP_TIME:@"100"
     };
     NSString *datakit = @"http://datakit-test.com";
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakit];
-    FTMobileConfig *copyConfig = [config copy];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:datakit];
+    FTSDKConfig *copyConfig = [config copy];
     
     XCTAssertNoThrow([copyConfig mergeWithRemoteConfigModel:[[FTRemoteConfigModel alloc] initWithDict:testBaseDict]]);
     XCTAssertTrue(config != copyConfig);
@@ -354,7 +354,7 @@
     self.expectation = [self expectationWithDescription:@"UpdateRemoteConfig"];
     [[FTRemoteConfigManager sharedInstance] saveRemoteConfig:nil];
     
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakit];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:datakit];
     config.remoteConfiguration = YES;
     [FTMobileAgent startWithConfigOptions:config];
     [FTRemoteConfigManager sharedInstance].delegate = self;
@@ -589,7 +589,7 @@
 - (void)sdkInitWithRemoteConfiguration:(BOOL)enable interval:(int)interval block:(nullable FTRemoteConfigFetchCompletionBlock)block{
     NSString *datakit = @"http://datakit-test.com";
     NSString *appId = @"appid-test";
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakit];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:datakit];
     config.remoteConfiguration = enable;
     config.remoteConfigMiniUpdateInterval = interval;
     config.remoteConfigFetchCompletionBlock = block;
@@ -830,7 +830,7 @@
     
     NSString *datakit = @"http://datakit-test.com";
     
-    FTMobileConfig *config = [[FTMobileConfig alloc] init];
+    FTSDKConfig *config = [[FTSDKConfig alloc] init];
     config.remoteConfiguration = YES;
     config.remoteConfigMiniUpdateInterval = 0;
     config.enableDataFilter = NO;
@@ -875,7 +875,7 @@
         return [OHHTTPStubsResponse responseWithData:[contentStr dataUsingEncoding:NSUTF8StringEncoding] statusCode:200 headers:nil];
     }];
     
-    FTMobileConfig *config = [[FTMobileConfig alloc] init];
+    FTSDKConfig *config = [[FTSDKConfig alloc] init];
     config.remoteConfiguration = YES;
     config.remoteConfigMiniUpdateInterval = 0;
     config.enableDataFilter = NO;
@@ -911,7 +911,7 @@
         return [OHHTTPStubsResponse responseWithData:[contentStr dataUsingEncoding:NSUTF8StringEncoding] statusCode:200 headers:nil];
     }];
     
-    FTMobileConfig *config = [[FTMobileConfig alloc] initWithDatakitUrl:datakit];
+    FTSDKConfig *config = [[FTSDKConfig alloc] initWithDatakitUrl:datakit];
     config.remoteConfiguration = YES;
     config.remoteConfigMiniUpdateInterval = 0;
     config.enableDataFilter = NO;
@@ -950,7 +950,7 @@
         return nil;
     }];
     
-    FTMobileConfig *config = [[FTMobileConfig alloc] init];
+    FTSDKConfig *config = [[FTSDKConfig alloc] init];
     config.remoteConfiguration = YES;
     config.remoteConfigMiniUpdateInterval = 0;
     config.enableDataFilter = NO;
@@ -1002,7 +1002,7 @@
         return nil;
     }];
     
-    FTMobileConfig *config = [[FTMobileConfig alloc] init];
+    FTSDKConfig *config = [[FTSDKConfig alloc] init];
     config.remoteConfiguration = YES;
     config.remoteConfigMiniUpdateInterval = 0;
     config.enableDataFilter = NO;
@@ -1054,7 +1054,7 @@
         return nil;
     }];
     
-    FTMobileConfig *config = [[FTMobileConfig alloc] initWithDatakitUrl:datakit];
+    FTSDKConfig *config = [[FTSDKConfig alloc] initWithDatakitUrl:datakit];
     config.remoteConfiguration = YES;
     config.remoteConfigMiniUpdateInterval = 0;
     config.enableDataFilter = NO;

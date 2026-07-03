@@ -8,7 +8,8 @@
 
 #import <XCTest/XCTest.h>
 #import "FTRumConfig.h"
-#import "FTMobileConfig+Private.h"
+#import "FTMobileSDK.h"
+#import "FTSDKConfig+Private.h"
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"
 #import "FTMobileAgent+Private.h"
@@ -343,7 +344,7 @@ typedef FTRUMAction* _Nullable (^FTLaunchActionTrackingBlock)(FTLaunchType type)
 }
 
 - (void)testViewTrackingStrategy_rumView_isUntrackedModal{
-    FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:self.url];
+    FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:self.url];
     config.enableSDKDebugLog = YES;
     config.autoSync = NO;
     [FTMobileAgent startWithConfigOptions:config];

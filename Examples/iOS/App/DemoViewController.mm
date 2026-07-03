@@ -8,7 +8,7 @@
 
 #import "DemoViewController.h"
 #import "UITestVC.h"
-#import <GuanceSDK/FTMobileAgent.h>
+#import <GuanceSDK/GuanceSDK.h>
 //Test crash collection
 #import "TestLongTaskVC.h"
 #import "TestWKWebViewVC.h"
