@@ -3,7 +3,7 @@
 //  ft-sdk-iosTestUnitTests
 //
 //  Created by hulilei on 2020/8/27.
-//  Copyright 2020 Shanghai Guance Information Technology Co., Ltd.
+//  Copyright 2021 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.

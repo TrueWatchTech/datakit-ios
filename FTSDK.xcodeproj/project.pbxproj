@@ -1937,13 +1937,6 @@
 			name = FTLog;
 			sourceTree = "<group>";
 		};
-		1751F5252FDA9F9200C43206 /* Heatmap */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Heatmap;
-			sourceTree = "<group>";
-		};
 		1762D6C22DC1C8EA00238B61 /* Storage */ = {
 			isa = PBXGroup;
 			children = (
@@ -2453,7 +2446,6 @@
 		17E4CB8829CD42E4005C2D99 /* FTRUM */ = {
 			isa = PBXGroup;
 			children = (
-				1751F5252FDA9F9200C43206 /* Heatmap */,
 				17E4CBD629CD42E4005C2D99 /* FTCrash */,
 				172B10F32E377BA100753766 /* FTFatalErrorContext.h */,
 				17A4230B2EEAB9E400416673 /* FTFatalErrorContext.m */,
