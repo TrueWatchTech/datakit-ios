@@ -4,19 +4,34 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build"
-PODSPEC="${SCRIPT_DIR}/TrueWatchMobileSDK.podspec"
+PODSPEC="${SCRIPT_DIR}/GuanceSDK.podspec"
 FRAMEWORK_SCRIPT="${SCRIPT_DIR}/BuildSDKPackages.sh"
 SPM_VALIDATION_DIR="${BUILD_DIR}/SwiftPackageValidation"
 SPM_DERIVED_DATA="${BUILD_DIR}/SwiftPackageDerivedData"
 SPM_HOME="${BUILD_DIR}/SwiftPackageHome"
 SPM_MODULE_CACHE="${BUILD_DIR}/SwiftPackageModuleCache"
-SPM_DESTINATION="generic/platform=iOS"
+SPM_DESTINATION="${SPM_DESTINATION:-}"
+SPM_PLATFORMS="${SPM_PLATFORMS:-ios,macos,tvos}"
 XCODEBUILD_OPTIONS="${XCODEBUILD_OPTIONS--quiet}"
+FRAMEWORK_ZIPS=(
+  "GuanceSDK.xcframework.zip"
+  "GuanceSessionReplay.xcframework.zip"
+  "GuanceWidgetExtension.xcframework.zip"
+  "GuanceWidgetExtension-DisableSwizzlingResource.xcframework.zip"
+  "GuanceSDK-DisableSwizzlingResource.xcframework.zip"
+  "GuanceSDK-Dynamic.xcframework.zip"
+  "GuanceSessionReplay-Dynamic.xcframework.zip"
+  "GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework.zip"
+)
 SPM_SCHEMES=(
-  "FTMobileSDK"
-  "FTMobileExtension"
-  "FTSDKCore"
-  "FTSessionReplay"
+  "GuanceSDK"
+  "GuanceWidgetExtension"
+  "GuanceSessionReplay"
+)
+SPM_SCHEME_PLATFORMS=(
+  "ios,macos,tvos"
+  "ios"
+  "ios"
 )
 
 RUN_COCOAPODS=1
@@ -43,16 +58,19 @@ Usage:
   bash VerifyDistributionPackages.sh [options]
 
 Checks:
-  cocoapods   pod lib lint TrueWatchMobileSDK.podspec
-  framework   BuildSDKPackages.sh, then validates build/SDK.zip
-  spm         Swift Package manifest + iOS xcodebuild build for all products
+  cocoapods   pod lib lint GuanceSDK.podspec
+  framework   BuildSDKPackages.sh, then validates generated .xcframework.zip files
+  spm         Swift Package manifest + xcodebuild builds for each product's supported platforms
 
 Options:
   --only <list>            Comma-separated checks to run: cocoapods,framework,spm
   --skip <list>            Comma-separated checks to skip: cocoapods,framework,spm
   --fail-fast              Stop at the first failed check
-  --podspec <path>         Podspec path. Default: TrueWatchMobileSDK.podspec
-  --spm-destination <dest> xcodebuild destination. Default: generic/platform=iOS
+  --podspec <path>         Podspec path. Default: GuanceSDK.podspec
+  --spm-platforms <list>   Comma-separated platforms to validate: ios,macos,tvos
+                           Default: ios,macos,tvos
+  --spm-destination <dest> xcodebuild destination override. When set, SPM builds
+                           each selected product once with this destination.
   --help, -h               Show this help
 
 Environment:
@@ -60,6 +78,8 @@ Environment:
                            Default: --allow-warnings --verbose
   XCODEBUILD_OPTIONS       Extra options for Swift Package xcodebuild.
                            Default: -quiet
+  SPM_PLATFORMS            Same as --spm-platforms.
+  SPM_DESTINATION          Same as --spm-destination.
 
 Examples:
   bash VerifyDistributionPackages.sh
@@ -84,6 +104,100 @@ contains_item() {
   done
 
   return 1
+}
+
+normalize_spm_platform() {
+  local platform
+  platform="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+
+  case "${platform}" in
+    ios|iphoneos)
+      echo "ios"
+      ;;
+    macos|osx)
+      echo "macos"
+      ;;
+    tvos|appletvos)
+      echo "tvos"
+      ;;
+    *)
+      error "Unsupported SPM platform: $1. Supported values: ios,macos,tvos"
+      return 1
+      ;;
+  esac
+}
+
+normalize_spm_platform_list() {
+  local list="$1"
+  local old_ifs="$IFS"
+  local normalized=()
+  IFS=","
+  set -- ${list}
+  IFS="$old_ifs"
+
+  local value
+  local platform
+  for value in "$@"; do
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    if [[ -z "${value}" ]]; then
+      continue
+    fi
+    platform="$(normalize_spm_platform "${value}")" || return 1
+    normalized+=("${platform}")
+  done
+
+  if [[ ${#normalized[@]} -eq 0 ]]; then
+    error "SPM platform list is empty"
+    return 1
+  fi
+
+  local old_ifs_join="$IFS"
+  IFS=","
+  echo "${normalized[*]}"
+  IFS="$old_ifs_join"
+}
+
+spm_platform_destination() {
+  case "$1" in
+    ios)
+      echo "generic/platform=iOS"
+      ;;
+    macos)
+      echo "generic/platform=macOS"
+      ;;
+    tvos)
+      echo "generic/platform=tvOS"
+      ;;
+    *)
+      error "Unsupported SPM platform: $1"
+      return 1
+      ;;
+  esac
+}
+
+spm_platform_display_name() {
+  case "$1" in
+    ios)
+      echo "iOS"
+      ;;
+    macos)
+      echo "macOS"
+      ;;
+    tvos)
+      echo "tvOS"
+      ;;
+    *)
+      echo "$1"
+      ;;
+  esac
+}
+
+spm_platform_selected() {
+  local selected_platforms="$1"
+  local platform="$2"
+
+  contains_item "${selected_platforms}" "${platform}"
 }
 
 enable_only() {
@@ -169,15 +283,23 @@ validate_framework_package() {
     return 1
   fi
 
-  bash "${FRAMEWORK_SCRIPT}"
-
-  local sdk_zip="${BUILD_DIR}/SDK.zip"
-  if [[ ! -s "${sdk_zip}" ]]; then
-    error "SDK zip was not generated: ${sdk_zip}"
+  if ! bash "${FRAMEWORK_SCRIPT}"; then
+    error "Framework packaging script failed: ${FRAMEWORK_SCRIPT}"
     return 1
   fi
 
-  zipinfo -1 "${sdk_zip}" > /dev/null
+  local zip_name
+  for zip_name in "${FRAMEWORK_ZIPS[@]}"; do
+    local zip_path="${BUILD_DIR}/${zip_name}"
+    local xcframework_name="${zip_name%.zip}"
+
+    if [[ ! -s "${zip_path}" ]]; then
+      error "Framework zip was not generated: ${zip_path}"
+      return 1
+    fi
+
+    zipinfo -1 "${zip_path}" "${xcframework_name}/Info.plist" > /dev/null || return 1
+  done
 }
 
 prepare_spm_validation_dir() {
@@ -186,7 +308,26 @@ prepare_spm_validation_dir() {
   mkdir -p "${SPM_VALIDATION_DIR}" "${SPM_HOME}" "${SPM_MODULE_CACHE}"
 
   cp "${SCRIPT_DIR}/Package.swift" "${SPM_VALIDATION_DIR}/Package.swift"
-  ln -s "${SCRIPT_DIR}/FTMobileSDK" "${SPM_VALIDATION_DIR}/FTMobileSDK"
+  ln -s "${SCRIPT_DIR}/Sources" "${SPM_VALIDATION_DIR}/Sources"
+}
+
+build_swift_package_scheme() {
+  local scheme="$1"
+  local destination="$2"
+  local platform_name="$3"
+
+  info "Building Swift Package scheme: ${scheme} (${platform_name}, ${destination})"
+  # shellcheck disable=SC2086
+  HOME="${SPM_HOME}" \
+    CLANG_MODULE_CACHE_PATH="${SPM_MODULE_CACHE}" \
+    xcodebuild build \
+    ${XCODEBUILD_OPTIONS} \
+    -scheme "${scheme}" \
+    -destination "${destination}" \
+    -derivedDataPath "${SPM_DERIVED_DATA}" \
+    CLANG_MODULE_CACHE_PATH="${SPM_MODULE_CACHE}" \
+    CODE_SIGNING_ALLOWED=NO \
+    CODE_SIGNING_REQUIRED=NO
 }
 
 validate_swift_package() {
@@ -207,20 +348,50 @@ validate_swift_package() {
       CLANG_MODULE_CACHE_PATH="${SPM_MODULE_CACHE}" \
       swift package describe > /dev/null
 
+    local selected_platforms
+    selected_platforms="$(normalize_spm_platform_list "${SPM_PLATFORMS}")"
+
+    local old_ifs="$IFS"
+    IFS=","
+    local selected_platform_array=(${selected_platforms})
+    IFS="$old_ifs"
+
+    local index
     local scheme
-    for scheme in "${SPM_SCHEMES[@]}"; do
-      info "Building Swift Package scheme: ${scheme}"
-      # shellcheck disable=SC2086
-      HOME="${SPM_HOME}" \
-        CLANG_MODULE_CACHE_PATH="${SPM_MODULE_CACHE}" \
-        xcodebuild build \
-        ${XCODEBUILD_OPTIONS} \
-        -scheme "${scheme}" \
-        -destination "${SPM_DESTINATION}" \
-        -derivedDataPath "${SPM_DERIVED_DATA}" \
-        CLANG_MODULE_CACHE_PATH="${SPM_MODULE_CACHE}" \
-        CODE_SIGNING_ALLOWED=NO \
-        CODE_SIGNING_REQUIRED=NO
+    local scheme_platforms
+    local platform
+    local destination
+    local should_build_with_override
+
+    for index in "${!SPM_SCHEMES[@]}"; do
+      scheme="${SPM_SCHEMES[${index}]}"
+      scheme_platforms="${SPM_SCHEME_PLATFORMS[${index}]}"
+
+      if [[ -n "${SPM_DESTINATION}" ]]; then
+        should_build_with_override=0
+        for platform in "${selected_platform_array[@]}"; do
+          if spm_platform_selected "${scheme_platforms}" "${platform}"; then
+            should_build_with_override=1
+            break
+          fi
+        done
+        if [[ "${should_build_with_override}" == "1" ]]; then
+          build_swift_package_scheme "${scheme}" "${SPM_DESTINATION}" "custom"
+        else
+          warn "Skipping Swift Package scheme ${scheme}; selected platforms (${selected_platforms}) do not match supported platforms (${scheme_platforms})"
+        fi
+        continue
+      fi
+
+      for platform in "${selected_platform_array[@]}"; do
+        if ! spm_platform_selected "${scheme_platforms}" "${platform}"; then
+          warn "Skipping Swift Package scheme ${scheme} on $(spm_platform_display_name "${platform}")"
+          continue
+        fi
+
+        destination="$(spm_platform_destination "${platform}")"
+        build_swift_package_scheme "${scheme}" "${destination}" "$(spm_platform_display_name "${platform}")"
+      done
     done
   )
 }
@@ -254,6 +425,14 @@ parse_args() {
           exit 1
         fi
         PODSPEC="$2"
+        shift 2
+        ;;
+      --spm-platforms)
+        if [[ $# -lt 2 ]]; then
+          error "Missing value for --spm-platforms"
+          exit 1
+        fi
+        SPM_PLATFORMS="$2"
         shift 2
         ;;
       --spm-destination)

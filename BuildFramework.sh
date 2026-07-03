@@ -1,22 +1,22 @@
 #!/bin/bash
 
 # Usage Examples (Command → Output XCFramework Name):
-#   bash BuildFramework.sh FTMobileSDK                          → FTMobileSDK.xcframework
-#   bash BuildFramework.sh FTMobileSDK-dynamic                  → FTMobileSDK-Dynamic.xcframework
-#   bash BuildFramework.sh FTMobileSDK --disable-swizzling-resource  → FTMobileSDK-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh FTMobileSDK-dynamic --disable-swizzling-resource → FTMobileSDK-Dynamic-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh FTMobileExtension                    → FTMobileExtension.xcframework
-#   bash BuildFramework.sh FTMobileExtension --disable-swizzling-resource → FTMobileExtension-DisableSwizzlingResource.xcframework
-#   bash BuildFramework.sh FTSessionReplay                      → FTSessionReplay.xcframework
-#   bash BuildFramework.sh FTSessionReplay-dynamic              → FTSessionReplay-Dynamic.xcframework
+#   bash BuildFramework.sh GuanceSDK                                  → GuanceSDK.xcframework
+#   bash BuildFramework.sh GuanceSDK --dynamic                        → GuanceSDK-Dynamic.xcframework
+#   bash BuildFramework.sh GuanceSDK --disable-swizzling-resource     → GuanceSDK-DisableSwizzlingResource.xcframework
+#   bash BuildFramework.sh GuanceSDK --dynamic --disable-swizzling-resource → GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework
+#   bash BuildFramework.sh GuanceWidgetExtension                      → GuanceWidgetExtension.xcframework
+#   bash BuildFramework.sh GuanceSessionReplay                        → GuanceSessionReplay.xcframework
+#   bash BuildFramework.sh GuanceSessionReplay --dynamic              → GuanceSessionReplay-Dynamic.xcframework
 
 # Parameter Notes:
-#   -dynamic: Build dynamic library (default: static library)
+#   --dynamic: Build dynamic library (default: static library)
 #   --disable-swizzling-resource: Disable URLSession method swizzling (avoids swizzling conflicts)
 
 # SDK Usage Scenarios:
-#   Main Project: FTMobileSDK (static/dynamic)
-#   Widget Extension: FTMobileExtension (static only) / FTMobileSDK-dynamic (dynamic, shared with main project)
+#   Main Project SDK: static/dynamic
+#   Widget Extension SDK: static only
+#   Session Replay SDK: static/dynamic
 
 # Output Path: Packaged SDK is saved to the "build" folder in the current directory
 
@@ -24,9 +24,13 @@ set -euo pipefail
 # ======================== CORE ========================
 SWIZZLING_MACRO="FT_DISABLE_SWIZZLING_RESOURCE"
 CONFIGURATION="Release"
+PROJECT="${PROJECT:-FTSDK.xcodeproj}"
+BASE_CONFIG="${BASE_CONFIG:-Base.xcconfig}"
+XCODEBUILD_OPTIONS="${XCODEBUILD_OPTIONS--quiet}"
 
 LIB_TYPE="static"
 SCHEME_NAME=""
+PRODUCT_NAME=""
 WORK_DIR="./build"
 
 # ======================== [Utility Functions] ========================
@@ -41,17 +45,37 @@ error() {
 }
 
 show_help() {
+  local sdk_product_name
+  local session_replay_product_name
+  local widget_extension_product_name
+  sdk_product_name="$(read_xcconfig_value_or_default SDK_PRODUCT_NAME GuanceSDK)"
+  session_replay_product_name="$(read_xcconfig_value_or_default SESSION_REPLAY_PRODUCT_NAME GuanceSessionReplay)"
+  widget_extension_product_name="$(read_xcconfig_value_or_default WIDGET_EXTENSION_PRODUCT_NAME GuanceWidgetExtension)"
+
   echo "Usage:"
-  echo "  bash $0 <SCHEME_NAME> [--disable-swizzling-resource]"
+  echo "  bash $0 <PRODUCT_NAME> [--dynamic] [--disable-swizzling-resource]"
+  echo "  bash $0 <PRODUCT_NAME>-dynamic [--disable-swizzling-resource]"
   echo ""
-  echo "Core Workflow (aligned with original script):"
-  echo "  1. Compile archive for physical iOS devices"
-  echo "  2. Compile archive for iOS simulators"
-  echo "  3. Combine two archives to generate XCFramework (dynamic libraries link dSYM files)"
+  echo "Products:"
+  echo "  ${sdk_product_name}"
+  echo "  ${session_replay_product_name}"
+  echo "  ${widget_extension_product_name} (static only)"
+  echo ""
+  echo "Options:"
+  echo "  --dynamic                       Build a dynamic XCFramework"
+  echo "  --disable-swizzling-resource    Disable URLSession resource swizzling"
   echo ""
   echo "Examples:"
-  echo " bash $0 FTMobileSDK-dynamic --disable-swizzling-resource # dynamic + disable swizzling"
-  echo " bash $0 FTMobileSDK # static"
+  echo "  bash $0 ${sdk_product_name}"
+  echo "  bash $0 ${sdk_product_name} --dynamic"
+  echo "  bash $0 ${sdk_product_name} --disable-swizzling-resource"
+  echo "  bash $0 ${sdk_product_name} --dynamic --disable-swizzling-resource"
+  echo "  bash $0 ${session_replay_product_name}"
+  echo "  bash $0 ${session_replay_product_name} --dynamic"
+  echo "  bash $0 ${widget_extension_product_name}"
+  echo ""
+  echo "Output:"
+  echo "  build/<XCFrameworkName>/<XCFrameworkName>.xcframework"
 }
 
 # Check xcodebuild environment
@@ -59,7 +83,42 @@ check_env() {
   if ! command -v xcodebuild &> /dev/null; then
     error "❌ xcodebuild not found. Please install Xcode and configure command line tools"
   fi
+  if [[ ! -d "${PROJECT}" ]]; then
+    error "❌ Xcode project not found: ${PROJECT}"
+  fi
+  if [[ ! -f "${BASE_CONFIG}" ]]; then
+    error "❌ Base xcconfig not found: ${BASE_CONFIG}"
+  fi
   info "✅ Environment check passed"
+}
+
+read_xcconfig_value() {
+  local key="$1"
+  local value
+  value=$(sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*//p" "${BASE_CONFIG}" | tail -n 1)
+  value="${value%%//*}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  if [[ -z "${value}" ]]; then
+    error "❌ Missing ${key} in ${BASE_CONFIG}"
+  fi
+  echo "${value}"
+}
+
+read_xcconfig_value_or_default() {
+  local key="$1"
+  local fallback="$2"
+  local value=""
+  if [[ -f "${BASE_CONFIG}" ]]; then
+    value=$(sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*//p" "${BASE_CONFIG}" | tail -n 1)
+    value="${value%%//*}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+  fi
+  if [[ -z "${value}" ]]; then
+    value="${fallback}"
+  fi
+  echo "${value}"
 }
 
 # Clean up old build artifacts (aligned with your script: empty build directory)
@@ -70,37 +129,74 @@ clean_build() {
   mkdir -p "${clean}"
 }
 
-# Parse Scheme (core: distinguish static/dynamic libraries, return framework name)
-# Parameter: scheme name
-# Return: framework name (stdout) + library type (static/dynamic, global variable LIB_TYPE)
-parse_scheme() {
-  local scheme="$1"
-  local scheme_lower=$(echo "${scheme}" | tr '[:upper:]' '[:lower:]')
-  if [[ "${scheme_lower}" == *"-dynamic" ]]; then
+# Parse product input and map it to the neutral Xcode scheme.
+# Parameter: product name
+# Return: neutral scheme name and product name through globals
+parse_product() {
+  local product="$1"
+  local product_lower=$(echo "${product}" | tr '[:upper:]' '[:lower:]')
+  local requested_name
+  if [[ "${product_lower}" == *"-dynamic" ]]; then
     LIB_TYPE="dynamic"
-    SCHEME_NAME="${scheme%-dynamic}"
+    requested_name="${product%-dynamic}"
   else
-    LIB_TYPE="static"
-    SCHEME_NAME="${scheme}"
+    requested_name="${product}"
+  fi
+
+  local sdk_product_name
+  local session_replay_product_name
+  local widget_extension_product_name
+  sdk_product_name="$(read_xcconfig_value SDK_PRODUCT_NAME)"
+  session_replay_product_name="$(read_xcconfig_value SESSION_REPLAY_PRODUCT_NAME)"
+  widget_extension_product_name="$(read_xcconfig_value WIDGET_EXTENSION_PRODUCT_NAME)"
+
+  if [[ "${requested_name}" == "FTSDK" || "${requested_name}" == "${sdk_product_name}" ]]; then
+    SCHEME_NAME="FTSDK"
+    PRODUCT_NAME="${sdk_product_name}"
+  elif [[ "${requested_name}" == "FTSessionReplay" || "${requested_name}" == "${session_replay_product_name}" ]]; then
+    SCHEME_NAME="FTSessionReplay"
+    PRODUCT_NAME="${session_replay_product_name}"
+  elif [[ "${requested_name}" == "FTWidgetExtension" || "${requested_name}" == "${widget_extension_product_name}" ]]; then
+    SCHEME_NAME="FTWidgetExtension"
+    PRODUCT_NAME="${widget_extension_product_name}"
+  else
+    error "❌ Unsupported product name: ${requested_name}. Run $0 --help to view supported products."
+  fi
+
+  if [[ "${SCHEME_NAME}" == "FTWidgetExtension" && "${LIB_TYPE}" == "dynamic" ]]; then
+    error "❌ ${widget_extension_product_name} only supports static XCFrameworks. Remove --dynamic."
   fi
 }
 
 # ======================== [Step 1: Compile Single Archive (aligned with your compilation logic)] ========================
 # Parameter 1: Scheme name
-# Parameter 2: Framework name
+# Parameter 2: Product name
 # Parameter 3: Compilation platform (iphoneos/iphonesimulator)
 # Parameter 4: Whether to disable Swizzling (0/1)
 # Parameter 5: Archive output path (e.g., ./build/ios.xcarchive)
 build_archive() {
   local scheme="$1"
-  local framework_name="$2"
+  local product_name="$2"
   local platform="$3"
   local disable_swizzling="$4"
   local archive_path="$5"
+  local derived_data_path="${archive_path}/DerivedData"
+  local destination
   
   archive_path+="/${platform}.xcarchive"
+  case "${platform}" in
+    iphoneos)
+      destination="generic/platform=iOS"
+      ;;
+    iphonesimulator)
+      destination="generic/platform=iOS Simulator"
+      ;;
+    *)
+      error "❌ Unsupported archive platform: ${platform}"
+      ;;
+  esac
   
-  info "📦 Starting to compile ${platform} archive → ${archive_path} (${LIB_TYPE})"
+  info "📦 Starting to compile ${product_name} for ${platform} → ${archive_path} (${LIB_TYPE})"
 
   # Distinguish static/dynamic library parameters (aligned with your script)
   local mach_o_type="staticlib"
@@ -115,11 +211,16 @@ build_archive() {
   fi
   
   # Execute compilation (fully aligned with your xcodebuild parameters)
+  # shellcheck disable=SC2086
   xcodebuild archive \
+    ${XCODEBUILD_OPTIONS} \
+    -project "${PROJECT}" \
     -scheme "${scheme}" \
     -configuration "${CONFIGURATION}" \
     -archivePath "${archive_path}" \
     -sdk "${platform}" \
+    -destination "${destination}" \
+    -derivedDataPath "${derived_data_path}" \
     SKIP_INSTALL=NO \
     MACH_O_TYPE="${mach_o_type}" \
     GCC_PREPROCESSOR_DEFINITIONS="${preprocessor_defs}" \
@@ -133,16 +234,16 @@ build_archive() {
 }
 
 # ======================== [Step 2: Combine XCFramework (fully replicate your logic)] ========================
-# Parameter 1: Framework name
-# Parameter 2: Whether to disable Swizzling (0/1)
+# Parameter 1: Product name
+# Parameter 2: Framework output name
 # Parameter 3: Archive path
 create_xcframework() {
-  local scheme="$1"
+  local product_name="$1"
   local framework_name="$2"
   local ARCHIVE_PATH="$3"
 
-  local ios_framework="${ARCHIVE_PATH}/iphoneos.xcarchive/Products/Library/Frameworks/${scheme}.framework"
-  local sim_framework="${ARCHIVE_PATH}/iphonesimulator.xcarchive/Products/Library/Frameworks/${scheme}.framework"
+  local ios_framework="${ARCHIVE_PATH}/iphoneos.xcarchive/Products/Library/Frameworks/${product_name}.framework"
+  local sim_framework="${ARCHIVE_PATH}/iphonesimulator.xcarchive/Products/Library/Frameworks/${product_name}.framework"
  
   local XCF_FRAMEWORK_PATH="${ARCHIVE_PATH}/${framework_name}.xcframework"
   
@@ -159,8 +260,8 @@ create_xcframework() {
 
   # 5. Generate XCFramework (fully replicate your branch logic)
   if [[ "${LIB_TYPE}" == "dynamic" ]]; then
-    local ios_dsym="${ARCHIVE_PATH}/iphoneos.xcarchive/dSYMs/${scheme}.framework.dSYM"
-    local sim_dsym="${ARCHIVE_PATH}/iphonesimulator.xcarchive/dSYMs/${scheme}.framework.dSYM"
+    local ios_dsym="${ARCHIVE_PATH}/iphoneos.xcarchive/dSYMs/${product_name}.framework.dSYM"
+    local sim_dsym="${ARCHIVE_PATH}/iphonesimulator.xcarchive/dSYMs/${product_name}.framework.dSYM"
 
     if [[ ! -d "${ios_dsym}" ]]; then
       error "❌ Physical device dSYM does not exist: ${ios_dsym}"
@@ -202,7 +303,8 @@ create_xcframework() {
 # ======================== [Main Workflow (strict step-by-step: clean → parse → compile → combine)] ========================
 main() {
   # Initialize parameters
-  local scheme=""
+  local product=""
+  local dynamic="0"
   local disable_swizzling="0"
 
   # Parse command line parameters (compatible with legacy commands)
@@ -212,8 +314,12 @@ main() {
         if [[ $# -lt 2 ]]; then
           error "❌ Missing value for --scheme"
         fi
-        scheme="$2"
+        product="$2"
         shift 2
+        ;;
+      --dynamic)
+        dynamic="1"
+        shift
         ;;
       --disable-swizzling-resource)
           disable_swizzling="1"
@@ -224,8 +330,8 @@ main() {
         exit 0
         ;;
       *)
-        if [[ -z "${scheme}" ]]; then
-          scheme="$1"
+        if [[ -z "${product}" ]]; then
+          product="$1"
           shift
         else
           error "❌ Invalid parameter: $1 (Run $0 --help to view usage)"
@@ -234,18 +340,22 @@ main() {
     esac
   done
 
-  # Verify Scheme is mandatory
-  if [[ -z "${scheme}" ]]; then
-    error "❌ Missing Scheme name! Example: $0 FTMobileSDK-dynamic"
+  # Verify product name is mandatory
+  if [[ -z "${product}" ]]; then
+    error "❌ Missing product name! Run $0 --help to view usage."
   fi
 
   # Step 1: Environment check + clean up old artifacts
   check_env
 
-  # Step 2: Parse Scheme (get framework name + library type)
-  parse_scheme "${scheme}"
+  if [[ "${dynamic}" == "1" && "$(echo "${product}" | tr '[:upper:]' '[:lower:]')" != *"-dynamic" ]]; then
+    product+="-dynamic"
+  fi
+
+  # Step 2: Parse product name (get neutral scheme name + framework name + library type)
+  parse_product "${product}"
   
-  local framework_name="${SCHEME_NAME}"
+  local framework_name="${PRODUCT_NAME}"
   
   if [[ "${LIB_TYPE}" == "dynamic" ]]; then
           framework_name+="-Dynamic"
@@ -259,13 +369,14 @@ main() {
   
   clean_build "${archive_path}"
   
-  info "🔧  → SCHEME_NAME: ${SCHEME_NAME} | FRAMEWORK_NAME: ${framework_name} | LIB_TYPE: ${LIB_TYPE}"
+  info "🔧  → PRODUCT_NAME: ${PRODUCT_NAME} | FRAMEWORK_NAME: ${framework_name} | LIB_TYPE: ${LIB_TYPE}"
   # Step 4: archive
-  build_archive "${SCHEME_NAME}" "${framework_name}" "iphoneos" "${disable_swizzling}" "${archive_path}"
-  build_archive "${SCHEME_NAME}" "${framework_name}" "iphonesimulator" "${disable_swizzling}" "${archive_path}"
+  build_archive "${SCHEME_NAME}" "${PRODUCT_NAME}" "iphoneos" "${disable_swizzling}" "${archive_path}"
+  build_archive "${SCHEME_NAME}" "${PRODUCT_NAME}" "iphonesimulator" "${disable_swizzling}" "${archive_path}"
 
   # Step 5: Combine archives to generate XCFramework (core: combine after compilation completes)
-  create_xcframework "${SCHEME_NAME}" "${framework_name}" "${archive_path}"
+  create_xcframework "${PRODUCT_NAME}" "${framework_name}" "${archive_path}"
+  rm -rf "${archive_path}/DerivedData"
 
   # Final artifact prompt
   info "🎉 Full workflow completed! Final artifact:"
