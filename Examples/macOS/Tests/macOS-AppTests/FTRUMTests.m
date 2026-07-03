@@ -19,7 +19,7 @@
 #import "FTResourceContentModel.h"
 #import "FTResourceMetricsModel.h"
 #import "TestRumWebView.h"
-#import "FTMobileAgentVersion.h"
+#import "FTSDKVersion.h"
 #import "FTTestHelper.h"
 @interface FTRUMTests : XCTestCase<WKNavigationDelegate>
 @property (nonatomic, copy) NSString *url;

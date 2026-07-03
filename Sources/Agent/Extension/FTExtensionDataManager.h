@@ -1,6 +1,6 @@
 //
 //  FTExtensionDataManager.h
-//  GuanceWidgetExtension
+//  FTWidgetExtension
 //
 //  Created by hulilei on 2022/9/9.
 //  Copyright © 2022 DataFlux-cn. All rights reserved.

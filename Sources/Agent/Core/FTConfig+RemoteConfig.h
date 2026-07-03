@@ -6,12 +6,12 @@
 //  Copyright © 2025 DataFlux-cn. All rights reserved.
 //
 
-#import "FTMobileConfig.h"
+#import "FTSDKConfig.h"
 #import "FTRumConfig.h"
 #import "FTLoggerConfig.h"
 #import "FTRemoteConfigModel.h"
 
-@interface FTMobileConfig (RemoteConfig)
+@interface FTSDKConfig (RemoteConfig)
 -(void)mergeWithRemoteConfigModel:(FTRemoteConfigModel *)model;
 @end
 

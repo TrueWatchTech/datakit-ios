@@ -164,17 +164,17 @@ validate_zip() {
 }
 
 build_dynamic_package() {
-  build_and_copy "GuanceSDK-dynamic" \
+  build_and_copy "FTSDK-dynamic" \
     "GuanceSDK-Dynamic" \
     "${DYNAMIC_DIR}" \
     "GuanceSDK-Dynamic.xcframework"
 
-  build_and_copy "GuanceSessionReplay-dynamic" \
+  build_and_copy "FTSessionReplay-dynamic" \
     "GuanceSessionReplay-Dynamic" \
     "${DYNAMIC_DIR}" \
     "GuanceSessionReplay-Dynamic.xcframework"
 
-  build_and_copy "GuanceSDK-dynamic" \
+  build_and_copy "FTSDK-dynamic" \
     "GuanceSDK-Dynamic-DisableSwizzlingResource" \
     "${DYNAMIC_DIR}" \
     "GuanceSDK-Dynamic-DisableSwizzlingResource.xcframework" \
@@ -185,28 +185,28 @@ build_dynamic_package() {
 }
 
 build_static_package() {
-  build_and_copy "GuanceSDK" \
+  build_and_copy "FTSDK" \
     "GuanceSDK" \
     "${STATIC_DIR}" \
     "GuanceSDK.xcframework"
 
-  build_and_copy "GuanceSessionReplay" \
+  build_and_copy "FTSessionReplay" \
     "GuanceSessionReplay" \
     "${STATIC_DIR}" \
     "GuanceSessionReplay.xcframework"
 
-  build_and_copy "GuanceWidgetExtension" \
+  build_and_copy "FTWidgetExtension" \
     "GuanceWidgetExtension" \
     "${STATIC_DIR}" \
     "GuanceWidgetExtension.xcframework"
 
-  build_and_copy "GuanceWidgetExtension" \
+  build_and_copy "FTWidgetExtension" \
     "GuanceWidgetExtension-DisableSwizzlingResource" \
     "${STATIC_DIR}" \
     "GuanceWidgetExtension-DisableSwizzlingResource.xcframework" \
     --disable-swizzling-resource
 
-  build_and_copy "GuanceSDK" \
+  build_and_copy "FTSDK" \
     "GuanceSDK-DisableSwizzlingResource" \
     "${STATIC_DIR}" \
     "GuanceSDK-DisableSwizzlingResource.xcframework" \

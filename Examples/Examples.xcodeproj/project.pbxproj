@@ -395,8 +395,8 @@
 		178378772D8D0BB600C590AE /* FTRUMTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTRUMTest.m; sourceTree = "<group>"; };
 		178378782D8D0BB600C590AE /* FTRUMViewTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTRUMViewTest.m; sourceTree = "<group>"; };
 		178649282A1CA79100521187 /* GuanceSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = GuanceSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		1788B11429BAF43B007FDFF1 /* HttpEngineTestUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = HttpEngineTestUtil.m; path = App/HttpEngineTestUtil.m; sourceTree = SOURCE_ROOT; };
-		1788B11529BAF43B007FDFF1 /* HttpEngineTestUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HttpEngineTestUtil.h; path = App/HttpEngineTestUtil.h; sourceTree = SOURCE_ROOT; };
+		1788B11429BAF43B007FDFF1 /* HttpEngineTestUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = HttpEngineTestUtil.m; path = iOS/App/HttpEngineTestUtil.m; sourceTree = SOURCE_ROOT; };
+		1788B11529BAF43B007FDFF1 /* HttpEngineTestUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HttpEngineTestUtil.h; path = iOS/App/HttpEngineTestUtil.h; sourceTree = SOURCE_ROOT; };
 		1788B20A29C86D24007FDFF1 /* GuanceSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = GuanceSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1788B20E29C86D32007FDFF1 /* GuanceWidgetExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = GuanceWidgetExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		178AE3AA2D55B74F00BDC51B /* FTMobileSDKUnitTests-tvOS.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "FTMobileSDKUnitTests-tvOS.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -765,7 +765,7 @@
 				172DD33B28F7FC28007AE5E9 /* Assets.xcassets */,
 				172DD33D28F7FC28007AE5E9 /* Info.plist */,
 			);
-			path = "Extensions/WidgetDemo";
+			path = "iOS/Extensions/WidgetDemo";
 			sourceTree = "<group>";
 		};
 		173A03F82CDDD32A00E07D53 /* LongTaskManagerTest */ = {
@@ -819,7 +819,7 @@
 				1764E41C29ACB70200E70DBB /* RUMViewController.swift */,
 				1764E41E29ACB70200E70DBB /* SwiftUIDemoView.swift */,
 			);
-			path = SwiftApp;
+			path = iOS/SwiftApp;
 			sourceTree = "<group>";
 		};
 		177892B829A60CD20007B47F /* PerformanceTest */ = {
@@ -925,7 +925,7 @@
 				17F10EB92D13EAC800737EDD /* ViewController.swift */,
 			);
 			name = "tvOS-App";
-			path = "../tvOS/App";
+			path = "tvOS/App";
 			sourceTree = "<group>";
 		};
 		17F10EC72D13EACC00737EDD /* tvOS-AppTests */ = {
@@ -935,7 +935,7 @@
 				17F10EC62D13EACC00737EDD /* tvOS_AppTests.swift */,
 			);
 			name = "tvOS-AppTests";
-			path = "../tvOS/Tests/tvOS-AppTests";
+			path = "tvOS/Tests/tvOS-AppTests";
 			sourceTree = "<group>";
 		};
 		17F10ECE2D13EACE00737EDD /* tvOS-AppUITests */ = {
@@ -947,7 +947,7 @@
 				17F10ECD2D13EACE00737EDD /* tvOS_AppUITestsLaunchTests.swift */,
 			);
 			name = "tvOS-AppUITests";
-			path = "../tvOS/Tests/tvOS-AppUITests";
+			path = "tvOS/Tests/tvOS-AppUITests";
 			sourceTree = "<group>";
 		};
 		4A11694D239113B600C0BC4E = {
@@ -1043,7 +1043,7 @@
 				17BCF3882D66FFD8009A63FD /* ContentViewController.m */,
 				17BCF3852D66FF6D009A63FD /* TestPageVC.m */,
 			);
-			path = App;
+			path = iOS/App;
 			sourceTree = "<group>";
 		};
 		4A22526D23B5AC7600B0ED41 /* FTMobileSDKUITests */ = {
@@ -1052,7 +1052,7 @@
 				4A22526E23B5AC7600B0ED41 /* FTMobileSDKUITests.m */,
 				4A22527023B5AC7600B0ED41 /* Info.plist */,
 			);
-			path = "Tests/FTMobileSDKUITests";
+			path = "iOS/Tests/FTMobileSDKUITests";
 			sourceTree = "<group>";
 		};
 		4A2C825F24EFC9AB006D4FC6 /* HookTest */ = {
@@ -1130,7 +1130,7 @@
 				178378792D8D0BB600C590AE /* RUM */,
 				DDD1ED5FC12CFB64A803FDBF /* DataFilter */,
 			);
-			path = "Tests/FTMobileSDKUnitTests";
+			path = "iOS/Tests/FTMobileSDKUnitTests";
 			sourceTree = "<group>";
 		};
 		7C28B7D2266092C400CECBA6 /* Recovered References */ = {
@@ -1178,7 +1178,7 @@
 				8446B522E6054C6EEE68965C /* Pods-FTMobileSDKUnitTests-tvOS.release.xcconfig */,
 			);
 			name = Pods;
-			path = ../../Pods;
+			path = ../Pods;
 			sourceTree = "<group>";
 		};
 		DDD1ED5FC12CFB64A803FDBF /* DataFilter */ = {
@@ -1277,7 +1277,7 @@
 				0EC4FAB7BDDD6D22CDB31466 /* Frameworks */,
 			);
 			name = macOS;
-			path = ../macOS;
+			path = macOS;
 			sourceTree = SOURCE_ROOT;
 		};
 		7CDA50C726DE15EB0062CC39 /* Products */ = {
@@ -2296,7 +2296,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CODE_SIGN_ENTITLEMENTS = Extensions/WidgetDemo/WidgetDemoExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = iOS/Extensions/WidgetDemo/WidgetDemoExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -2306,7 +2306,7 @@
 					"$(inherited)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Extensions/WidgetDemo/Info.plist;
+				INFOPLIST_FILE = iOS/Extensions/WidgetDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetDemo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 DataFlux-cn. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2339,13 +2339,13 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CODE_SIGN_ENTITLEMENTS = Extensions/WidgetDemo/WidgetDemoExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = iOS/Extensions/WidgetDemo/WidgetDemoExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RRLM22BB37;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Extensions/WidgetDemo/Info.plist;
+				INFOPLIST_FILE = iOS/Extensions/WidgetDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetDemo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 DataFlux-cn. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2378,13 +2378,13 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CODE_SIGN_ENTITLEMENTS = Extensions/WidgetDemo/WidgetDemoExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = iOS/Extensions/WidgetDemo/WidgetDemoExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RRLM22BB37;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Extensions/WidgetDemo/Info.plist;
+				INFOPLIST_FILE = iOS/Extensions/WidgetDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetDemo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 DataFlux-cn. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2425,7 +2425,7 @@
 					"$(inherited)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SwiftApp/Info.plist;
+				INFOPLIST_FILE = iOS/SwiftApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -2459,7 +2459,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BW62V33GLH;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SwiftApp/Info.plist;
+				INFOPLIST_FILE = iOS/SwiftApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -2493,7 +2493,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BW62V33GLH;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SwiftApp/Info.plist;
+				INFOPLIST_FILE = iOS/SwiftApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -2532,9 +2532,9 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/..\"",
 					"$(inherited)",
-					"\"$(SRCROOT)/../FTMobileSDK\"/**",
+					"\"$(SRCROOT)/../Sources\"/**",
 				);
-				INFOPLIST_FILE = Tests/FTMobileSDKUnitTests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUnitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2549,7 +2549,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
@@ -2573,9 +2573,9 @@
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../FTMobileSDK\"/**",
+					"\"$(SRCROOT)/../Sources\"/**",
 				);
-				INFOPLIST_FILE = Tests/FTMobileSDKUnitTests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUnitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2590,7 +2590,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
@@ -2609,9 +2609,9 @@
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../FTMobileSDK\"/**",
+					"\"$(SRCROOT)/../Sources\"/**",
 				);
-				INFOPLIST_FILE = Tests/FTMobileSDKUnitTests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUnitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2626,7 +2626,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/tvOS-App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/tvOS-App";
@@ -2695,7 +2695,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CODE_SIGN_ENTITLEMENTS = iOS/App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -2705,7 +2705,7 @@
 					"PREPROD=1",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/App/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/iOS/App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = 1.0.1;
@@ -2715,7 +2715,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.demo.ft-sdk-iosTest";
 				PRODUCT_NAME = App;
-				SWIFT_OBJC_BRIDGING_HEADER = "App/SampleApp-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/App/SampleApp-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(SWIFT_MODULE_NAME)-Swift.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -2739,9 +2739,9 @@
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../FTMobileSDK\"/**",
+					"\"$(SRCROOT)/../Sources\"/**",
 				);
-				INFOPLIST_FILE = Tests/FTMobileSDKUnitTests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUnitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2754,7 +2754,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -2770,7 +2770,7 @@
 				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				HEADER_SEARCH_PATHS = "";
-				INFOPLIST_FILE = Tests/FTMobileSDKUITests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2804,7 +2804,7 @@
 					"$(inherited)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "../tvOS/App/Info.plist";
+				INFOPLIST_FILE = "tvOS/App/Info.plist";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
@@ -2843,7 +2843,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "../tvOS/App/Info.plist";
+				INFOPLIST_FILE = "tvOS/App/Info.plist";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
@@ -2881,7 +2881,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "../tvOS/App/Info.plist";
+				INFOPLIST_FILE = "tvOS/App/Info.plist";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
@@ -3188,7 +3188,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CODE_SIGN_ENTITLEMENTS = iOS/App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -3198,7 +3198,7 @@
 					"$(inherited)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/App/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/iOS/App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = 1.0.1;
@@ -3208,7 +3208,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.demo.ft-sdk-iosTest";
 				PRODUCT_NAME = App;
-				SWIFT_OBJC_BRIDGING_HEADER = "App/SampleApp-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/App/SampleApp-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(SWIFT_MODULE_NAME)-Swift.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -3222,14 +3222,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CODE_SIGN_ENTITLEMENTS = iOS/App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = RRLM22BB37;
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/App/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/iOS/App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = 1.0.1;
@@ -3239,7 +3239,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.demo.ft-sdk-iosTest";
 				PRODUCT_NAME = App;
-				SWIFT_OBJC_BRIDGING_HEADER = "App/SampleApp-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/App/SampleApp-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(SWIFT_MODULE_NAME)-Swift.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -3254,7 +3254,7 @@
 				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				HEADER_SEARCH_PATHS = "";
-				INFOPLIST_FILE = Tests/FTMobileSDKUITests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3276,7 +3276,7 @@
 				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				HEADER_SEARCH_PATHS = "";
-				INFOPLIST_FILE = Tests/FTMobileSDKUITests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3307,9 +3307,9 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/..\"",
 					"$(inherited)",
-					"\"$(SRCROOT)/../FTMobileSDK\"/**",
+					"\"$(SRCROOT)/../Sources\"/**",
 				);
-				INFOPLIST_FILE = Tests/FTMobileSDKUnitTests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUnitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3322,7 +3322,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -3341,9 +3341,9 @@
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../FTMobileSDK\"/**",
+					"\"$(SRCROOT)/../Sources\"/**",
 				);
-				INFOPLIST_FILE = Tests/FTMobileSDKUnitTests/Info.plist;
+				INFOPLIST_FILE = iOS/Tests/FTMobileSDKUnitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3356,7 +3356,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOS/Tests/FTMobileSDKUnitTests/FTMobileSDKUnitTests-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/App";
@@ -3371,7 +3371,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "../macOS/App/macOS-App.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "macOS/App/macOS-App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
@@ -3387,7 +3387,7 @@
 					"COCOAPODS=1",
 					"Pre=1",
 				);
-				INFOPLIST_FILE = "../macOS/App/Info.plist";
+				INFOPLIST_FILE = "macOS/App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3398,7 +3398,7 @@
 				SUPPORTED_PLATFORMS = macosx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PRODUCT_MODULE_NAME = macOS_App;
-				SWIFT_OBJC_BRIDGING_HEADER = "../macOS/App/macOS-App-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "macOS/App/macOS-App-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -3417,7 +3417,7 @@
 					"\"$(SRCROOT)/..\"/**",
 					"$(inherited)",
 				);
-				INFOPLIST_FILE = "../macOS/Tests/macOS-AppTests/Info.plist";
+				INFOPLIST_FILE = "macOS/Tests/macOS-AppTests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3440,7 +3440,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = RRLM22BB37;
-				INFOPLIST_FILE = "../macOS/Tests/macOS-AppUITests/Info.plist";
+				INFOPLIST_FILE = "macOS/Tests/macOS-AppUITests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3461,7 +3461,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "../macOS/App/macOS-App.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "macOS/App/macOS-App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
@@ -3478,7 +3478,7 @@
 					"$(BUILT_PRODUCTS_DIR)/GuanceSDK.framework/Headers",
 					"$(BUILT_PRODUCTS_DIR)/GuanceSDK.framework/Versions/A/Headers",
 				);
-				INFOPLIST_FILE = "../macOS/App/Info.plist";
+				INFOPLIST_FILE = "macOS/App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3489,7 +3489,7 @@
 				SUPPORTED_PLATFORMS = macosx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PRODUCT_MODULE_NAME = macOS_App;
-				SWIFT_OBJC_BRIDGING_HEADER = "../macOS/App/macOS-App-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "macOS/App/macOS-App-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -3502,7 +3502,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "../macOS/App/macOS-App.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "macOS/App/macOS-App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
@@ -3513,7 +3513,7 @@
 					"$(BUILT_PRODUCTS_DIR)/GuanceSDK.framework/Versions/A/Headers",
 				);
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = "../macOS/App/Info.plist";
+				INFOPLIST_FILE = "macOS/App/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3524,7 +3524,7 @@
 				SUPPORTED_PLATFORMS = macosx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PRODUCT_MODULE_NAME = macOS_App;
-				SWIFT_OBJC_BRIDGING_HEADER = "../macOS/App/macOS-App-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "macOS/App/macOS-App-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -3543,7 +3543,7 @@
 					"\"$(SRCROOT)/..\"/**",
 					"$(inherited)",
 				);
-				INFOPLIST_FILE = "../macOS/Tests/macOS-AppTests/Info.plist";
+				INFOPLIST_FILE = "macOS/Tests/macOS-AppTests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3571,7 +3571,7 @@
 					"\"$(SRCROOT)/..\"/**",
 					"$(inherited)",
 				);
-				INFOPLIST_FILE = "../macOS/Tests/macOS-AppTests/Info.plist";
+				INFOPLIST_FILE = "macOS/Tests/macOS-AppTests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3594,7 +3594,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = RRLM22BB37;
-				INFOPLIST_FILE = "../macOS/Tests/macOS-AppUITests/Info.plist";
+				INFOPLIST_FILE = "macOS/Tests/macOS-AppUITests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -3616,7 +3616,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = RRLM22BB37;
-				INFOPLIST_FILE = "../macOS/Tests/macOS-AppUITests/Info.plist";
+				INFOPLIST_FILE = "macOS/Tests/macOS-AppUITests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

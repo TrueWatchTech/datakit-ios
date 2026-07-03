@@ -1,6 +1,6 @@
 //
 //  FTHTTPClient.m
-//  GuanceSDK
+//  FTSDK
 //
 //  Created by hulilei on 2021/8/2.
 //  Copyright © 2021 DataFlux-cn. All rights reserved.
@@ -9,7 +9,7 @@
 #import "FTHTTPClient.h"
 #import "FTInternalConstants.h"
 
-NSErrorDomain const FTHTTPClientErrorDomain = @"com.guance.ft.httpclient";
+NSErrorDomain const FTHTTPClientErrorDomain = @"com.ft.sdk.httpclient";
 
 @interface FTHTTPClient()
 @property (nonatomic, strong) NSURLSession *session;

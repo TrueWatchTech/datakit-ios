@@ -1,6 +1,6 @@
 //
 //  NSMenuItem+FTAutoTrack.m
-//  GuanceSDK
+//  FTSDK
 //
 //  Created by hulilei on 2021/9/28.
 //

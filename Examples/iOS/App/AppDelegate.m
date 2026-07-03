@@ -52,9 +52,9 @@
     if ( !isUnitTests && !isUITests) {
         [[FTLog sharedInstance] registerInnerLogCacheToLogsDirectory:nil fileNamePrefix:nil];
         // Local environment deployment
-      //  FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:datakitUrl];
+      //  FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:datakitUrl];
         // Use public network DataWay deployment
-        FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatawayUrl:datawayUrl clientToken:clientToken];
+        FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatawayUrl:datawayUrl clientToken:clientToken];
         config.enableSDKDebugLog = YES;
         config.autoSync = YES;
         [config setEnvWithType:FTEnvPre];

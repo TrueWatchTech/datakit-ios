@@ -1,6 +1,6 @@
 //
 //  NSCollectionView+FTAutoTrack.h
-//  GuanceSDK
+//  FTSDK
 //
 //  Created by hulilei on 2021/9/17.
 //

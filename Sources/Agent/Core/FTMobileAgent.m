@@ -25,11 +25,11 @@
 #import "FTUserInfo.h"
 #import "FTExtensionDataManager.h"
 #import "FTExternalDataManager+Private.h"
-#import "FTMobileAgentVersion.h"
+#import "FTSDKVersion.h"
 #import "FTNetworkInfoManager.h"
 #import "FTURLSessionInstrumentation.h"
 #import "FTInternalConstants.h"
-#import "FTMobileConfig+Private.h"
+#import "FTSDKConfig+Private.h"
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"
 #import "FTLogger+Private.h"
@@ -51,7 +51,7 @@
 @property (nonatomic, strong) FTLoggerConfig *loggerConfig;
 @property (nonatomic, strong) FTRumConfig *rumConfig;
 @property (nonatomic, strong) FTTraceConfig *traceConfig;
-@property (nonatomic, strong) FTMobileConfig *sdkConfig;
+@property (nonatomic, strong) FTSDKConfig *sdkConfig;
 @end
 @implementation FTMobileAgent
 static NSObject *sharedInstanceLock;
@@ -62,7 +62,7 @@ static FTMobileAgent *sharedInstance = nil;
     }
 }
 #pragma mark --------- Initialize config settings ----------
-+ (void)startWithConfigOptions:(FTMobileConfig *)configOptions{
++ (void)startWithConfigOptions:(FTSDKConfig *)configOptions{
     NSAssert ((strcmp(dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL), dispatch_queue_get_label(dispatch_get_main_queue())) == 0),@"The SDK must be initialized on the main thread, otherwise unpredictable issues may occur (such as missing launch events).");
     
     @synchronized(sharedInstanceLock) {
@@ -79,7 +79,7 @@ static FTMobileAgent *sharedInstance = nil;
     }
 }
 
-- (instancetype)initWithConfig:(FTMobileConfig *)config {
+- (instancetype)initWithConfig:(FTSDKConfig *)config {
     @try {
         self = [super init];
         if (self) {
@@ -178,7 +178,7 @@ static FTMobileAgent *sharedInstance = nil;
     [[FTRemoteConfigManager sharedInstance] updateRemoteConfigWithMinimumUpdateInterval:miniUpdateInterval completion:completion];
 }
 #pragma mark ========== real sdk init ==========
-- (void)applyBaseConfig:(FTMobileConfig *)config{
+- (void)applyBaseConfig:(FTSDKConfig *)config{
     // Basic type recording
     [FTLog enableLog:config.enableSDKDebugLog];
     NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];

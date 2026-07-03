@@ -19,7 +19,7 @@ SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
 cd "$SCRIPT_DIR"
 
 PODSPEC="GuanceSDK.podspec"
-VERSION_HEADER="Sources/Agent/Core/FTMobileAgentVersion.h"
+VERSION_HEADER="Sources/Agent/Core/FTSDKVersion.h"
 INFO_PLIST="Sources/Info.plist"
 
 for file in "$PODSPEC" "$VERSION_HEADER" "$INFO_PLIST"; do

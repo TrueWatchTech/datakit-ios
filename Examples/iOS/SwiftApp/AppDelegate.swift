@@ -20,7 +20,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        let url = dic["ACCESS_SERVER_URL"]
 
         if let url = dic["ACCESS_DATAWAY_URL"],let token = dic["CLIENT_TOKEN"],let appid = dic["APP_ID"]{
-            let config = FTMobileConfig(datawayUrl: url, clientToken: token)
+            let config = FTSDKConfig(datawayUrl: url, clientToken: token)
             config.enableSDKDebugLog = true
             FTMobileAgent.start(withConfigOptions: config)
             let rumConfig = FTRumConfig(appid: appid)

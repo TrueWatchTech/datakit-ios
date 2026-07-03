@@ -8,13 +8,13 @@
 
 #import <Foundation/Foundation.h>
 #import "FTConfig+RemoteConfig.h"
-#import "FTMobileConfig.h"
+#import "FTSDKConfig.h"
 #import "FTLoggerConfig.h"
 #import "FTRumConfig.h"
 #import "FTJSONUtil.h"
 #import "FTInnerLog.h"
 
-@implementation FTMobileConfig (RemoteConfig)
+@implementation FTSDKConfig (RemoteConfig)
 
 -(void)mergeWithRemoteConfigModel:(FTRemoteConfigModel *)model{
     @try {

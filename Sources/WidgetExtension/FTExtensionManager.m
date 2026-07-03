@@ -1,6 +1,6 @@
 //
 //  FTExtensionManager.m
-//  GuanceWidgetExtension
+//  FTWidgetExtension
 //
 //  Created by hulilei on 2020/11/13.
 //  Copyright © 2020 hll. All rights reserved.
@@ -19,7 +19,7 @@
 #import "NSString+FTAdd.h"
 #import "FTConstants.h"
 #import "FTLogger.h"
-#import "FTMobileConfig+Private.h"
+#import "FTSDKConfig+Private.h"
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"
 #import "FTInternalConstants.h"
@@ -61,7 +61,7 @@ static FTExtensionManager *sharedInstance = nil;
     NSDictionary *traceDict = [[FTExtensionDataManager sharedInstance] getTraceConfigWithGroupIdentifier:self.extensionConfig.groupIdentifier];
     NSDictionary *loggerDict = [[FTExtensionDataManager sharedInstance] getLoggerConfigWithGroupIdentifier:self.extensionConfig.groupIdentifier];
    
-    FTMobileConfig *mobileConfig = [[FTMobileConfig alloc]initWithDictionary:mobileDict];
+    FTSDKConfig *mobileConfig = [[FTSDKConfig alloc]initWithDictionary:mobileDict];
     FTRumConfig *rumConfig =[[FTRumConfig alloc]initWithDictionary:rumDict];
     FTTraceConfig *traceConfig =[[FTTraceConfig alloc]initWithDictionary:traceDict];
     FTLoggerConfig *loggerConfig = [[FTLoggerConfig alloc]initWithDictionary:loggerDict];

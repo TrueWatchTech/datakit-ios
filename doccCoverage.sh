@@ -15,9 +15,9 @@ set -euo pipefail
 # sh doccCoverage.sh        Get documentation coverage for public files
 # bash doccCoverage.sh all  Get documentation coverage for all files
 # bash doccCoverage.sh      Get documentation coverage for public files
-project='Guance.xcodeproj'
+project='FTSDK.xcodeproj'
 project_path="${project}/project.pbxproj"
-scheme='GuanceSDK'
+scheme='FTSDK'
 configuration="${CONFIGURATION:-Release}"
 sdk="${SDK:-iphoneos}"
 derived_data_path="${DERIVED_DATA_PATH:-build/DocCCoverageDerivedData}"
@@ -36,13 +36,13 @@ fi
 trap cleanup EXIT
 
 changeFileAttributeToPublic(){
-project_backup=$(mktemp "${TMPDIR:-/tmp}/GuanceSDKProject.XXXXXX.pbxproj")
+project_backup=$(mktemp "${TMPDIR:-/tmp}/FTSDKProject.XXXXXX.pbxproj")
 cp "$project_path" "$project_backup"
 perl -0pi -e 's/^(\s*[A-F0-9]+ \/\* [^\n]*\.h in Headers \*\/ = \{isa = PBXBuildFile; fileRef = [^;]+;)(?: settings = \{ATTRIBUTES = \([^)]*\); \};)? \};$/$1 settings = {ATTRIBUTES = (Public, ); }; };/mg' "$project_path"
 }
 
 createTempDocCCatalog(){
-docc_temp_root=$(mktemp -d "${TMPDIR:-/tmp}/GuanceSDKDocs.XXXXXX")
+docc_temp_root=$(mktemp -d "${TMPDIR:-/tmp}/FTSDKDocs.XXXXXX")
 local docc_catalog="${docc_temp_root}/${scheme}.docc"
 mkdir -p "$docc_catalog"
 printf '# %s\n\nAPI documentation coverage.\n' "$scheme" > "${docc_catalog}/${scheme}.md"
@@ -88,7 +88,7 @@ docc_catalog=$(createTempDocCCatalog)
 symbol_graph_dir=$(findSymbolGraphDir)
 xcrun docc convert "$docc_catalog" \
 --fallback-display-name "$scheme" \
---fallback-bundle-identifier com.guance.sdk.GuanceSDK \
+--fallback-bundle-identifier com.ft.sdk.FTSDK \
 --fallback-bundle-version 1.0 \
 --additional-symbol-graph-dir "$symbol_graph_dir" \
 --experimental-documentation-coverage \

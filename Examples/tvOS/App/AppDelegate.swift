@@ -25,7 +25,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         FTLog.sharedInstance().registerInnerLogCacheToDefaultPath()
         if let url = url,let appid = appid{
-            let config = FTMobileConfig(datakitUrl: url)
+            let config = FTSDKConfig(datakitUrl: url)
             config.enableSDKDebugLog = true
             FTMobileAgent.start(withConfigOptions: config)
             let rumConfig = FTRumConfig(appid: appid)

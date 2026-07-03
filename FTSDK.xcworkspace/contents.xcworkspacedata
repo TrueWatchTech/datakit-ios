@@ -2,10 +2,10 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:Guance.xcodeproj">
+      location = "group:FTSDK.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Examples/iOS/Examples.xcodeproj">
+      location = "group:Examples/Examples.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:Pods/Pods.xcodeproj">

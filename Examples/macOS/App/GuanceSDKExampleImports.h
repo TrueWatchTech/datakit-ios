@@ -1,5 +1,5 @@
 #import "FTMobileAgent.h"
-#import "FTMobileConfig.h"
+#import "FTSDKConfig.h"
 #import "FTRumConfig.h"
 #import "FTLoggerConfig.h"
 #import "FTLogger.h"

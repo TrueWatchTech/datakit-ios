@@ -19,7 +19,7 @@
 #import "FTMobileAgent+Private.h"
 #import "FTGlobalRumManager.h"
 #import "FTRUMManager.h"
-#import "FTMobileAgentVersion.h"
+#import "FTSDKVersion.h"
 #import "FTMobileConfig+Private.h"
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"

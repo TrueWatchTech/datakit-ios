@@ -1,6 +1,6 @@
 //
 //  GuanceSDKCore.h
-//  GuanceSDK
+//  FTSDK
 //
 //  Created by hulilei on 2023/4/20.
 //  Copyright © 2023 DataFlux-cn. All rights reserved.

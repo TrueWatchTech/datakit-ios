@@ -12,7 +12,7 @@ esac
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SCHEME_DIR="${SCRIPT_DIR}/Examples/iOS/Examples.xcodeproj/xcshareddata/xcschemes"
+SCHEME_DIR="${SCRIPT_DIR}/Examples/Examples.xcodeproj/xcshareddata/xcschemes"
 APP_ID="${APP_ID:-}"
 ACCESS_SERVER_URL="${ACCESS_SERVER_URL:-}"
 TRACK_ID="${TRACK_ID:-}"
@@ -78,7 +78,7 @@ if [ -z "$DEVICE_DESTINATION" ]; then
   exit 1
 fi
 
-xcodebuild test -workspace Guance.xcworkspace \
+xcodebuild test -workspace FTSDK.xcworkspace \
    -scheme FTMobileSDKUITestsForCmd \
    -only-testing FTMobileSDKUITests \
    -destination "$DEVICE_DESTINATION"

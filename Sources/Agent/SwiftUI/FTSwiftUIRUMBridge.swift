@@ -1,6 +1,6 @@
 //
 //  FTSwiftUIRUMBridge.swift
-//  GuanceSDK
+//  FTSDK
 //
 //  Created by hulilei on 2026/7/2.
 //  Copyright © 2026 DataFlux-cn. All rights reserved.

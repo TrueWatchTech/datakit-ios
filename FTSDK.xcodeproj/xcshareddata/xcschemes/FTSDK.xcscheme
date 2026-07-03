@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4A884259239E5754001B44C3"
                BuildableName = "GuanceSDK.framework"
-               BlueprintName = "GuanceSDK"
-               ReferencedContainer = "container:Guance.xcodeproj">
+               BlueprintName = "FTSDK"
+               ReferencedContainer = "container:FTSDK.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -51,8 +51,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4A884259239E5754001B44C3"
             BuildableName = "GuanceSDK.framework"
-            BlueprintName = "GuanceSDK"
-            ReferencedContainer = "container:Guance.xcodeproj">
+            BlueprintName = "FTSDK"
+            ReferencedContainer = "container:FTSDK.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

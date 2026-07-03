@@ -10,7 +10,7 @@
 #import "FTMobileAgent+Private.h"
 #import "FTConstants.h"
 #import "FTPresetProperty.h"
-#import "FTMobileAgentVersion.h"
+#import "FTSDKVersion.h"
 @interface PerformanceBaseTest : XCTestCase
 
 @end

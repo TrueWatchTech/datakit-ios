@@ -26,7 +26,7 @@ int main(int argc, const char * argv[]) {
         NSString *appid = [processInfo environment][@"APP_ID"];
         BOOL isRuningUnitTest = [[processInfo environment][@"isUnitTests"] boolValue];
         if(!isRuningUnitTest){
-            FTMobileConfig *config = [[FTMobileConfig alloc]initWithDatakitUrl:url];
+            FTSDKConfig *config = [[FTSDKConfig alloc]initWithDatakitUrl:url];
             config.enableSDKDebugLog = YES;
             [FTMobileAgent startWithConfigOptions:config];
             FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:appid];

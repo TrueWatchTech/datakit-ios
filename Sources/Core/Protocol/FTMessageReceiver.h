@@ -1,6 +1,6 @@
 //
 //  FTMessageReceiver.h
-//  GuanceSDK
+//  FTSDK
 //
 //  Created by hulilei on 2024/7/10.
 //  Copyright © 2024 DataFlux-cn. All rights reserved.

@@ -12,7 +12,7 @@ esac
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SCHEME_DIR="${SCRIPT_DIR}/Examples/iOS/Examples.xcodeproj/xcshareddata/xcschemes"
+SCHEME_DIR="${SCRIPT_DIR}/Examples/Examples.xcodeproj/xcshareddata/xcschemes"
 APP_ID="${APP_ID:-}"
 ACCESS_SERVER_URL="${ACCESS_SERVER_URL:-}"
 TRACK_ID="${TRACK_ID:-}"
@@ -90,7 +90,7 @@ function findSimulator(){
     local SIMULATOR_INFO
     local SIMULATOR_ID
 
-    DESTINATIONS=$(xcodebuild -workspace Guance.xcworkspace -scheme "${TEST_SCHEME}" -showdestinations)
+    DESTINATIONS=$(xcodebuild -workspace FTSDK.xcworkspace -scheme "${TEST_SCHEME}" -showdestinations)
     SIMULATOR_INFO=$(echo "$DESTINATIONS" | awk -v platform="${TEST_SIMULATOR}" '
       index($0, "{ platform:" platform) > 0 &&
       index($0, "id:") > 0 &&
@@ -125,7 +125,7 @@ else
 fi
 
 ## Test iOS
-xcodebuild test -workspace Guance.xcworkspace \
+xcodebuild test -workspace FTSDK.xcworkspace \
 -scheme FTMobileSDKUnitTestsForCmd \
 -only-testing FTMobileSDKUnitTests \
 -destination "$IOS_DESTINATION" | $XCODEBUILD_FORMATTER
@@ -133,7 +133,7 @@ xcodebuild test -workspace Guance.xcworkspace \
 TVOS_DESTINATION=$(findSimulator "FTMobileSDKUnitTestsTVOSForCmd" "tvOS Simulator")
 
 ## Test tvOS
-xcodebuild test -workspace Guance.xcworkspace \
+xcodebuild test -workspace FTSDK.xcworkspace \
 -scheme FTMobileSDKUnitTestsTVOSForCmd \
 -only-testing FTMobileSDKUnitTests-tvOS \
 -destination "$TVOS_DESTINATION" | $XCODEBUILD_FORMATTER

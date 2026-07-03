@@ -1,8 +1,8 @@
 # Uncomment the next line to define a global platform for your project
 # platform :ios, '9.0'
 use_frameworks!
-example_project_path = 'Examples/iOS/Examples'
-workspace 'Guance.xcworkspace'
+example_project_path = 'Examples/Examples'
+workspace 'FTSDK.xcworkspace'
 project example_project_path
 
 target 'FTMobileSDKUnitTests' do

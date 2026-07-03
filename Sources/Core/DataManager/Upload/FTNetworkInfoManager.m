@@ -1,6 +1,6 @@
 //
 //  FTNetworkInfoManager.m
-//  GuanceSDK
+//  FTSDK
 //
 //  Created by hulilei on 2021/8/30.
 //  Copyright © 2021 DataFlux-cn. All rights reserved.
