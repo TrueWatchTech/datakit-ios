@@ -21,6 +21,6 @@
 #ifndef FTSDKVersion_h
 #define FTSDKVersion_h
 
-#define SDK_VERSION  @"1.6.5"
+#define SDK_VERSION  @"1.6.5-alpha.3"
 
 #endif /* FTSDKVersion_h */
