@@ -1,3 +1,9 @@
+//
+//  FTWKWebViewRecorder.m
+//  SessionReplay
+//
+//  Created by hulilei on 2025/4/18.
+//
 //  Copyright 2025 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,7 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTWKWebViewRecorder.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2025/4/18.
-//
+
 #if !TARGET_OS_TV
 #import "FTWKWebViewRecorder.h"
 #import "FTViewAttributes.h"

@@ -1,3 +1,9 @@
+//
+//  FTRecordingCoordinator.m
+//  SessionReplay
+//
+//  Created by hulilei on 2026/6/4.
+//
 //  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTRecordingCoordinator.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2026/6/4.
-//
 
 #import "FTRecordingCoordinator.h"
 #import "FTRecorder.h"

@@ -1,3 +1,9 @@
+//
+//  FTTLV.m
+//  SessionReplay
+//
+//  Created by hulilei on 2024/6/24.
+//
 //  Copyright 2024 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTTLV.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2024/6/24.
-//
 
 #import "FTTLV.h"
 NSUInteger const FT_MAX_DATA_LENGTH = 10*1024*1024;

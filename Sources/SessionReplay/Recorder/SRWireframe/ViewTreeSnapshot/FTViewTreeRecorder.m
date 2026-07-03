@@ -1,3 +1,9 @@
+//
+//  FTViewTreeRecorder.m
+//  SessionReplay
+//
+//  Created by hulilei on 2024/6/13.
+//
 //  Copyright 2024 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTViewTreeRecorder.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2024/6/13.
-//
 
 #import "FTViewTreeRecorder.h"
 #import "FTViewAttributes.h"

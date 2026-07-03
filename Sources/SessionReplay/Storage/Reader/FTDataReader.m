@@ -1,3 +1,9 @@
+//
+//  FTDataReader.m
+//  SessionReplay
+//
+//  Created by hulilei on 2024/6/21.
+//
 //  Copyright 2024 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTDataReader.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2024/6/21.
-//
 
 #import "FTDataReader.h"
 #import "FTSessionReplayCoreImports.h"

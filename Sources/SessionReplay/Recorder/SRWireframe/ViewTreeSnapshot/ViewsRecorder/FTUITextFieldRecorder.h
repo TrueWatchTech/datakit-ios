@@ -1,3 +1,9 @@
+//
+//  FTUITextFieldRecorder.h
+//  SessionReplay
+//
+//  Created by hulilei on 2023/8/30.
+//
 //  Copyright 2023 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTUITextFieldRecorder.h
-//  FTMobileSDK
-//
-//  Created by hulilei on 2023/8/30.
-//
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>

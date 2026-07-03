@@ -1,3 +1,9 @@
+//
+//  FTDataStoreFileWriter.m
+//  SessionReplay
+//
+//  Created by hulilei on 2024/7/2.
+//
 //  Copyright 2024 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTDataStoreFileWriter.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2024/7/2.
-//
 
 #import "FTDataStoreFileWriter.h"
 #import "FTFile.h"

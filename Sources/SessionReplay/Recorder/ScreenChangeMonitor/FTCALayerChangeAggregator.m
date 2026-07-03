@@ -1,3 +1,9 @@
+//
+//  FTCALayerChangeAggregator.m
+//  SessionReplay
+//
+//  Created by hulilei on 2026/3/3.
+//
 //  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTCALayerChangeAggregator.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2026/3/3.
-//
 
 #import "FTCALayerChangeAggregator.h"
 #import "FTCALayerSwizzler.h"

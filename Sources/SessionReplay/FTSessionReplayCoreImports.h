@@ -1,3 +1,9 @@
+//
+//  FTSessionReplayCoreImports.h
+//  SessionReplay
+//
+//  Created by hulilei on 2026/4/8.
+//
 //  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTSessionReplayCoreImports.h
-//  FTSessionReplay
-//
-//  Created by hulilei on 2026/4/8.
-//
 
 #pragma once
 

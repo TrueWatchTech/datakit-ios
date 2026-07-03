@@ -1,3 +1,9 @@
+//
+//  FTTmpCacheManager.h
+//  SessionReplay
+//
+//  Created by hulilei on 2025/3/19.
+//
 //  Copyright 2025 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTTmpCacheManager.h
-//  FTMobileSDK
-//
-//  Created by hulilei on 2025/3/19.
-//
 
 #import <Foundation/Foundation.h>
 #import "FTFileWriter.h"

@@ -1,3 +1,9 @@
+//
+//  FTSRBaseFrame.m
+//  SessionReplay
+//
+//  Created by hulilei on 2023/8/7.
+//
 //  Copyright 2023 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTSRBaseFrame.m
-//  FTMobileSDK
-//
-//  Created by hulilei on 2023/8/7.
-//
 
 #import "FTSRBaseFrame.h"
 #import <objc/runtime.h>

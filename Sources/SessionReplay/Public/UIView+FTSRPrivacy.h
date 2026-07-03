@@ -1,3 +1,9 @@
+//
+//  UIView+FTSRPrivacy.h
+//  SessionReplay
+//
+//  Created by hulilei on 2025/3/11.
+//
 //  Copyright 2025 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  UIView+FTSRPrivacy.h
-//  FTMobileSDK
-//
-//  Created by hulilei on 2025/3/11.
-//
 
 #import <UIKit/UIKit.h>
 #import "FTSessionReplayPrivacyOverrides.h"

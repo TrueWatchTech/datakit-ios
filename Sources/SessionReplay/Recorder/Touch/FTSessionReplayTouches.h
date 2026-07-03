@@ -1,3 +1,9 @@
+//
+//  FTSessionReplayTouches.h
+//  SessionReplay
+//
+//  Created by hulilei on 2022/12/23.
+//
 //  Copyright 2022 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTSessionReplayTouches.h
-//  FTMobileAgent
-//
-//  Created by hulilei on 2022/12/23.
-//
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>

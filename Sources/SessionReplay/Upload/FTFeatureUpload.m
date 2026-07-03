@@ -1,3 +1,9 @@
+//
+//  FTFeatureUpload.m
+//  SessionReplay
+//
+//  Created by hulilei on 2023/1/11.
+//
 //  Copyright 2023 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTFeatureUpload.m
-//  FTMobileAgent
-//
-//  Created by hulilei on 2023/1/11.
-//
 
 #import "FTFeatureUpload.h"
 #import "FTSessionReplayCoreImports.h"

@@ -1,3 +1,9 @@
+//
+//  FTCompression.h
+//  SessionReplay
+//
+//  Created by hulilei on 2023/1/10.
+//
 //  Copyright 2023 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,6 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTCompression.h
-//  FTMobileAgent
-//
-//  Created by hulilei on 2023/1/10.
-//
 
 #import <Foundation/Foundation.h>
 

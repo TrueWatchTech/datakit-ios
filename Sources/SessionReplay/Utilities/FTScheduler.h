@@ -1,3 +1,9 @@
+//
+//  FTScheduler.h
+//  SessionReplay
+//
+//  Created by hulilei on 2026/3/2.
+//
 //  Copyright 2026 Shanghai Guance Information Technology Co., Ltd.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +21,7 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS
-//
-//  FTScheduler.h
-//  FTMobileSDK
-//
-//  Created by hulilei on 2026/3/2.
-//
+
 #import <Foundation/Foundation.h>
 #import "FTQueue.h"
 #ifndef FTScheduler_h
