@@ -21,7 +21,6 @@
 #import <XCTest/XCTest.h>
 #import "FTTestHelper.h"
 #import "FTMobileAgent+Private.h"
-@import GuanceSDK;
 #import "FTConstants.h"
 #import "FTTrackerEventDBTool.h"
 #import "FTTrackDataManager.h"

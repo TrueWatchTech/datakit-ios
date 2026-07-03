@@ -24,7 +24,6 @@
 #import "FTTrackDataManager.h"
 #import "FTTrackerEventDBTool.h"
 #import "FTConstants.h"
-@import GuanceSDK;
 #import "FTMobileAgent+Private.h"
 #import "FTJSONUtil.h"
 @interface MacOSAppTests : XCTestCase

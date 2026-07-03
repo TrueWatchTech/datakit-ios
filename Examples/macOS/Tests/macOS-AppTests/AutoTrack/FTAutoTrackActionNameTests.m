@@ -24,7 +24,6 @@
 #import "NSMenuItem+FTAutoTrack.h"
 #import "NSTabView+FTAutoTrack.h"
 #import "NSView+FTAutoTrack.h"
-@import GuanceSDK;
 #import "FTTrackerEventDBTool.h"
 #import "LoginWindow.h"
 #import "FTMobileAgent+Private.h"
