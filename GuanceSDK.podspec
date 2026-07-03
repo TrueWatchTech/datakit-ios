@@ -37,6 +37,8 @@ Pod::Spec.new do |s|
 		agent.tvos.deployment_target = '12.0'
 		agent.source_files = 'Sources/*.{h}',
 			'Sources/Agent/**/*{.h,.m}'
+		agent.ios.exclude_files = 'Sources/Agent/AutoTrack/Mac/**/*'
+		agent.tvos.exclude_files = 'Sources/Agent/AutoTrack/Mac/**/*'
 		agent.dependency 'GuanceSDK/Core'
 	end
 

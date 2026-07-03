@@ -19,6 +19,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <TargetConditionals.h>
 #import "FTBaseInfoHandler.h"
 #import "FTConstants.h"
 #import "FTDateUtil.h"
@@ -61,10 +62,12 @@
 #import "FTNetworkConnectivity.h"
 #import "FTTrackDataManager.h"
 #import "FTTrackerEventDBTool.h"
+#if !TARGET_OS_TV
 #import "FTWebViewJavascriptBridgeBase.h"
 #import "FTWKWebViewHandler.h"
 #import "FTWKWebViewHandler+Private.h"
 #import "FTWKWebViewJavascriptBridge.h"
+#endif
 #import "FTDataWriterWorker.h"
 #import "FTLoggerConfig.h"
 #import "FTRequest.h"
@@ -74,4 +77,6 @@
 #import "FTRemoteConfigModel.h"
 #import "FTRemoteConfigError.h"
 #import "FTRemoteConfigTypeDefs.h"
+#if !TARGET_OS_TV
 #import "WKWebView+FTAutoTrack.h"
+#endif
