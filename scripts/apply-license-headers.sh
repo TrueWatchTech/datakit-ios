@@ -104,7 +104,7 @@ list_files() {
 extract_year() {
   local file="$1"
   local year
-  year="$(perl -ne 'if (/Copyright\s+(?:©\s*)?([0-9]{3,4})\s+(?:Shanghai TrueWatch Information Technology Co\., Ltd\.|DataFlux-cn\.?|TrueWatchCloud\.?|hll\.?)/) { print $1; exit }' "${file}")"
+  year="$(perl -ne 'if (/Copyright\s+(?:©\s*)?([0-9]{3,4})\s+(?:TRUEWATCH TECHNOLOGY INC PTE\. LTD\.|TrueWatchCloud\.?|hll\.?)/) { print $1; exit }' "${file}")"
 
   if [[ -n "${year}" && "${year}" =~ ^[0-9]{4}$ ]]; then
     echo "${year}"
@@ -114,11 +114,11 @@ extract_year() {
 }
 
 has_complete_header() {
-  perl -0ne 'exit(m{^//  Copyright [0-9]{4} Shanghai TrueWatch Information Technology Co\., Ltd\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
+  perl -0ne 'exit(m{^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
 }
 
 has_legacy_header_text() {
-  sed -n '1,40p' "$1" | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (DataFlux-cn|TrueWatchCloud|hll)|All rights reserved\.'
+  sed -n '1,40p' "$1" | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (TrueWatchCloud|hll)|All rights reserved\.'
 }
 
 rewrite_file_to_stdout() {
@@ -158,7 +158,7 @@ rewrite_file_to_stdout() {
     sub strip_existing_header {
       my ($text) = @_;
 
-      $text =~ s{^(//\s*Copyright\s+(?:©\s*)?[0-9]{3,4}\s+(?:Shanghai TrueWatch Information Technology Co\., Ltd\.|DataFlux-cn\.?|TrueWatchCloud\.?|hll\.?)(?:\s+All rights reserved\.)?\s*\n)}{}mg;
+      $text =~ s{^(//\s*Copyright\s+(?:©\s*)?[0-9]{3,4}\s+(?:TRUEWATCH TECHNOLOGY INC PTE\. LTD\.|TrueWatchCloud\.?|hll\.?)(?:\s+All rights reserved\.)?\s*\n)}{}mg;
       $text =~ s{^(//\s*\n(?=//\s*Licensed under the Apache License, Version 2\.0 \(the "License"\);))}{}mg;
       $text =~ s{
         ^//\s*Licensed\ under\ the\ Apache\ License,\ Version\ 2\.0\ \(the\ "License"\);\n
