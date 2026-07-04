@@ -49,7 +49,7 @@ NSString * const FT_DEFAULT_SERVICE_NAME = @"df_rum_ios";
 NSString * const FT_TVOS_SERVICE_NAME = @"df_rum_tvos";
 NSString * const FT_IOS_SDK_NAME = @"df_ios_rum_sdk";
 NSString * const FT_TVOS_SDK_NAME = @"df_tvos_rum_sdk";
-NSString * const FT_MACOS_SDK_NAME = @"TrueWatchMacOSSDK";
+NSString * const FT_MACOS_SDK_NAME = @"df_macos_rum_sdk";
 #if FT_HOST_MAC
 NSString * const FT_SDK_NAME_VALUE = FT_MACOS_SDK_NAME;
 NSString * const FT_USER_AGENT_NAME = @"DF-RUM-macOS";
