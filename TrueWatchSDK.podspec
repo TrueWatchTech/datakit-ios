@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
 	s.name         = "TrueWatchSDK"
-	s.version      = "1.6.5-alpha.3"
+	s.version      = "1.6.5"
 	s.summary      = "TrueWatchTech iOS Data Collection SDK"
 	#s.description  = ""
 	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
