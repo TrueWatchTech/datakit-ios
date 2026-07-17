@@ -1,3 +1,104 @@
+# 1.6.5
+1. Added `FTSessionReplayConfig.enableSwiftUI` to explicitly enable SwiftUI recording in Session Replay. SwiftUI recording is disabled by default.
+2. Added support for custom Session Replay `source` values on iOS segment uploads to support Flutter Session Replay scenarios.
+3. Fixed Session Replay crashes caused by dynamic `UIColor` resolution, and improved background snapshot processing and SwiftUI recording stability.
+4. Improved Session Replay data cache handling after sampling state changes so error-sampled sessions start recording reliably and recording continuity stays stable.
+5. Improved Session Replay, RUM, and Log upload scheduling and retry handling, including upload worker isolation, lifecycle-triggered cache flush behavior, and Session Replay segment/resource retry status handling.
+6. Improved Session Replay rendering correctness and performance by optimizing node flattening, raising snapshot processor queue priority, inheriting view-tree privacy overrides, and clipping unsupported placeholders correctly.
+7. Fixed RUM View timing and upload package consistency by preserving event time and deduplicating View data before package ID generation.
+---
+# 1.6.5-beta.1
+1. Fixed Session Replay SwiftUI recorder registration so SwiftUI recording stays disabled unless `FTSessionReplayConfig.enableSwiftUI` is enabled.
+2. Improved Session Replay SwiftUI reflection alignment and type-safe display list access to reduce SwiftUI recording crash risk.
+3. Reverted the WebView Session Replay file naming change from 1.6.5-alpha and restored the w file prefix.
+---
+# 1.6.5-alpha.2
+1. Fixed a RUM View time display issue where View data could use update time instead of event time.
+2. Fixed RUM View deduplication before upload package ID generation so package counts, `sdk_data_id`, and payload lines stay consistent.
+3. Improved Session Replay writer registration when tracking consent changes, ensuring cache writers are available synchronously.
+4. Improved Session Replay SwiftUI recording stability and rendering support.
+5. Improved Session Replay node flattening performance.
+6. Improved Session Replay processor queue priority.
+7. Fixed Session Replay view-tree privacy override inheritance.
+8. Fixed unsupported Session Replay placeholders so they are clipped correctly.
+---
+# 1.6.5-alpha.1
+1. Fixed Session Replay crashes related to dynamic `UIColor` resolution and background snapshot processing
+2. Added `FTSessionReplayConfig.enableSwiftUI` to explicitly enable SwiftUI recording in Session Replay. The default is `NO`.
+3. Added support for custom Session Replay `source` values on iOS segment uploads.
+4. Improved Session Replay writer management based on tracking consent.
+5. Fixed Session Replay error-sampled sessions so recording starts when error replay sampling is active.
+6. Improved Session Replay, RUM, and Log upload scheduling and retry handling.
+---
+# 1.6.4
+1. Added Session Replay support for SwiftUI views.
+2. Added RUM SwiftUI view tracking and manual tap action tracking support.
+3. Added the `app_launch_type` field to cold start actions to distinguish foreground and background launches.
+4. Added `FTMobileConfig.enableDataFilter` and `FTMobileConfig.dataFilters` to enable SDK-side DataFilter and configure local blacklist rules. DataFilter rules are applied after `lineDataModifier` and before local cache writes.
+5. Improved upload worker shutdown isolation, upload callback synchronization, and RUM upload behavior to avoid duplicate uploads, stale retry loops, upload execution conflicts, and duplicate View data during uploads.
+6. Replaced RUM placeholder View handling with fallback View resolution to improve View tracking consistency when the original View is unavailable.
+7. Improved preset property tag handling for nil, empty, and user info update scenarios.
+---
+# 1.6.4-beta.1
+1. Used the remotely delivered pull interval to control DataFilter refresh frequency.
+2. Fixed CocoaPods linker warnings.
+3. Marked SwiftUI bridge symbols as private SPI to keep Swift packaging compatibility without exposing them as public API.
+---
+# 1.6.4-alpha.4
+1. Improved DataFilter rule parsing and invalid rule handling for RUM and logging blacklist rules.
+2. Hardened remote DataFilter refresh to prevent stale callbacks after shutdown, reinit, or upload endpoint changes from overwriting current filter state.
+3. Appended `disable_filter=true` only in Datakit mode when every uploaded record in the batch has already been checked by remote DataFilter.
+4. Improved upload worker shutdown isolation so stale workers stop retrying and stop starting new upload loops, while successful in-flight uploads can still delete their corresponding local records.
+5. Replaced RUM placeholder view handling with fallback view resolution to improve view tracking consistency when the original view is unavailable.
+6. Removed SwiftUI automatic action tracking support.
+7. Improved preset property tag handling for nil, empty, and user info update scenarios.
+---
+# 1.6.4-alpha.3
+1. Added SDK-side DataKit-compatible data filtering with local and remote filter rules for RUM and logging data.
+2. Improved upload state handling and callback synchronization to avoid duplicate or conflicting upload execution.
+3. Improved SDK internal request filtering by marking internal requests with `X-FT-SDK-Internal-Request`.
+4. Updated privacy manifest declarations.
+---
+# 1.6.4-alpha.2
+1. Fixed CocoaPods validation Swift version.
+---
+# 1.6.4-alpha.1
+1. Added Session Replay support for SwiftUI views.
+2. Added RUM view and action tracking support for SwiftUI views.
+3. Added app launch type tracking for cold start scenarios.
+4. Added C++ and zlib settings to the podspec and SwiftPM package configuration.
+5. Improved preset property handling by guarding against nil property dictionaries.
+6. Improved RUM upload handling by skipping duplicate view data during uploads and handling 403/429 upload retry responses.
+7. Added `UIKeyboardHiddenViewController_Save` to the automatic view tracking blacklist.
+---
+# 1.6.3
+1. Added `view_long_task_rate` to count page jank rate for RUM views.
+2. Added `network_available` field to RUM Resource data, captured as a start-time network availability snapshot.
+3. Added RUM crash duration fields from app stats: `foreground_crash_free_duration` and `background_crash_free_duration`.
+4. Added link RUM key support for Session Replay resource asset uploads.
+5. Enabled intake request compression by default.
+6. Fixed long task detector race conditions by using timestamps.
+7. Fixed WKWebView bridge locking and duplicate enable handling to improve WebView RUM/session replay stability.
+8. Fixed Session Replay local CSS injection for immutable nested WebView node data, preventing mutation failures during WebView replay processing.
+---
+# 1.6.3-beta.3
+1. same as 1.6.3-beta.2
+---
+# 1.6.3-beta.2
+1. Fixed Session Replay local CSS injection for immutable nested WebView node data, preventing mutation failures during WebView replay processing.
+2. Enabled intake request compression by default.
+---
+# 1.6.3-beta.1
+1. Fixed WKWebView bridge locking and duplicate enable handling to improve WebView RUM/session replay stability.
+2. Added `network_available` field to RUM Resource data, captured as a start-time network availability snapshot.
+---
+# 1.6.3-alpha.1
+1. Added `view_long_task_rate` to count page jank rate for RUM views.
+2. Fixed long task detector race conditions by using timestamps.
+3. Added link RUM key support for Session Replay resource asset uploads.
+4. Improved URLSession swizzling compatibility with no-op delegate placeholders.
+5. Added RUM crash duration fields from app stats: `foreground_crash_free_duration` and `background_crash_free_duration`.
+---
 # 1.6.2
 1. Session Replay supports configuring fine-grained privacy masking for touches, text & input, and images via touchPrivacy, textAndInputPrivacy, and imagePrivacy.
 2. Supported view-level privacy overrides for UIView using sessionReplayPrivacyOverrides.

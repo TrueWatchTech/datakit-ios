@@ -4,199 +4,234 @@
 import PackageDescription
 
 let package = Package(
-    name: "FTMobileSDK",
-    platforms: [.iOS(.v12),
-                .macOS(.v10_14),
-                .tvOS(.v12),
+    name: "TrueWatchSDK",
+    platforms: [
+        .iOS(.v12),
+        .macOS(.v10_14),
+        .tvOS(.v12),
     ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
-            name: "FTMobileSDK",
+            name: "TrueWatchSDK",
             targets: [
-                "FTMobileSDK",
-            ]),
-        .library(
-            name: "FTMobileExtension",
-            targets: [
-                      "FTMobileExtension",
-                     ]),
-        .library(
-            name: "FTSDKCore",
-            targets: [
-                      "FTSDKCore",
-                     ]),
-        .library(
-            name: "FTSessionReplay",
-            targets: ["FTSessionReplay"]),
-    ],
-    dependencies: [
-        // Dependencies declare other packages that this package depends on.
-        // .package(url: /* package url */, from: "1.0.0"),
-    ],
-    targets: [
-        .target(
-            name: "FTMobileSDK",
-            dependencies: [
-                           "FTSDKCore",
-                           "_FTExtension",
-                           "_FTExternalData",
-                           "_FTConfig",
-                          ],
-            path: "FTMobileSDK",
-            sources: ["FTMobileAgent/Core",
-                      "FTMobileAgent/AutoTrack"
-                     ],
-            cSettings: [
-                .headerSearchPath("FTMobileAgent/Core"),
-                .headerSearchPath("FTMobileAgent/AutoTrack")
+                "TrueWatchSDK",
+                "TrueWatchSDKSwiftUI",
             ]
         ),
-        .target(name: "_FTConfig",
-                dependencies: ["_FTBaseUtils_Base",
-                               "_FTRUM",
-                               "_FTProtocol",
-                              ],
-                path: "FTMobileSDK/FTMobileAgent",
-                sources: ["Config"],
-                publicHeadersPath: "Config",
-                cSettings: [
-                    
-                ]),
-        .target(name: "_FTExternalData",
-                dependencies: ["_FTProtocol",
-                               "_FTBaseUtils_Base"],
-                path: "FTMobileSDK/FTMobileAgent/ExternalData",
-                publicHeadersPath: ".",
-                cSettings: [
-                    
-                ]),
+        .library(
+            name: "TrueWatchWidgetExtension",
+            targets: ["TrueWatchWidgetExtension"]
+        ),
+        .library(
+            name: "TrueWatchSessionReplay",
+            targets: [
+                "TrueWatchSessionReplay",
+                "TrueWatchSessionReplaySwiftUI",
+            ]
+        ),
+    ],
+    dependencies: [],
+    targets: [
+        // MARK: - TrueWatchSDK
+        .target(
+            name: "TrueWatchSDK",
+            dependencies: [
+                "_TrueWatchSDKObjC",
+                "TrueWatchSDKSwiftUI",
+            ],
+            path: "Sources/SwiftPM",
+            sources: ["TrueWatchSDK.swift"]
+        ),
+        .target(
+            name: "_TrueWatchSDKObjC",
+            dependencies: [
+                "_TrueWatchSDKCore",
+                "_AgentExtension",
+                "_AgentExternalData",
+                "_AgentConfig",
+                "TrueWatchSDKSwiftUI",
+            ],
+            path: "Sources",
+            sources: [
+                "Agent/Core",
+                "Agent/AutoTrack",
+            ],
+            publicHeadersPath: "Agent/Core",
+            cSettings: [
+                .headerSearchPath("Agent/Core"),
+                .headerSearchPath("Agent/AutoTrack"),
+                .headerSearchPath("Core/DataFilter")
+            ]
+        ),
+        .target(
+            name: "TrueWatchSDKSwiftUI",
+            path: "Sources/Agent/SwiftUI"
+        ),
+        .target(
+            name: "_AgentConfig",
+            dependencies: [
+                "_FTBaseUtils_Base",
+                "_FTRUM",
+                "_FTProtocol",
+            ],
+            path: "Sources/Agent",
+            sources: ["Config"],
+            publicHeadersPath: "Config"
+        ),
+        .target(
+            name: "_AgentExternalData",
+            dependencies: [
+                "_FTProtocol",
+                "_FTBaseUtils_Base",
+            ],
+            path: "Sources/Agent/ExternalData",
+            publicHeadersPath: "."
+        ),
         .target(
             name: "_FTProtocol",
             dependencies: [],
-            path: "FTMobileSDK/FTSDKCore/Protocol",
-            publicHeadersPath: ".",
-            cSettings: [
-            ]
+            path: "Sources/Core/Protocol",
+            publicHeadersPath: "."
         ),
         .target(
             name: "_FTRUM",
-            dependencies: ["_FTBaseUtils_Base",
-                           "_FTBaseUtils_Thread",
-                           "_FTProtocol"],
-            path: "FTMobileSDK/FTSDKCore/FTRUM",
+            dependencies: [
+                "_FTBaseUtils_Base",
+                "_FTBaseUtils_Thread",
+                "_FTProtocol",
+            ],
+            path: "Sources/Core/FTRUM",
             cSettings: [
                 .headerSearchPath("Monitor"),
                 .headerSearchPath("FTCrash"),
                 .headerSearchPath("FTCrash/RecordingCore"),
                 .headerSearchPath("FTCrash/Recording"),
                 .headerSearchPath("FTCrash/Recording/Monitors"),
-                .headerSearchPath("RUMCore"),
+                .headerSearchPath("RUMCore")
             ]
         ),
-        .target(name: "_FTURLSessionAutoInstrumentation",
-                dependencies: ["_FTProtocol","_FTBaseUtils_Swizzle"],
-                path: "FTMobileSDK/FTSDKCore/URLSessionAutoInstrumentation",
-                publicHeadersPath: ".",
-                cSettings: [
-                ]),
-        .target(name: "_FTLogger",
-                dependencies: ["_FTBaseUtils_Base",
-                               "_FTProtocol"],
-                path: "FTMobileSDK/FTSDKCore/Logger",
-                publicHeadersPath: ".",
-                cSettings: [
-                   
-                ]
-               ),
-        // MARK: - BaseUtils
-        .target(name: "_FTBaseUtils_Base",
-                dependencies: ["_FTBaseUtils_Thread"],
-                path: "FTMobileSDK/FTSDKCore/BaseUtils/Base",
-                publicHeadersPath: ".",
-                cSettings: [
-                    
-                ]),
-        .target(name: "_FTBaseUtils_Swizzle",
-                dependencies: ["_FTBaseUtils_Base"],
-                path: "FTMobileSDK/FTSDKCore/BaseUtils/Swizzle",
-                publicHeadersPath: ".",
-                cSettings: [
-                   
-                ]),
-        .target(name: "_FTBaseUtils_Thread",
-                path: "FTMobileSDK/FTSDKCore/BaseUtils/Thread",
-                cSettings: [
-                    
-                ]),
-        
-        // MARK: - FTMobileExtension
-        .target(name: "_FTExtension",
-                dependencies: ["_FTBaseUtils_Base"],
-                path: "FTMobileSDK/FTMobileAgent/Extension",
-                publicHeadersPath: ".",
-                cSettings: [
-                    
-                ]),
-        .target(name: "FTMobileExtension",
-                dependencies: [
-                               "_FTExtension",
-                               "_FTRUM",
-                               "_FTURLSessionAutoInstrumentation",
-                               "_FTExternalData",
-                               "_FTLogger",
-                               "_FTConfig"
-                              ],
-                path: "FTMobileSDK/FTMobileExtension",
-                resources: [
-                    .copy("../Resources/PrivacyInfo.xcprivacy")],
-                publicHeadersPath: ".",
-                cSettings: [
-                    
-                ]),
-        .target(name: "FTSDKCore",
-                dependencies: [
-                               "_FTRUM",
-                               "_FTURLSessionAutoInstrumentation",
-                               "_FTLogger"
-                              ],
-                path: "FTMobileSDK",
-                sources: ["FTSDKCore/FTWKWebView","FTSDKCore/DataManager","FTSDKCore/RemoteConfig"],
-                resources: [
-                    .copy("Resources/PrivacyInfo.xcprivacy")],
-                publicHeadersPath: "FTSDKCore/include",
-                cSettings: [
-                    .headerSearchPath("FTSDKCore/DataManager/Upload"),
-                    .headerSearchPath("FTSDKCore/DataManager/Storage"),
-                    .headerSearchPath("FTSDKCore/DataManager/Storage/fmdb"),
-                    .headerSearchPath("FTSDKCore/FTWKWebView/JSBridge"),
+        .target(
+            name: "_FTURLSessionAutoInstrumentation",
+            dependencies: [
+                "_FTProtocol",
+                "_FTBaseUtils_Swizzle",
+            ],
+            path: "Sources/Core/URLSessionAutoInstrumentation",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "_FTLogger",
+            dependencies: [
+                "_FTBaseUtils_Base",
+                "_FTProtocol",
+            ],
+            path: "Sources/Core/Logger",
+            publicHeadersPath: "."
+        ),
 
-                ]
-               ),
-        .target(name: "FTSessionReplay",
-                dependencies: ["FTSDKCore"],
-                path: "FTMobileSDK/FTSessionReplay",
-                publicHeadersPath: "Public",
-                cSettings: [
-                    .headerSearchPath("../.."),
-                    .headerSearchPath("."),
-                    .headerSearchPath("Processor/Builders"),
-                    .headerSearchPath("DataStore"),
-                    .headerSearchPath("Recorder"),
-                    .headerSearchPath("Recorder/Touch"),
-                    .headerSearchPath("Recorder/SRWireframe"),
-                    .headerSearchPath("Recorder/SRWireframe/ViewTreeSnapshot"),
-                    .headerSearchPath("Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder"),
-                    .headerSearchPath("Recorder/ScreenChangeMonitor"),
-                    .headerSearchPath("Storage"),
-                    .headerSearchPath("Storage/Writer"),
-                    .headerSearchPath("Storage/Reader"),
-                    .headerSearchPath("Storage/TmpCache"),
-                    .headerSearchPath("TLV"),
-                    .headerSearchPath("Upload"),
-                    .headerSearchPath("Upload/Request"),
-                    .headerSearchPath("Utilities"),
-                ]
-               ),
+        // MARK: - BaseUtils
+        .target(
+            name: "_FTBaseUtils_Base",
+            dependencies: ["_FTBaseUtils_Thread"],
+            path: "Sources/Core/BaseUtils/Base",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "_FTBaseUtils_Swizzle",
+            dependencies: ["_FTBaseUtils_Base"],
+            path: "Sources/Core/BaseUtils/Swizzle",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "_FTBaseUtils_Thread",
+            path: "Sources/Core/BaseUtils/Thread"
+        ),
+
+        // MARK: - TrueWatchWidgetExtension
+        .target(
+            name: "_AgentExtension",
+            dependencies: ["_FTBaseUtils_Base"],
+            path: "Sources/Agent/Extension",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "TrueWatchWidgetExtension",
+            dependencies: [
+                "_AgentExtension",
+                "_FTRUM",
+                "_FTURLSessionAutoInstrumentation",
+                "_AgentExternalData",
+                "_FTLogger",
+                "_AgentConfig",
+            ],
+            path: "Sources/WidgetExtension",
+            resources: [
+                .copy("../Resources/PrivacyInfo.xcprivacy"),
+            ],
+            publicHeadersPath: "."
+        ),
+
+        // MARK: - TrueWatchSDKCore
+        .target(
+            name: "_TrueWatchSDKCore",
+            dependencies: [
+                "_FTRUM",
+                "_FTURLSessionAutoInstrumentation",
+                "_FTLogger",
+            ],
+            path: "Sources",
+            sources: [
+                "Core/FTWKWebView",
+                "Core/DataManager",
+                "Core/RemoteConfig",
+                "Core/DataFilter",
+            ],
+            resources: [
+                .copy("Resources/PrivacyInfo.xcprivacy"),
+            ],
+            publicHeadersPath: "Core/include",
+            cSettings: [
+                .headerSearchPath("Core/DataManager/Upload"),
+                .headerSearchPath("Core/DataManager/Storage"),
+                .headerSearchPath("Core/DataManager/Storage/fmdb"),
+                .headerSearchPath("Core/FTWKWebView/JSBridge"),
+                .headerSearchPath("Core/DataFilter"),
+            ]
+        ),
+
+        // MARK: - TrueWatchSessionReplay
+        .target(
+            name: "TrueWatchSessionReplay",
+            dependencies: ["_TrueWatchSDKCore"],
+            path: "Sources/SessionReplay",
+            exclude: [
+                "Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder/SwiftUI",
+            ],
+            publicHeadersPath: "Public",
+            cSettings: [
+                .headerSearchPath("../.."),
+                .headerSearchPath("."),
+                .headerSearchPath("Processor/Builders"),
+                .headerSearchPath("DataStore"),
+                .headerSearchPath("Recorder"),
+                .headerSearchPath("Recorder/Touch"),
+                .headerSearchPath("Recorder/SRWireframe"),
+                .headerSearchPath("Recorder/SRWireframe/ViewTreeSnapshot"),
+                .headerSearchPath("Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder"),
+                .headerSearchPath("Recorder/ScreenChangeMonitor"),
+                .headerSearchPath("Storage"),
+                .headerSearchPath("Storage/Writer"),
+                .headerSearchPath("Storage/Reader"),
+                .headerSearchPath("Storage/TmpCache"),
+                .headerSearchPath("TLV"),
+                .headerSearchPath("Upload"),
+                .headerSearchPath("Upload/Request"),
+                .headerSearchPath("Utilities"),
+            ]
+        ),
+        .target(
+            name: "TrueWatchSessionReplaySwiftUI",
+            path: "Sources/SessionReplay/Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder/SwiftUI"
+        ),
     ]
 )

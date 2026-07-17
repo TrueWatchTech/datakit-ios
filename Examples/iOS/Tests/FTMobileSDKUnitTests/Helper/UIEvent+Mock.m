@@ -1,0 +1,70 @@
+//
+//  UIEvent+Mock.m
+//  FTMobileSDKUnitTests
+//
+//  Created by hulilei on 2025/2/7.
+//  Copyright 2025 TRUEWATCH TECHNOLOGY INC PTE. LTD.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+#import "UIEvent+Mock.h"
+@interface UIPressesEventMock:UIPressesEvent
+@end
+@implementation UIPressesEventMock{
+    NSSet<UIPress *> *_allPresses;
+}
+-(instancetype)initWithAllPresses:(NSSet<UIPress*>*)presses{
+    self = [super init];
+    if(self){
+        _allPresses = presses;
+    }
+    return self;
+}
+-(NSSet<UIPress *> *)allPresses{
+    return _allPresses;
+}
+@end
+
+@implementation UIPressesMock{
+    UIPressPhase _phase;
+    UIPressType _type;
+    UIView *_view;
+}
+-(instancetype)initWithPhase:(UIPressPhase)phase type:(UIPressType)type view: (UIView*)view{
+    self = [super init];
+    if(self){
+        _phase = phase;
+        _type = type;
+        _view = view;
+    }
+    return self;
+}
+-(UIPressPhase)phase{
+    return _phase;
+}
+-(UIPressType)type{
+    return _type;
+}
+-(UIResponder *)responder{
+    return _view;
+}
+@end
+@implementation UIEvent (Mock)
++ (UIPressesEvent*)mockWithPress:(UIPress*)press{
+    return [[UIPressesEventMock alloc]initWithAllPresses:[NSSet setWithArray:@[press]]];
+}
+@end
+
+
+
