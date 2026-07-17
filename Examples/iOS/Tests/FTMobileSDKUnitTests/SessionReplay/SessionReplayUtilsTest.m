@@ -43,7 +43,12 @@
 #import "FTNetworkInfoManager.h"
 #import "FTUploadStatus.h"
 #import "FTUIImageResource.h"
+#import "UIImage+FTSRIdentifier.h"
+#import "UIColor+FTSRIdentifier.h"
 #import "FTSRWireframe.h"
+#if !TARGET_OS_TV
+#import "WKWebView+FTAutoTrack.h"
+#endif
 
 BOOL isNull(id value)
 {
@@ -250,6 +255,41 @@ BOOL isNAN(id value) {
         UIRectFill((CGRect){CGPointZero, size});
     }];
 }
+
+- (void)testImageSrIdentifierCopiesMutableString{
+    UIImage *image = [self sessionReplayTestImage];
+    NSMutableString *identifier = [NSMutableString stringWithString:@"image-id"];
+    image.srIdentifier = identifier;
+
+    [identifier appendString:@"-mutated"];
+
+    XCTAssertEqualObjects(image.srIdentifier, @"image-id");
+}
+
+- (void)testColorSrIdentifierCopiesMutableString{
+    UIColor *color = [UIColor redColor];
+    NSMutableString *identifier = [NSMutableString stringWithString:@"color-id"];
+    color.srIdentifier = identifier;
+
+    [identifier appendString:@"-mutated"];
+
+    XCTAssertEqualObjects(color.srIdentifier, @"color-id");
+}
+
+#if !TARGET_OS_TV
+- (void)testWebViewLinkRumKeysInfoCopiesMutableDictionary{
+    WKWebView *webView = [[WKWebView alloc] initWithFrame:CGRectZero];
+    NSMutableDictionary *linkRumKeysInfo = [@{@"view_id": @"view-1"} mutableCopy];
+    webView.ft_linkRumKeysInfo = linkRumKeysInfo;
+
+    linkRumKeysInfo[@"view_id"] = @"view-2";
+    linkRumKeysInfo[@"extra"] = @"value";
+
+    XCTAssertEqualObjects(webView.ft_linkRumKeysInfo[@"view_id"], @"view-1");
+    XCTAssertNil(webView.ft_linkRumKeysInfo[@"extra"]);
+    XCTAssertFalse([webView.ft_linkRumKeysInfo isKindOfClass:[NSMutableDictionary class]]);
+}
+#endif
 
 - (void)testImageResourceResolvesDynamicTintColorBeforeBackgroundProcessing API_AVAILABLE(ios(13.0)){
     __block NSInteger providerCallCount = 0;
@@ -505,6 +545,38 @@ BOOL isNAN(id value) {
     NSArray *result = [conditions checkForUpload];
     
     XCTAssertFalse([result containsObject:@"Upload URL Not Configured"]);
+}
+
+- (void)testUploadConditionsUsesUnknownForInvalidBatteryState{
+    [FTNetworkInfoManager sharedInstance].setUploadURL(@"https://example.com", nil, nil);
+    FTUploadConditions *conditions = [[FTUploadConditions alloc] init];
+    [conditions setValue:@0 forKey:@"batteryLevel"];
+
+    NSArray<NSArray *> *blockingCases = @[
+        @[@(UIDeviceBatteryStateUnplugged), @"Unplugged"],
+        @[@((UIDeviceBatteryState)-1), @"Unknown"],
+        @[@(UIDeviceBatteryStateFull + 1), @"Unknown"],
+        @[@(NSUIntegerMax), @"Unknown"],
+    ];
+    for (NSArray *testCase in blockingCases) {
+        [conditions setValue:testCase[0] forKey:@"batteryState"];
+        NSString *expected = [@"Battery State: " stringByAppendingString:testCase[1]];
+        NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(NSString *condition, NSDictionary *bindings) {
+            return [condition containsString:expected];
+        }];
+        XCTAssertEqual([[conditions checkForUpload] filteredArrayUsingPredicate:predicate].count, 1);
+    }
+
+    [conditions setValue:@(UIDeviceBatteryStateUnknown) forKey:@"batteryState"];
+    XCTAssertNotNil([conditions checkForUpload]);
+
+    NSPredicate *batteryPredicate = [NSPredicate predicateWithBlock:^BOOL(NSString *condition, NSDictionary *bindings) {
+        return [condition containsString:@"Battery Level"];
+    }];
+    [conditions setValue:@(UIDeviceBatteryStateCharging) forKey:@"batteryState"];
+    XCTAssertEqual([[conditions checkForUpload] filteredArrayUsingPredicate:batteryPredicate].count, 0);
+    [conditions setValue:@(UIDeviceBatteryStateFull) forKey:@"batteryState"];
+    XCTAssertEqual([[conditions checkForUpload] filteredArrayUsingPredicate:batteryPredicate].count, 0);
 }
 
 - (void)testResourceRequestContainsBindInfoFields{

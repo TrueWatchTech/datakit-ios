@@ -25,7 +25,7 @@
 #import "FTLoggerConfig.h"
 #import "FTRecordModel.h"
 #import "FTBaseInfoHandler.h"
-#import "FTGlobalRumManager.h"
+#import "FTGlobalRumManager+Private.h"
 #import "FTConstants.h"
 #import "FTMobileAgent+Private.h"
 #import "FTInnerLog.h"
@@ -51,11 +51,12 @@
 #import "FTDataWriterWorker.h"
 #import "FTModuleManager.h"
 #import "FTRemoteConfigManager.h"
-#import "../../Core/DataFilter/FTDataFilterManager.h"
+#import "FTDataFilterManager.h"
 #import "FTRemoteConfigurationProtocol.h"
 #import "FTRemoteConfigError.h"
 #import "FTConfig+RemoteConfig.h"
 #import "FTRemoteConfigTypeDefs.h"
+#import "FTCrash.h"
 #import "FTRemoteConfigError.h"
 #import "FTDateUtil.h"
 #import "FTAppLaunchTracker.h"
@@ -201,8 +202,7 @@ static FTMobileAgent *sharedInstance = nil;
                                                     env:config.env
                                                 service:config.service
                                           globalContext:config.globalContext
-                                                pkgInfo:config.pkgInfo
-    ];
+                                                pkgInfo:config.pkgInfo];
     [FTExtensionDataManager sharedInstance].groupIdentifierArray = config.groupIdentifiers;
     [FTNetworkInfoManager sharedInstance]
         .setUploadURL(config.datakitUrl,config.datawayUrl,config.clientToken)
@@ -213,6 +213,7 @@ static FTMobileAgent *sharedInstance = nil;
                                     localFilters:config.dataFilters];
     BOOL autoSync = config.autoSync&&[FTNetworkInfoManager sharedInstance].isNetworkConfigured;
     // Start data processing manager
+    [FTTrackerEventDBTool sharedManagerWithEnableLimitWithDbSize:config.enableLimitWithDbSize];
     [FTTrackDataManager startWithAutoSync:autoSync syncPageSize:config.syncPageSize syncSleepTime:config.syncSleepTime];
     [[FTTrackDataManager sharedInstance] setEnableLimitWithDb:config.enableLimitWithDbSize size:config.dbCacheLimit discardNew:config.dbDiscardType == FTDBDiscard];
     
@@ -364,7 +365,7 @@ static FTMobileAgent *sharedInstance = nil;
                     if (status) {
                         NSString *statusStr;
                         if([status isKindOfClass:NSNumber.class]){
-                            statusStr = FTStatusStringMap[[status intValue]];
+                            statusStr = FTStringFromLogStatus((LogStatus)[status integerValue]);
                         }else{
                             statusStr = status;
                         }
@@ -471,5 +472,8 @@ static FTMobileAgent *sharedInstance = nil;
 }
 - (void)additionalConfigurationWithSource:(NSString *)source{
     [FTPresetProperty sharedInstance].sessionReplaySource = source;
+}
++ (NSString *)sdkVersion{
+    return SDK_VERSION;
 }
 @end

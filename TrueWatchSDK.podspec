@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
 	s.name         = "TrueWatchSDK"
-	s.version      = "1.6.5"
+	s.version      = "1.6.6"
 	s.summary      = "TrueWatchTech iOS Data Collection SDK"
 	#s.description  = ""
 	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
 		'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) FT_COCOAPODS=1'
 	}
 
-	#$JENKINS_DYNAMIC_VERSION replacing "#{s.version}" will cause an error during pod valid phase
+	#1.6.6 replacing "#{s.version}" will cause an error during pod valid phase
 	s.source       = { :git => "https://github.com/TrueWatchTech/datakit-ios.git", :tag => s.version.to_s }
 
     s.resource_bundle = {
@@ -48,6 +48,11 @@ Pod::Spec.new do |s|
 		e.dependency 'TrueWatchSDK/Core/FTRUM'
 		e.dependency 'TrueWatchSDK/Core/URLSessionAutoInstrumentation'
 		e.dependency 'TrueWatchSDK/Core/Logger'
+	end
+
+	s.subspec 'Extension' do |e|
+		e.platform = :ios, '12.0'
+		e.dependency "#{s.name}/WidgetExtension"
 	end
 
 	s.subspec 'Extension' do |e|

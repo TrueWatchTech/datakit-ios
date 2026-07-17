@@ -41,7 +41,7 @@
 /// Whether to enable automatic upload logic (on startup, network status changes, write interval 10s)
 @property (atomic, assign) BOOL autoSync;
 @property (nonatomic, strong) FTDBDataCachePolicy *dataCachePolicy;
-@property (nonatomic, strong) dispatch_block_t uploadWork;
+@property (nonatomic, copy) dispatch_block_t uploadWork;
 @property (nonatomic, strong) dispatch_source_t timerSource;
 @property (nonatomic, strong) FTDataUploadWorker *dataUploadWorker;
 @end
@@ -116,7 +116,6 @@ static FTTrackDataManager *sharedInstance = nil;
     [self.dataUploadWorker updateSyncPageSize:syncPageSize syncSleepTime:syncSleepTime];
 }
 -(void)setEnableLimitWithDb:(BOOL)enable size:(long)size discardNew:(BOOL)discardNew{
-    [[FTTrackerEventDBTool sharedManager] setEnableLimitWithDbSize:enable];
     if (enable) {
         [self.dataCachePolicy setDBLimitWithSize:size discardNew:discardNew];
     }
@@ -182,7 +181,6 @@ static FTTrackDataManager *sharedInstance = nil;
 - (void)applicationDidEnterBackground{
     @try {
         [self.dataCachePolicy insertCacheToDBWithoutCallback];
-        [[FTTrackerEventDBTool sharedManager] close];
     }
     @catch (NSException *exception) {
         FTInnerLogError(@"exception %@",exception);
@@ -192,7 +190,6 @@ static FTTrackDataManager *sharedInstance = nil;
 -(void)applicationWillTerminate{
     @try {
         [self.dataCachePolicy insertCacheToDBWithoutCallback];
-        [[FTTrackerEventDBTool sharedManager] close];
     } @catch (NSException *exception) {
         FTInnerLogError(@"exception %@",exception);
     }
@@ -208,8 +205,10 @@ static FTTrackDataManager *sharedInstance = nil;
 + (void)shutDown{
     @synchronized(sharedInstanceLock) {
         if (sharedInstance) {
+            [sharedInstance.dataCachePolicy insertCacheToDBWithoutCallback];
             [sharedInstance.dataUploadWorker invalidateAndCancelPendingUploads];
             [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:sharedInstance];
+            [[FTTrackerEventDBTool sharedManager] close];
         }
         sharedInstance = nil;
     }

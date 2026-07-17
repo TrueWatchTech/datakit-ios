@@ -29,6 +29,9 @@ EOF
 
 is_supported_file() {
   case "$1" in
+    Sources/SessionReplay/*.h|Sources/SessionReplay/*.m|Sources/SessionReplay/*.mm|Sources/SessionReplay/*.swift|Sources/SessionReplay/**/*.h|Sources/SessionReplay/**/*.m|Sources/SessionReplay/**/*.mm|Sources/SessionReplay/**/*.swift)
+      return 0
+      ;;
     Sources/*.h|Sources/*.m|Sources/*.mm|Sources/*.swift|Sources/**/*.h|Sources/**/*.m|Sources/**/*.mm|Sources/**/*.swift)
       return 0
       ;;
@@ -62,7 +65,7 @@ is_skipped_path() {
 }
 
 has_third_party_license() {
-  sed -n '1,80p' "$1" | grep -Eq 'Copyright \(c\)|Permission is hereby granted|Karl Stenerud|Apple Inc\.|FMDB'
+  sed -n '1,80p' "$1" | grep -Eq 'Copyright \(c\)|Permission is hereby granted|Karl Stenerud|Apple Inc\.|FMDB|Copyright 2019-Present Datadog|software derived from software developed at Datadog'
 }
 
 list_files() {
@@ -78,7 +81,7 @@ list_files() {
 }
 
 has_complete_header() {
-  perl -0ne 'exit(m{^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
+  perl -0e 'local $/; my $content = <> // ""; exit($content =~ m{^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
 }
 
 has_truewatch_copyright() {
@@ -86,7 +89,13 @@ has_truewatch_copyright() {
 }
 
 has_legacy_header_text() {
-  sed -n '1,40p' "$1" | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (TrueWatchCloud|hll)|All rights reserved\.'
+  sed -n '1,40p' "$1" | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (TrueWatchCloud|hll)|All rights reserved\.|[Gg][Uu][Aa][Nn][Cc][Ee]|[Jj][Ii][Aa][Gg][Oo][Uu][Yy][Uu][Nn]'
+}
+
+has_duplicate_truewatch_copyright() {
+  local count
+  count="$(grep -Ec '^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.$' "$1" || true)"
+  [[ "${count}" -gt 1 ]]
 }
 
 check_file() {
@@ -96,6 +105,11 @@ check_file() {
 
   if has_legacy_header_text "${abs_path}"; then
     error "${rel_path}: contains legacy or incompatible copyright header"
+    failed=1
+  fi
+
+  if has_duplicate_truewatch_copyright "${abs_path}"; then
+    error "${rel_path}: contains duplicate TrueWatch copyright headers"
     failed=1
   fi
 

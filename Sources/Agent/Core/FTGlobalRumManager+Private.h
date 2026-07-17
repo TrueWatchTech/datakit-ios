@@ -1,8 +1,8 @@
 //
-//  UIScrollView+FTAutoTrack.h
+//  FTGlobalRumManager+Private.h
 //  FTMobileAgent
 //
-//  Created by hulilei on 2021/7/28.
+//  Created by hulilei on 2020/4/14.
 //  Copyright 2021 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,23 +18,25 @@
 //  limitations under the License.
 //
 
-#import <TargetConditionals.h>
-#if TARGET_OS_IOS || TARGET_OS_TV
-#import <UIKit/UIKit.h>
+#import "FTGlobalRumManager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface UITableView (FTAutoTrack)
+@class FTRUMManager,FTRumConfig;
+@protocol FTRUMDataWriteProtocol;
 
-- (void)ft_setDelegate:(id <UITableViewDelegate>)delegate;
+@interface FTGlobalRumManager (Private)
+/// Object for handling RUM data
+@property (nonatomic, strong) FTRUMManager *rumManager;
 
-@end
+/// Set rum configuration options
+/// - Parameter rumConfig: rum configuration options
+- (void)setRumConfig:(FTRumConfig *)rumConfig writer:(id <FTRUMDataWriteProtocol>)writer;
 
-@interface UICollectionView (FTAutoTrack)
+- (void)updateSampleRate:(int)sampleRate sessionOnErrorSampleRate:(int)sessionOnErrorSampleRate;
 
-- (void)ft_setDelegate:(id <UICollectionViewDelegate>)delegate;
-
+/// Shut down singleton
+- (void)shutDown;
 @end
 
 NS_ASSUME_NONNULL_END
-#endif

@@ -13,10 +13,11 @@
 #import "FTConstants.h"
 #import "FTSDKCompat.h"
 static NSString * const FT_DB_REMOTE_FILTER_CHECKED = @"remote_filter_checked";
+static NSInteger const FT_DB_AUTO_VACUUM_INCREMENTAL = 2;
 @interface FTTrackerEventDBTool ()
 @property (nonatomic, strong) NSString *dbPath;
 @property (nonatomic, strong) ZY_FMDatabaseQueue *dbQueue;
-@property (nonatomic, assign) BOOL enableLimitWithDbSize;
+@property (nonatomic, assign) BOOL incrementalAutoVacuumEnabled;
 
 @end
 @implementation FTTrackerEventDBTool
@@ -27,7 +28,13 @@ static dispatch_once_t onceToken;
 {
     return [FTTrackerEventDBTool shareDatabaseWithPath:nil dbName:nil];
 }
++ (instancetype)sharedManagerWithEnableLimitWithDbSize:(BOOL)enableLimitWithDbSize{
+    return [FTTrackerEventDBTool shareDatabaseWithPath:nil dbName:nil enableLimitWithDbSize:enableLimitWithDbSize];
+}
 + (instancetype)shareDatabaseWithPath:(NSString *)dbPath dbName:(NSString *)dbName{
+    return [FTTrackerEventDBTool shareDatabaseWithPath:dbPath dbName:dbName enableLimitWithDbSize:NO];
+}
++ (instancetype)shareDatabaseWithPath:(NSString *)dbPath dbName:(NSString *)dbName enableLimitWithDbSize:(BOOL)enableLimitWithDbSize{
     dispatch_once(&onceToken, ^{
         NSString *path = dbPath;
         NSString *name = dbName;
@@ -48,8 +55,7 @@ static dispatch_once_t onceToken;
             dbTool.dbPath = path;
             FTInnerLogDebug(@"db path:%@",path);
             dbTool.dbQueue = dbQueue;
-            dbTool.enableLimitWithDbSize = NO;
-            [dbTool createTable];
+            [dbTool createTableWithEnableLimitWithDbSize:enableLimitWithDbSize];
         }
     });
     if (!dbTool) {
@@ -64,8 +70,11 @@ static dispatch_once_t onceToken;
 - (id)mutableCopyWithZone:(struct _NSZone *)zone {
     return self;
 }
-- (void)createTable{
+- (void)createTableWithEnableLimitWithDbSize:(BOOL)enableLimitWithDbSize{
     @try {
+        if (enableLimitWithDbSize) {
+            [self enableIncrementalAutoVacuum];
+        }
         [self createEventTable];
         [self enableWAL];
     } @catch (NSException *exception) {
@@ -129,7 +138,8 @@ static dispatch_once_t onceToken;
 }
 -(void)enableWAL{
     [self zy_inDatabase:^(ZY_FMDatabase *db){
-        [db executeQuery:@"PRAGMA journal_mode=WAL;"];
+        ZY_FMResultSet *set = [db executeQuery:@"PRAGMA journal_mode=WAL;"];
+        [set close];
     }];
 }
 -(BOOL)insertItem:(FTRecordModel *)item{
@@ -239,7 +249,7 @@ static dispatch_once_t onceToken;
     [self zy_inDatabase:^(ZY_FMDatabase *db){
         NSString *sqlStr = [NSString stringWithFormat:@"DELETE FROM %@ WHERE op = ? AND _id <= ? ;",FT_DB_TRACE_EVENT_TABLE_NAME];
         is = [db executeUpdate:sqlStr,type,identify];
-        if(weakSelf.enableLimitWithDbSize){
+        if(is && weakSelf.incrementalAutoVacuumEnabled){
             NSString *str = [NSString stringWithFormat:@"PRAGMA incremental_vacuum(%ld)", (long)count];
             ZY_FMResultSet *set = [db executeQuery:str];
             [set close];
@@ -253,7 +263,7 @@ static dispatch_once_t onceToken;
     [self zy_inDatabase:^(ZY_FMDatabase *db){
         NSString *sqlStr = [NSString stringWithFormat:@"DELETE FROM %@ WHERE _id in (SELECT _id from '%@' WHERE  op = ? ORDER by _id ASC LIMIT ? )",FT_DB_TRACE_EVENT_TABLE_NAME,FT_DB_TRACE_EVENT_TABLE_NAME];
         is = [db executeUpdate:sqlStr,type,@(count)];
-        if(weakSelf.enableLimitWithDbSize){
+        if(is && weakSelf.incrementalAutoVacuumEnabled){
             NSString *str = [NSString stringWithFormat:@"PRAGMA incremental_vacuum(%ld)", (long)count];
             ZY_FMResultSet *set = [db executeQuery:str];
             [set close];
@@ -267,7 +277,7 @@ static dispatch_once_t onceToken;
     [self zy_inDatabase:^(ZY_FMDatabase *db){
         NSString *sqlStr = [NSString stringWithFormat:@"DELETE FROM %@ WHERE _id in (SELECT _id from '%@' ORDER by _id ASC LIMIT ?)",FT_DB_TRACE_EVENT_TABLE_NAME,FT_DB_TRACE_EVENT_TABLE_NAME];
         is = [db executeUpdate:sqlStr,@(count)];
-        if(weakSelf.enableLimitWithDbSize){
+        if(is && weakSelf.incrementalAutoVacuumEnabled){
             NSString *str = [NSString stringWithFormat:@"PRAGMA incremental_vacuum(%ld)", (long)count];
             ZY_FMResultSet *set = [db executeQuery:str];
             [set close];
@@ -281,7 +291,7 @@ static dispatch_once_t onceToken;
     [self zy_inDatabase:^(ZY_FMDatabase *db){
         NSString *sqlStr = [NSString stringWithFormat:@"DELETE FROM %@ WHERE _id in (SELECT _id from '%@' WHERE op = ? or op = ? ORDER by _id ASC LIMIT ?)",FT_DB_TRACE_EVENT_TABLE_NAME,FT_DB_TRACE_EVENT_TABLE_NAME];
         is = [db executeUpdate:sqlStr,FT_DATA_TYPE_LOGGING,FT_DATA_TYPE_RUM,@(count)];
-        if(weakSelf.enableLimitWithDbSize){
+        if(is && weakSelf.incrementalAutoVacuumEnabled){
             NSString *str = [NSString stringWithFormat:@"PRAGMA incremental_vacuum(%ld)", (long)count];
             ZY_FMResultSet *set = [db executeQuery:str];
             [set close];
@@ -338,7 +348,6 @@ static dispatch_once_t onceToken;
     return is;
 }
 - (void)close{
-    [self vacuumDB];
     [[self dbQueue] close];
 }
 static long pageSize = 0;
@@ -395,28 +404,28 @@ static long pageSize = 0;
         block(db);
     }];
 }
-- (BOOL)vacuumDB{
-    __block BOOL is;
-    [self zy_inDatabase:^(ZY_FMDatabase *db){
-        is = [db executeUpdate:@"vacuum;"];
-    }];
-    return is;
+
+- (NSInteger)autoVacuumModeWithDatabase:(ZY_FMDatabase *)db{
+    NSInteger mode = 0;
+    ZY_FMResultSet *set = [db executeQuery:@"PRAGMA auto_vacuum"];
+    if ([set next]) {
+        mode = [set intForColumnIndex:0];
+    }
+    [set close];
+    return mode;
 }
-- (BOOL)autoVacuum{
+
+- (BOOL)enableIncrementalAutoVacuum{
     __block BOOL is;
     [self zy_inDatabase:^(ZY_FMDatabase *db){
         is = [db executeUpdate:@"PRAGMA auto_vacuum = INCREMENTAL"];
+        NSInteger mode = [self autoVacuumModeWithDatabase:db];
+        self.incrementalAutoVacuumEnabled = mode == FT_DB_AUTO_VACUUM_INCREMENTAL;
         if(is){
-            FTInnerLogDebug(@"PRAGMA auto_vacuum = INCREMENTAL Success");
+            FTInnerLogDebug(@"PRAGMA auto_vacuum = INCREMENTAL Success, incrementalAutoVacuumEnabled = %d",self.incrementalAutoVacuumEnabled);
         }
     }];
     return is;
-}
--(void)setEnableLimitWithDbSize:(BOOL)enableLimitWithDbSize{
-    _enableLimitWithDbSize = enableLimitWithDbSize;
-    if(enableLimitWithDbSize){
-        [self autoVacuum];
-    }
 }
 /**
  * Only used for testing.

@@ -15,13 +15,11 @@
 
 #ifndef FTSDK_h
 #define FTSDK_h
-
-#import <Foundation/Foundation.h>
 #import <TargetConditionals.h>
-
 #import "FTSDKConfig.h"
 #import "FTMobileConfig.h"
 #import "FTExternalDataManager.h"
+#import "FTGlobalRumManager.h"
 #import "FTResourceMetricsModel.h"
 #import "FTResourceContentModel.h"
 #import "FTURLSessionDelegate.h"
@@ -46,10 +44,5 @@
 #import "FTRUMAction.h"
 #import "FTDefaultActionTrackingHandler.h"
 #import "FTDefaultUIKitViewTrackingHandler.h"
-#import "FTPackageIdGenerator.h"
-#import "FTRecordModel.h"
-#import "FTRequest.h"
-#import "FTRequestBody.h"
-#import "FTSerialNumberGenerator.h"
 
 #endif /* FTSDK_h */

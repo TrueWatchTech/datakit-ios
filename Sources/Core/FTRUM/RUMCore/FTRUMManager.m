@@ -37,31 +37,49 @@
 #import "FTRUMContext.h"
 #import "FTMessageReceiver.h"
 #import "FTRUMViewHandler.h"
+#import "FTAppLifeCycle.h"
+#if FT_HAS_UIKIT
+#import <UIKit/UIKit.h>
+#endif
+#if FT_HOST_MAC
+#import <AppKit/AppKit.h>
+#endif
 
-NSString * const AppStateStringMap[] = {
-    [FTAppStateUnknown] = @"unknown",
-    [FTAppStateStartUp] = @"startup",
-    [FTAppStateRun] = @"run",
-    [FTAppStateBackground] = @"background",
-};
+NSString *FTStringFromAppState(FTAppState state) {
+    switch (state) {
+        case FTAppStateUnknown:
+            return @"unknown";
+        case FTAppStateStartUp:
+            return @"startup";
+        case FTAppStateRun:
+            return @"run";
+        case FTAppStateBackground:
+            return @"background";
+        default:
+            return @"unknown";
+    }
+}
 void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 
-@interface FTRUMManager()<FTRUMSessionProtocol,FTMessageReceiver>
+@interface FTRUMManager()<FTRUMSessionProtocol,FTMessageReceiver,FTAppLifeCycleDelegate>
 @property (nonatomic, strong) FTRUMDependencies *rumDependencies;
 @property (nonatomic, strong) FTRUMSessionHandler *sessionHandler;
 @property (nonatomic, strong) FTReadWriteHelper<NSMutableDictionary *> *preViewDuration;
 @property (nonatomic, strong) dispatch_queue_t rumQueue;
+@property (atomic,copy,readwrite) NSString *viewReferrer;
+@property (atomic,copy,nullable) NSString *viewReferrerId;
 @end
 @implementation FTRUMManager
 -(instancetype)initWithRumDependencies:(FTRUMDependencies *)dependencies{
     self = [super init];
     if(self){
         _rumDependencies = dependencies;
-        _appState = FTAppStateStartUp;
+        self.appState = [self initialAppState];
         _preViewDuration = [[FTReadWriteHelper alloc]initWithValue:[NSMutableDictionary new]] ;
         _rumQueue = dispatch_queue_create("com.ft.rum", DISPATCH_QUEUE_SERIAL);
         dispatch_queue_set_specific(_rumQueue, FTRUMQueueIdentityKey, &FTRUMQueueIdentityKey, NULL);
         [[FTModuleManager sharedInstance] addMessageReceiver:self];
+        [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:self];
         [self notifyRumInit];
         self.assistant = self;
     }
@@ -99,7 +117,43 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 -(void)setAppState:(FTAppState)appState{
     _appState = appState;
-    self.rumDependencies.fatalErrorContext.appState = AppStateStringMap[appState];
+    self.rumDependencies.fatalErrorContext.appState = FTStringFromAppState(appState);
+}
+-(FTAppState)initialAppState{
+#if FT_HAS_UIKIT
+    if ([UIApplication respondsToSelector:@selector(sharedApplication)]) {
+        UIApplication *application = [UIApplication performSelector:@selector(sharedApplication)];
+        if (!application) {
+            return FTAppStateStartUp;
+        }
+        switch (application.applicationState) {
+            case UIApplicationStateActive:
+                return FTAppStateRun;
+            case UIApplicationStateBackground:
+                return FTAppStateBackground;
+            case UIApplicationStateInactive:
+            default:
+                return FTAppStateStartUp;
+        }
+    }
+    return FTAppStateStartUp;
+#elif FT_HOST_MAC
+    return [NSApplication sharedApplication].active ? FTAppStateRun : FTAppStateUnknown;
+#else
+    return FTAppStateStartUp;
+#endif
+}
+#pragma mark ========== RUM App State ==========
+-(void)applicationDidBecomeActive{
+    self.appState = FTAppStateRun;
+}
+-(void)applicationWillResignActive{
+#if FT_HOST_MAC
+    self.appState = FTAppStateUnknown;
+#endif
+}
+-(void)applicationDidEnterBackground{
+    self.appState = FTAppStateBackground;
 }
 -(void)updateSampleRate:(int)sampleRate sessionOnErrorSampleRate:(int)sessionOnErrorSampleRate{
     dispatch_async(self.rumQueue, ^{
@@ -206,6 +260,9 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 #pragma mark - Action -
 - (void)startAction:(NSString *)actionName actionType:(NSString *)actionType property:(NSDictionary *)property{
+    [self startAction:actionName actionType:actionType property:property heatmapAttributes:nil];
+}
+- (void)startAction:(NSString *)actionName actionType:(NSString *)actionType property:(NSDictionary *)property heatmapAttributes:(FTHeatmapAttributes *)heatmapAttributes{
     NSDate *time = [NSDate date];
     dispatch_async(self.rumQueue, ^{
         @try {
@@ -214,6 +271,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             actionModel.time = time;
             actionModel.type = FTRUMDataStartAction;
             actionModel.fields = property;
+            actionModel.heatmapAttributes = heatmapAttributes;
             [self process:actionModel context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -310,7 +368,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                 [tags setValue:@(content.httpStatusCode) forKey:FT_KEY_RESOURCE_STATUS];
                 
                 if (content.error || content.httpStatusCode>=400) {
-                    NSString *errorSituation = AppStateStringMap[self.appState];
+                    NSString *errorSituation = FTStringFromAppState(self.appState);
                     NSMutableDictionary *errorField = [NSMutableDictionary new];
                     NSMutableDictionary *errorTags = [NSMutableDictionary dictionaryWithDictionary:tags];
                     if(content.error){
@@ -427,13 +485,13 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 
 #pragma mark - error 、 long_task -
 -(void)addErrorWithType:(NSString *)type message:(NSString *)message stack:(NSString *)stack{
-    [self addErrorWithType:type stateStr:AppStateStringMap[self.appState] message:message stack:stack property:nil time:[NSDate ft_currentNanosecondTimeStamp]];
+    [self addErrorWithType:type stateStr:FTStringFromAppState(self.appState) message:message stack:stack property:nil time:[NSDate ft_currentNanosecondTimeStamp]];
 }
 -(void)addErrorWithType:(NSString *)type message:(NSString *)message stack:(NSString *)stack property:(nullable NSDictionary *)property{
-    [self addErrorWithType:type stateStr:AppStateStringMap[self.appState] message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp]];
+    [self addErrorWithType:type stateStr:FTStringFromAppState(self.appState) message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp]];
 }
 - (void)addErrorWithType:(NSString *)type state:(FTAppState)state message:(NSString *)message stack:(NSString *)stack property:(nullable NSDictionary *)property{
-    [self addErrorWithType:type stateStr:AppStateStringMap[state] message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp]];
+    [self addErrorWithType:type stateStr:FTStringFromAppState(state) message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp]];
 }
 - (void)addErrorWithType:(NSString *)type stateStr:(NSString *)stateStr message:(NSString *)message stack:(NSString *)stack property:(nullable NSDictionary *)property time:(long long)time{
     if (!(type && message && type.length>0 && message.length>0)) {
@@ -602,5 +660,9 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     }else{
         block();
     }
+}
+- (void)dealloc{
+    [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:self];
+    [[FTModuleManager sharedInstance] removeMessageReceiver:self];
 }
 @end

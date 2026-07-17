@@ -32,7 +32,7 @@
 #import "FTJSONUtil.h"
 #import "FTRUMManager.h"
 #import "FTRUMSessionHandler.h"
-#import "FTGlobalRumManager.h"
+#import "FTGlobalRumManager+Private.h"
 #import "UIView+FTAutoTrack.h"
 #import "FTExternalDataManager.h"
 #import "FTResourceContentModel.h"
@@ -56,6 +56,8 @@
 #import "FTCrashReportFields.h"
 #import "FTFatalErrorContext.h"
 #import "FTNetworkConnectivity.h"
+#import "FTAppLifeCycle.h"
+#import "FTHeatmap.h"
 
 @interface FTTestCrashReportWrapper : FTCrashReportWrapper
 @end
@@ -90,6 +92,42 @@
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
     [FTMobileAgent shutDown];
 }
+- (void)testInitialAppStateUpdatesFatalErrorContext{
+    FTRUMDependencies *dependencies = [[FTRUMDependencies alloc]init];
+    FTFatalErrorContext *fatalErrorContext = [[FTFatalErrorContext alloc]initWithErrorInfoProvider:nil];
+    dependencies.fatalErrorContext = fatalErrorContext;
+    FTRUMManager *manager = [[FTRUMManager alloc]initWithRumDependencies:dependencies];
+
+    FTFatalErrorContextModel *contextModel = [fatalErrorContext currentContextModel];
+    XCTAssertEqualObjects(contextModel.appState, FTStringFromAppState(manager.appState));
+
+    [manager syncProcess];
+}
+- (void)testAppStateConversionFunction{
+    XCTAssertEqualObjects(FTStringFromAppState(FTAppStateUnknown), @"unknown");
+    XCTAssertEqualObjects(FTStringFromAppState(FTAppStateStartUp), @"startup");
+    XCTAssertEqualObjects(FTStringFromAppState(FTAppStateRun), @"run");
+    XCTAssertEqualObjects(FTStringFromAppState(FTAppStateBackground), @"background");
+    XCTAssertEqualObjects(FTStringFromAppState((FTAppState)-1), @"unknown");
+    XCTAssertEqualObjects(FTStringFromAppState((FTAppState)(FTAppStateBackground + 1)), @"unknown");
+    XCTAssertEqualObjects(FTStringFromAppState((FTAppState)NSUIntegerMax), @"unknown");
+}
+#if FT_HAS_UIKIT
+- (void)testWillEnterForegroundKeepsBackgroundAppState{
+    FTRUMDependencies *dependencies = [[FTRUMDependencies alloc]init];
+    dependencies.fatalErrorContext = [[FTFatalErrorContext alloc]initWithErrorInfoProvider:nil];
+    FTRUMManager *manager = [[FTRUMManager alloc]initWithRumDependencies:dependencies];
+    manager.appState = FTAppStateBackground;
+
+    id<FTAppLifeCycleDelegate> delegate = (id<FTAppLifeCycleDelegate>)manager;
+    if ([delegate respondsToSelector:@selector(applicationWillEnterForeground)]) {
+        [delegate applicationWillEnterForeground];
+    }
+
+    XCTAssertEqual(manager.appState, FTAppStateBackground);
+    [manager syncProcess];
+}
+#endif
 #pragma mark ========== Session ==========
 
 - (void)testSessionIdChecks{
@@ -500,6 +538,67 @@
     }];
     XCTAssertTrue(hasResource);
 }
+- (void)testInactiveViewUpdateDoesNotOverrideCurrentRUMContext{
+    [self setRumConfig];
+    NSString *resourceKey = [FTBaseInfoHandler randomUUID];
+    NSDictionary *firstProperty = @{@"view_context":@"first"};
+    NSDictionary *secondProperty = @{@"view_context":@"second"};
+
+    [[FTExternalDataManager sharedManager] startViewWithName:@"first_view" property:firstProperty];
+    [[FTExternalDataManager sharedManager] startResourceWithKey:resourceKey];
+    [[FTExternalDataManager sharedManager] startViewWithName:@"second_view" property:secondProperty];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+
+    FTResourceContentModel *resource = [FTResourceContentModel new];
+    resource.url = [NSURL URLWithString:@"https://example.com/resource"];
+    resource.httpStatusCode = 200;
+    resource.httpMethod = @"GET";
+    [[FTExternalDataManager sharedManager] stopResourceWithKey:resourceKey];
+    [[FTExternalDataManager sharedManager] addResourceWithKey:resourceKey metrics:nil content:resource];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+
+    FTRUMManager *rum = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [rum valueForKey:@"rumDependencies"];
+    FTFatalErrorContextModel *contextModel = [dependencies.fatalErrorContext currentContextModel];
+    NSDictionary *lastViewTags = contextModel.lastViewContext[@"tags"];
+    NSDictionary *lastViewFields = contextModel.lastViewContext[@"fields"];
+
+    XCTAssertEqualObjects(lastViewTags[FT_KEY_VIEW_NAME], @"second_view");
+    XCTAssertTrue([lastViewFields[FT_KEY_IS_ACTIVE] boolValue]);
+
+    __block NSDictionary *rumContext;
+    [rum getLinkRUMDataWithCompletion:^(NSDictionary * _Nullable context) {
+        rumContext = context;
+    }];
+    [rum syncProcess];
+
+    NSDictionary *activeViewContext = dependencies.lastViewUserCustomDatas;
+    XCTAssertEqualObjects(rumContext[FT_KEY_VIEW_NAME], @"second_view");
+    XCTAssertEqualObjects(activeViewContext[@"view_context"], @"second");
+}
+- (void)testStopViewClearsCrashViewContext{
+    [self setRumConfig];
+    NSDictionary *viewProperty = @{@"view_context":@"crash_context"};
+
+    [[FTExternalDataManager sharedManager] startViewWithName:@"crash_view" property:viewProperty];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+
+    FTRUMManager *rum = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [rum valueForKey:@"rumDependencies"];
+    FTFatalErrorContextModel *activeContextModel = [dependencies.fatalErrorContext currentContextModel];
+    NSDictionary *activeViewTags = activeContextModel.lastViewContext[@"tags"];
+    NSDictionary *activeViewFields = activeContextModel.lastViewContext[@"fields"];
+
+    XCTAssertEqualObjects(activeViewTags[FT_KEY_VIEW_NAME], @"crash_view");
+    XCTAssertTrue([activeViewFields[FT_KEY_IS_ACTIVE] boolValue]);
+    XCTAssertEqualObjects(activeViewFields[@"view_context"], @"crash_context");
+
+    [[FTExternalDataManager sharedManager] stopView];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+
+    FTFatalErrorContextModel *stoppedContextModel = [dependencies.fatalErrorContext currentContextModel];
+    XCTAssertNil(stoppedContextModel.lastViewContext);
+}
 /**
  * Verify the format of source:resource data
  */
@@ -800,6 +899,34 @@
         }
     }];
 }
+- (void)testStartActionHeatmapPayloadWritesDDPositionAndTarget {
+    [self setRumConfig];
+    [FTModelHelper startViewWithName:@"heatmap_view"];
+    FTHeatmapIdentifier *identifier = [[FTHeatmapIdentifier alloc]initWithRawValue:@"096f3eb388a38ad189fd0aaee84e98a3"];
+    FTHeatmapAttributes *attributes = [[FTHeatmapAttributes alloc]initWithIdentifier:identifier size:CGSizeMake(78, 18) location:CGPointMake(23, 7)];
+    id<FTRumDatasProtocol> rum = [FTGlobalRumManager sharedInstance].rumManager;
+    if ([rum respondsToSelector:@selector(startAction:actionType:property:heatmapAttributes:)]) {
+        [rum startAction:@"heatmap_action" actionType:FT_KEY_ACTION_TYPE_CLICK property:nil heatmapAttributes:attributes];
+    }
+    [self waitForTimeInterval:0.2];
+    [self addLongTaskData:nil];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getFirstRecords:50 withType:FT_DATA_TYPE_RUM];
+    __block BOOL hasHeatmapAction = NO;
+    [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_ACTION] && [tags[FT_KEY_ACTION_NAME] isEqualToString:@"heatmap_action"]) {
+            XCTAssertEqualObjects(fields[@"action_position"][@"x"], @23);
+            XCTAssertEqualObjects(fields[@"action_position"][@"y"], @7);
+            XCTAssertEqualObjects(fields[@"action_target"][@"width"], @78);
+            XCTAssertEqualObjects(fields[@"action_target"][@"height"], @18);
+            XCTAssertEqualObjects(fields[@"action_target"][@"permanent_id"], @"096f3eb388a38ad189fd0aaee84e98a3");
+            hasHeatmapAction = YES;
+            *stop = YES;
+        }
+    }];
+    XCTAssertTrue(hasHeatmapAction);
+}
 - (void)testWrongFormatActionName{
     [self setRumConfig];
     [[FTExternalDataManager sharedManager] onCreateView:@"view1" loadTime:@1000000000];
@@ -1072,6 +1199,7 @@
 }
 - (void)testNoActiveView_startupFallbackView{
     [self setRumConfig];
+    [FTGlobalRumManager sharedInstance].rumManager.appState = FTAppStateStartUp;
     [FTModelHelper addActionWithContext:@{@"test":@"startup"}];
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
     NSArray *array = [[FTTrackerEventDBTool sharedManager] getFirstRecords:10 withType:FT_DATA_TYPE_RUM];
@@ -1092,6 +1220,7 @@
 }
 - (void)testNoActiveView_launchActionUsesFallbackView{
     [self setRumConfig];
+    [FTGlobalRumManager sharedInstance].rumManager.appState = FTAppStateStartUp;
     NSString *actionName = @"manual_cold_start";
     [[FTGlobalRumManager sharedInstance].rumManager addLaunch:actionName
                                                          type:FT_LAUNCH_COLD
@@ -1134,6 +1263,7 @@
 }
 - (void)testNoActiveView_fallbackViewChangesWithAppState{
     [self setRumConfig];
+    [FTGlobalRumManager sharedInstance].rumManager.appState = FTAppStateStartUp;
     [FTModelHelper addActionWithContext:@{@"test":@"startup"}];
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
     [FTGlobalRumManager sharedInstance].rumManager.appState = FTAppStateRun;
@@ -1155,7 +1285,7 @@
     XCTAssertTrue(rootViewId.length > 0);
     XCTAssertFalse([applicationLaunchViewId isEqualToString:rootViewId]);
 }
-- (void)testNoActiveView_runFallbackAssignsRunEventsToRootViewAndLaunchToApplicationLaunch{
+- (void)testNoActiveView_runFallbackAssignsEventsToRootView{
     [self setRumConfig];
     [FTGlobalRumManager sharedInstance].rumManager.appState = FTAppStateRun;
     NSString *actionName = @"no_active_view_action";
@@ -1173,15 +1303,11 @@
     NSArray *array = [[FTTrackerEventDBTool sharedManager] getFirstRecords:100 withType:FT_DATA_TYPE_RUM];
     __block BOOL hasError = NO, hasAction = NO, hasResource = NO, hasLongTask = NO, hasLaunch = NO;
     [FTModelHelper resolveModelArray:array callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
-        BOOL isSdkLaunchAction = [source isEqualToString:FT_RUM_SOURCE_ACTION] && [tags[FT_KEY_ACTION_NAME] isEqualToString:@"app_cold_start"];
         if ([source isEqualToString:FT_RUM_SOURCE_ERROR]
-            || ([source isEqualToString:FT_RUM_SOURCE_ACTION] && !isSdkLaunchAction)
+            || [source isEqualToString:FT_RUM_SOURCE_ACTION]
             || [source isEqualToString:FT_RUM_SOURCE_RESOURCE]
             || [source isEqualToString:FT_RUM_SOURCE_LONG_TASK]) {
             XCTAssertTrue([tags[FT_KEY_VIEW_NAME] isEqualToString:@"RootView"]);
-            XCTAssertTrue([tags[FT_KEY_VIEW_ID] length] > 0);
-        } else if (isSdkLaunchAction) {
-            XCTAssertTrue([tags[FT_KEY_VIEW_NAME] isEqualToString:@"ApplicationLaunch"]);
             XCTAssertTrue([tags[FT_KEY_VIEW_ID] length] > 0);
         }
         if ([source isEqualToString:FT_RUM_SOURCE_ERROR]) {
@@ -1290,6 +1416,26 @@
     XCTAssertTrue(hasActionData);
 
 }
+- (void)testAddErrorInvalidSituationFallsBackToUnknown{
+    [self setRumConfig];
+    [FTModelHelper startView];
+    [[FTExternalDataManager sharedManager] addErrorWithType:@"test"
+                                                     state:(FTAppState)NSUIntegerMax
+                                                   message:@"invalid state"
+                                                     stack:@"stack"
+                                                  property:nil];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+    NSArray *newArray = [[FTTrackerEventDBTool sharedManager] getFirstRecords:100 withType:FT_DATA_TYPE_RUM];
+    __block BOOL hasErrorData = NO;
+    [FTModelHelper resolveModelArray:newArray callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_ERROR] && [fields[FT_KEY_ERROR_MESSAGE] isEqualToString:@"invalid state"]) {
+            XCTAssertEqualObjects(tags[FT_KEY_ERROR_SITUATION], @"unknown");
+            hasErrorData = YES;
+            *stop = YES;
+        }
+    }];
+    XCTAssertTrue(hasErrorData);
+}
 - (void)testWrongFormatErrorData{
     [self setRumConfig];
     [[FTExternalDataManager sharedManager] addErrorWithType:@"" message:@"testWrongError" stack:@"error testWrongError"];
@@ -1310,8 +1456,7 @@
 - (void)testErrorSituation{
     [self setRumConfig];
 //    [[FTExternalDataManager sharedManager] addErrorWithType:@"ios_crash" message:@"testSituation_unknown" stack:@"error stack"];
-    [[NSNotificationCenter defaultCenter]
-     postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+    [FTGlobalRumManager sharedInstance].rumManager.appState = FTAppStateStartUp;
     [[FTExternalDataManager sharedManager] addErrorWithType:@"ios_crash" message:@"testSituation_startup" stack:@"error stack"];
     [[NSNotificationCenter defaultCenter]
      postNotificationName:UIApplicationDidBecomeActiveNotification object:nil];
@@ -1950,7 +2095,7 @@
             hasResource = YES;
         }
         if (![source isEqualToString:FT_RUM_SOURCE_VIEW]) {
-            XCTAssertTrue([tags[FT_KEY_VIEW_NAME] isEqualToString:@"ApplicationLaunch"]);
+            XCTAssertTrue([tags[FT_KEY_VIEW_NAME] isEqualToString:@"RootView"]);
             XCTAssertTrue([tags[FT_KEY_VIEW_ID] length] > 0);
         }
     }];
@@ -1998,7 +2143,7 @@
             hasResource = YES;
         }
         if (![source isEqualToString:FT_RUM_SOURCE_VIEW]) {
-            XCTAssertTrue([tags[FT_KEY_VIEW_NAME] isEqualToString:@"ApplicationLaunch"]);
+            XCTAssertTrue([tags[FT_KEY_VIEW_NAME] isEqualToString:@"RootView"]);
             XCTAssertTrue([tags[FT_KEY_VIEW_ID] length] > 0);
         }
     }];
@@ -2022,7 +2167,7 @@
         context = rumContext;
     }];
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    XCTAssertTrue([context[FT_KEY_VIEW_NAME] isEqualToString:@"ApplicationLaunch"]);
+    XCTAssertTrue([context[FT_KEY_VIEW_NAME] isEqualToString:@"RootView"]);
     XCTAssertTrue(context[FT_KEY_VIEW_ID]);
     XCTAssertTrue(context[FT_KEY_VIEW_REFERRER] == nil);
     XCTAssertTrue(context[FT_RUM_KEY_SESSION_ID]);
@@ -2073,7 +2218,7 @@
     NSMutableArray<FTRUMHandler*> *viewHandlers = [session valueForKey:@"viewHandlers"];
 
     FTRUMViewHandler *viewHandler = (FTRUMViewHandler *)[viewHandlers firstObject];
-    XCTAssertTrue([viewHandler.view_name isEqualToString:@"ApplicationLaunch"]);
+    XCTAssertTrue([viewHandler.view_name isEqualToString:@"RootView"]);
     NSString *oldViewId = viewHandler.view_id;
     //Change the last recorded data of the session to 15 minutes ago to simulate session expiration
     NSTimeInterval aTimeInterval = [[NSDate date] timeIntervalSinceReferenceDate] + 60 * 15;
@@ -2085,7 +2230,7 @@
     NSMutableArray *newViewHandlers = [newSession valueForKey:@"viewHandlers"];
     XCTAssertTrue(viewHandlers.count == newViewHandlers.count == 1);
     FTRUMViewHandler *newViewHandler = (FTRUMViewHandler *)[newViewHandlers firstObject];
-    XCTAssertTrue([newViewHandler.view_name isEqualToString:@"ApplicationLaunch"]);
+    XCTAssertTrue([newViewHandler.view_name isEqualToString:@"RootView"]);
     XCTAssertFalse([newViewHandler.view_id isEqualToString:oldViewId]);
 }
 
@@ -2175,7 +2320,7 @@
     sessionState.session_type = @"user";
     sessionState.sampleRate = 100;
     sessionState.sessionOnErrorSampleRate = 0;
-    FTFatalErrorContextModel *context = [[FTFatalErrorContextModel alloc] initWithAppState:AppStateStringMap[FTAppStateRun]
+    FTFatalErrorContextModel *context = [[FTFatalErrorContextModel alloc] initWithAppState:FTStringFromAppState(FTAppStateRun)
                                                                            lastSessionState:sessionState
                                                                             lastViewContext:nil
                                                                              dynamicContext:nil

@@ -37,13 +37,14 @@
             self.memoryMonitor = [[FTMemoryMonitor alloc] init];
         }
         _type = type;
-        _frequency = MonitorFrequencyMap[frequency];
+        _frequency = FTIntervalFromMonitorFrequency(frequency);
     }
     return self;
 }
 -(void)setDisplayMonitor:(FTDisplayRateMonitor *)displayMonitor{
     if (self.type & DeviceMetricsMonitorFps) {
         _displayMonitor = displayMonitor;
+        displayMonitor.autoStartWithAppLifecycle = YES;
         [displayMonitor start];
     }
 }
