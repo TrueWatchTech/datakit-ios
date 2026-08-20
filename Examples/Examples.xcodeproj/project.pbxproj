@@ -182,6 +182,8 @@
 		17F209E42D1540630076F57C /* TraceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1764E41A29ACB68C00E70DBB /* TraceViewController.swift */; };
 		17F209E52D1540680076F57C /* LogViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1764E41829ACB5BB00E70DBB /* LogViewController.swift */; };
 		17F209E62D1540990076F57C /* Crasher.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E925225E35E9700D12C12 /* Crasher.mm */; };
+		17F209E72D1540990076F57C /* Crasher.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E925225E35E9700D12C12 /* Crasher.mm */; };
+		17F209EA2D1540990076F57C /* CrashViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F209E92D1540990076F57C /* CrashViewController.m */; };
 		17F5A0112FCB010100D17137 /* FTSerialTimerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5A0102FCB010100D17137 /* FTSerialTimerTest.m */; };
 		17F5A0122FCB010100D17137 /* FTSerialTimerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5A0102FCB010100D17137 /* FTSerialTimerTest.m */; };
 		17F5C5232C60D62A007F2B2C /* FTSessionConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5C51F2C60D629007F2B2C /* FTSessionConfiguration.m */; };
@@ -210,7 +212,7 @@
 		4AECBCDE24497DBF0023DEF7 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AECBCD924497DBF0023DEF7 /* CoreBluetooth.framework */; };
 		7C28B872266098B800CECBA6 /* TestJsbridgeData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C28B871266098B800CECBA6 /* TestJsbridgeData.m */; };
 		7C28B878266098E700CECBA6 /* sample.html in Resources */ = {isa = PBXBuildFile; fileRef = 7C28B877266098E700CECBA6 /* sample.html */; };
-		7C64008B275A1E8300B2708B /* ManualRumAndTraceDataAdd.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C64008A275A1E8300B2708B /* ManualRumAndTraceDataAdd.m */; };
+		7C64008B275A1E8300B2708B /* RumVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C64008A275A1E8300B2708B /* RumVC.m */; };
 		7C6E8EC125DE4D4E00D12C12 /* CrashVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E8EC025DE4D4E00D12C12 /* CrashVC.m */; };
 		7C6E8F1425DF684600D12C12 /* TableViewCellItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E8F1325DF684600D12C12 /* TableViewCellItem.m */; };
 		7C6E925425E35E9800D12C12 /* Crasher.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E925225E35E9700D12C12 /* Crasher.mm */; };
@@ -244,6 +246,9 @@
 		7CF30EDF26F09D5E003CA20A /* CollectionViewItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 7CF30EDD26F09D5E003CA20A /* CollectionViewItem.m */; };
 		7CF30EE026F09D5E003CA20A /* CollectionViewItem.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7CF30EDE26F09D5E003CA20A /* CollectionViewItem.xib */; };
 		7CF30EE726F1EF9E003CA20A /* MainWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7CF30EE626F1EF9D003CA20A /* MainWindow.m */; };
+		A1F101012FC1000100A0A001 /* FTAppKitSessionReplayTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1F100012FC1000100A0A001 /* FTAppKitSessionReplayTests.m */; };
+		A1F103012FC1000100A0A001 /* TrueWatchSessionReplay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 179A53812F84EED200FE4B6F /* TrueWatchSessionReplay.framework */; };
+		A1F104032FC2000100A0A001 /* ImageSessionReplayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1F104022FC2000100A0A001 /* ImageSessionReplayViewController.m */; };
 		AA7E4075B29B727120ABB917 /* Pods_FTMobileSDKUnitTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7C9B67E2BBE800FB64098407 /* Pods_FTMobileSDKUnitTests.framework */; };
 		FDB05F65091D0063D8C9C8DE /* FTDataFilterTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C9C12EDDB1B60125668C322 /* FTDataFilterTest.m */; };
 /* End PBXBuildFile section */
@@ -501,6 +506,8 @@
 		17F10ECC2D13EACE00737EDD /* tvOS_AppUITestsLaunchTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = tvOS_AppUITestsLaunchTests.m; sourceTree = "<group>"; };
 		17F10ECD2D13EACE00737EDD /* tvOS_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tvOS_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		17F10ED32D13F11400737EDD /* TrueWatchSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = TrueWatchSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		17F209E82D1540990076F57C /* CrashViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrashViewController.h; sourceTree = "<group>"; };
+		17F209E92D1540990076F57C /* CrashViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CrashViewController.m; sourceTree = "<group>"; };
 		17F5A0102FCB010100D17137 /* FTSerialTimerTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTSerialTimerTest.m; sourceTree = "<group>"; };
 		17F5C51F2C60D629007F2B2C /* FTSessionConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FTSessionConfiguration.m; sourceTree = "<group>"; };
 		17F5C5202C60D62A007F2B2C /* FTURLProtocol.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FTURLProtocol.m; sourceTree = "<group>"; };
@@ -555,8 +562,8 @@
 		7C28B871266098B800CECBA6 /* TestJsbridgeData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TestJsbridgeData.m; sourceTree = "<group>"; };
 		7C28B877266098E700CECBA6 /* sample.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = sample.html; sourceTree = "<group>"; };
 		7C2DD68F25F9BFF600BFF757 /* SampleApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SampleApp-Bridging-Header.h"; sourceTree = "<group>"; };
-		7C640089275A1E8300B2708B /* ManualRumAndTraceDataAdd.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ManualRumAndTraceDataAdd.h; sourceTree = "<group>"; };
-		7C64008A275A1E8300B2708B /* ManualRumAndTraceDataAdd.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ManualRumAndTraceDataAdd.m; sourceTree = "<group>"; };
+		7C640089275A1E8300B2708B /* RumVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RumVC.h; sourceTree = "<group>"; };
+		7C64008A275A1E8300B2708B /* RumVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RumVC.m; sourceTree = "<group>"; };
 		7C6E8EBF25DE4D4E00D12C12 /* CrashVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrashVC.h; sourceTree = "<group>"; };
 		7C6E8EC025DE4D4E00D12C12 /* CrashVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CrashVC.m; sourceTree = "<group>"; };
 		7C6E8F1225DF684600D12C12 /* TableViewCellItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TableViewCellItem.h; sourceTree = "<group>"; };
@@ -623,6 +630,9 @@
 		8446B522E6054C6EEE68965C /* Pods-FTMobileSDKUnitTests-tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FTMobileSDKUnitTests-tvOS.release.xcconfig"; path = "Target Support Files/Pods-FTMobileSDKUnitTests-tvOS/Pods-FTMobileSDKUnitTests-tvOS.release.xcconfig"; sourceTree = "<group>"; };
 		91C1E5A38666EF7793AD416F /* Pods_FTMobileSDKUnitTests_tvOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FTMobileSDKUnitTests_tvOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A42D1F771C28BA3324823AC /* Pods-FTMobileSDKUnitTests tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FTMobileSDKUnitTests tvOS.release.xcconfig"; path = "Target Support Files/Pods-FTMobileSDKUnitTests tvOS/Pods-FTMobileSDKUnitTests tvOS.release.xcconfig"; sourceTree = "<group>"; };
+		A1F100012FC1000100A0A001 /* FTAppKitSessionReplayTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FTAppKitSessionReplayTests.m; sourceTree = "<group>"; };
+		A1F104012FC2000100A0A001 /* ImageSessionReplayViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImageSessionReplayViewController.h; sourceTree = "<group>"; };
+		A1F104022FC2000100A0A001 /* ImageSessionReplayViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ImageSessionReplayViewController.m; sourceTree = "<group>"; };
 		CC1B0A2F389AA3B88F436B9F /* Pods_SwiftApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD2604B4D308A74CFA896B76 /* Pods-FTMobileSDKUnitTests-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FTMobileSDKUnitTests-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-FTMobileSDKUnitTests-tvOS/Pods-FTMobileSDKUnitTests-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		EE4C59F8080E745DFE6C2E40 /* Pods-FTMobileSDKUnitTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FTMobileSDKUnitTests.release.xcconfig"; path = "Target Support Files/Pods-FTMobileSDKUnitTests/Pods-FTMobileSDKUnitTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -709,6 +719,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F103012FC1000100A0A001 /* TrueWatchSessionReplay.framework in Frameworks */,
 				17F6B0012FE0000100A0A001 /* TrueWatchSDK.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1026,8 +1037,8 @@
 				4A1169832391145B00C0BC4E /* DemoViewController.mm */,
 				175C7CFA29E6CE1A00A7F271 /* LoggerVC.h */,
 				175C7CF929E6CE1A00A7F271 /* LoggerVC.m */,
-				7C640089275A1E8300B2708B /* ManualRumAndTraceDataAdd.h */,
-				7C64008A275A1E8300B2708B /* ManualRumAndTraceDataAdd.m */,
+				7C640089275A1E8300B2708B /* RumVC.h */,
+				7C64008A275A1E8300B2708B /* RumVC.m */,
 				7C6E8EBF25DE4D4E00D12C12 /* CrashVC.h */,
 				7C6E8EC025DE4D4E00D12C12 /* CrashVC.m */,
 				7C6E925325E35E9800D12C12 /* Crasher.h */,
@@ -1227,6 +1238,8 @@
 				1799582329D6874F0033B46E /* RumViewController.h */,
 				1799582429D6874F0033B46E /* RumViewController.m */,
 				1799582529D6874F0033B46E /* RumViewController.xib */,
+				17F209E82D1540990076F57C /* CrashViewController.h */,
+				17F209E92D1540990076F57C /* CrashViewController.m */,
 				7CF30EDC26F09D5E003CA20A /* CollectionViewItem.h */,
 				7CF30EDD26F09D5E003CA20A /* CollectionViewItem.m */,
 				7CF30EDE26F09D5E003CA20A /* CollectionViewItem.xib */,
@@ -1238,6 +1251,8 @@
 				177BA53D29DBCF4200DB7497 /* TraceViewController.xib */,
 				175BC1392A08A34600AEBEB5 /* WebViewController.h */,
 				175BC13A2A08A34600AEBEB5 /* WebViewController.m */,
+				A1F104012FC2000100A0A001 /* ImageSessionReplayViewController.h */,
+				A1F104022FC2000100A0A001 /* ImageSessionReplayViewController.m */,
 			);
 			path = TabView;
 			sourceTree = "<group>";
@@ -1296,6 +1311,7 @@
 		7CDA50DF26DE15EE0062CC39 /* macOS-AppTests */ = {
 			isa = PBXGroup;
 			children = (
+				A1F102012FC1000100A0A001 /* SessionReplay */,
 				171B2F0F2AD39DA4000DB2BC /* TestRumWebView.h */,
 				171B2F102AD39DA4000DB2BC /* TestRumWebView.m */,
 				175BC1F52A0A58FD00AEBEB5 /* FTTestHelper.h */,
@@ -1340,6 +1356,14 @@
 			);
 			name = Pods;
 			path = ../Pods;
+			sourceTree = "<group>";
+		};
+		A1F102012FC1000100A0A001 /* SessionReplay */ = {
+			isa = PBXGroup;
+			children = (
+				A1F100012FC1000100A0A001 /* FTAppKitSessionReplayTests.m */,
+			);
+			path = SessionReplay;
 			sourceTree = "<group>";
 		};
 		DDD1ED5FC12CFB64A803FDBF /* DataFilter */ = {
@@ -2023,7 +2047,7 @@
 				17CBD8762F67EFB100FD9D8B /* CustomCollectionViewCell.m in Sources */,
 				7C28B872266098B800CECBA6 /* TestJsbridgeData.m in Sources */,
 				7C8CE50B25F8DD2A0043B213 /* PrintHookTest.swift in Sources */,
-				7C64008B275A1E8300B2708B /* ManualRumAndTraceDataAdd.m in Sources */,
+				7C64008B275A1E8300B2708B /* RumVC.m in Sources */,
 				7CA16CD426B8ECD10079840D /* TestWkWebViewHandler.m in Sources */,
 				4A11695E239113B600C0BC4E /* SceneDelegate.m in Sources */,
 				7C6E8F1425DF684600D12C12 /* TableViewCellItem.m in Sources */,
@@ -2116,6 +2140,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				17F209E72D1540990076F57C /* Crasher.mm in Sources */,
+				17F209EA2D1540990076F57C /* CrashViewController.m in Sources */,
 				7CF30EDF26F09D5E003CA20A /* CollectionViewItem.m in Sources */,
 				7CD26FF726EB24D40025CC50 /* SecondViewController.m in Sources */,
 				7CD2705226EB6C820025CC50 /* PresentCustomAnimator.m in Sources */,
@@ -2130,6 +2156,7 @@
 				7CDA50D626DE15ED0062CC39 /* main.m in Sources */,
 				7CD26F2726EA06BF0025CC50 /* LoginWindow.m in Sources */,
 				175BC13B2A08A34600AEBEB5 /* WebViewController.m in Sources */,
+				A1F104032FC2000100A0A001 /* ImageSessionReplayViewController.m in Sources */,
 				7CDA50CB26DE15EB0062CC39 /* AppDelegate.m in Sources */,
 				7CD26FE226EB223E0025CC50 /* TabViewController.m in Sources */,
 				177BA53E29DBCF4200DB7497 /* TraceViewController.m in Sources */,
@@ -2145,6 +2172,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F101012FC1000100A0A001 /* FTAppKitSessionReplayTests.m in Sources */,
 				1715F2952A04A123007EF5BB /* FTAutoTrackActionNameTests.m in Sources */,
 				1707C82329E52ED5009B7D9C /* FTRUMTests.m in Sources */,
 				7CDAF53726DE1C8B00F8F01D /* macOS-AppTests.m in Sources */,

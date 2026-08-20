@@ -25,5 +25,7 @@ FOUNDATION_EXPORT double TrueWatchSessionReplayVersionNumber;
 FOUNDATION_EXPORT const unsigned char TrueWatchSessionReplayVersionString[];
 
 #import "FTSessionReplay.h"
+#import "NSView+FTSRPrivacy.h"
+#import "UIView+FTSRPrivacy.h"
 
 #endif /* TrueWatchSessionReplay_h */

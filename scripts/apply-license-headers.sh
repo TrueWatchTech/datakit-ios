@@ -117,7 +117,7 @@ extract_year() {
 }
 
 has_complete_header() {
-  perl -0e 'local $/; my $content = <> // ""; exit($content =~ m{^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
+  perl -0e 'local $/; my $content = <> // ""; exit($content =~ m{^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//\n(?:\n|\z)}m ? 0 : 1)' "$1"
 }
 
 has_legacy_header_text() {
@@ -128,6 +128,38 @@ has_duplicate_truewatch_copyright() {
   local count
   count="$(grep -Ec '^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.$' "$1" || true)"
   [[ "${count}" -gt 1 ]]
+}
+
+has_duplicate_apache_license() {
+  local count
+  count="$(grep -Ec '^//[[:space:]]*Licensed under the Apache License, Version 2\.0' "$1" || true)"
+  [[ "${count}" -gt 1 ]]
+}
+
+has_duplicate_banner_separator() {
+  perl -0e '
+    local $/;
+    my $content = <> // "";
+    exit($content =~ m{^//[ \t]*\n//[ \t]*\n(?=//  Copyright)}m ? 0 : 1);
+  ' "$1"
+}
+
+has_misplaced_header() {
+  local file="$1"
+  local filename="${file##*/}"
+
+  perl -0e '
+    my ($filename) = @ARGV;
+    local $/;
+    my $content = <STDIN> // "";
+    my $license_index = index($content, "//  Copyright ");
+
+    exit 1 if $license_index < 0;
+    if ($content =~ m{^//[ \t]*\Q$filename\E[ \t]*$}m) {
+      exit($license_index < $-[0] ? 0 : 1);
+    }
+    exit 1;
+  ' "${filename}" < "${file}"
 }
 
 rewrite_file_to_stdout() {
@@ -185,15 +217,31 @@ rewrite_file_to_stdout() {
         ^//\s*\n?
       }{}xmg;
 
+      $text =~ s{^//[ \t]*Licensed under the Apache License, Version 2\.0 \(the "License"\);\n(?:^//[ \t]*you may not use this file except in compliance with the License\.\n)?(?:^//[ \t]*\n)?}{}mg;
+
       return $text;
     }
 
     $content = strip_existing_header($content);
+    $content =~ s{\A(?:[ \t]*\n)+}{};
     my $header = header_for($year);
+    my ($filename) = $file =~ m{([^/]+)\z};
+    my $inserted_into_banner = 0;
 
-    if ($content =~ s{\A((?://[^\n]*\n){0,20}//\s*Created by[^\n]*\n)(?://\s*\n)?}{$1 . $header . "\n"}e) {
-      # Inserted into an existing Xcode-style header.
-    } else {
+    if ($content =~ m{\A((?://[^\n]*\n)+)}) {
+      my $banner = $1;
+      if ($banner =~ m{^//[ \t]*\Q$filename\E[ \t]*$}m) {
+        my $banner_length = length($banner);
+        my $remainder = substr($content, $banner_length);
+        $remainder =~ s{\A(?:[ \t]*\n)+}{};
+        $banner =~ s{(?://[ \t]*\n)+\z}{};
+        $banner .= "//\n";
+        $content = $banner . $header . "\n" . $remainder;
+        $inserted_into_banner = 1;
+      }
+    }
+
+    if (!$inserted_into_banner) {
       $content = length($content) ? $header . "\n" . $content : $header;
     }
 
@@ -207,7 +255,7 @@ process_file() {
   local year
   local tmp_file
 
-  if ! has_legacy_header_text "${abs_path}" && ! has_duplicate_truewatch_copyright "${abs_path}" && has_complete_header "${abs_path}"; then
+  if ! has_legacy_header_text "${abs_path}" && ! has_duplicate_truewatch_copyright "${abs_path}" && ! has_duplicate_apache_license "${abs_path}" && ! has_duplicate_banner_separator "${abs_path}" && ! has_misplaced_header "${abs_path}" && has_complete_header "${abs_path}"; then
     return 1
   fi
 

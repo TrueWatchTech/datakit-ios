@@ -14,7 +14,7 @@
  */
 
 #import <TargetConditionals.h>
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS || TARGET_OS_OSX
 
 #import <Foundation/Foundation.h>
 #import "FTSRBaseFrame.h"
@@ -99,6 +99,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSDictionary *bindInfo;
 -(instancetype)initWithData:(NSData *)data;
 
+/// Identifier used only by Session Replay's local resource deduplication.
+-(NSString *)deduplicationIdentifier;
 -(NSString *)getResourceName;
 @end
 

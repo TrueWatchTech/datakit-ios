@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
 	s.name         = "TrueWatchSDK"
-	s.version      = "1.6.6"
+	s.version      = "1.6.7"
 	s.summary      = "TrueWatchTech iOS Data Collection SDK"
 	#s.description  = ""
 	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
 		'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) FT_COCOAPODS=1'
 	}
 
-	#1.6.6 replacing "#{s.version}" will cause an error during pod valid phase
+	#1.6.7 replacing "#{s.version}" will cause an error during pod valid phase
 	s.source       = { :git => "https://github.com/TrueWatchTech/datakit-ios.git", :tag => s.version.to_s }
 
     s.resource_bundle = {
@@ -130,7 +130,8 @@ Pod::Spec.new do |s|
 	end
 
 	s.subspec 'SessionReplay' do |sr|
-		 sr.platform = :ios, '12.0'
+		 sr.ios.deployment_target = '12.0'
+		 sr.osx.deployment_target = '10.14'
 		 sr.public_header_files = 'Sources/SessionReplay/Public/*.h'
 		 sr.source_files = 'Sources/SessionReplay/**/*{.h,.m}'
 		 sr.dependency 'TrueWatchSDK/Core'
@@ -141,7 +142,8 @@ Pod::Spec.new do |s|
 	end
 
 	s.subspec 'FTSessionReplay' do |sr|
-		sr.platform = :ios, '12.0'
+		sr.ios.deployment_target = '12.0'
+		sr.osx.deployment_target = '10.14'
 		sr.dependency "#{s.name}/SessionReplay"
 	end
 end

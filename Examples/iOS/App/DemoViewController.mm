@@ -28,7 +28,7 @@
 #import "TableViewCellItem.h"
 #import "App-Swift.h"
 #import "TestJsbridgeData.h"
-#import "ManualRumAndTraceDataAdd.h"
+#import "RumVC.h"
 #import "NetworkTraceVC.h"
 #import "LoggerVC.h"
 #import "TestUIControlVC.h"
@@ -90,8 +90,8 @@
         [FTMobileAgent appendLogGlobalContext:@{@"log_key":@"log_value"}];
         [FTMobileAgent appendRUMGlobalContext:@{@"rum_key":@"rum_value"}];
     }];
-    TableViewCellItem *item12 = [[TableViewCellItem alloc]initWithTitle:@"Manual Rum、Trace Data Add" handler:^{
-        [weakSelf.navigationController pushViewController:[ManualRumAndTraceDataAdd new] animated:YES];
+    TableViewCellItem *item12 = [[TableViewCellItem alloc]initWithTitle:@"Manual RUM and Trace Data Add" handler:^{
+        [weakSelf.navigationController pushViewController:[RumVC new] animated:YES];
 
     }];
     

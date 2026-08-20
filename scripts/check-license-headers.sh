@@ -81,7 +81,7 @@ list_files() {
 }
 
 has_complete_header() {
-  perl -0e 'local $/; my $content = <> // ""; exit($content =~ m{^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//}m ? 0 : 1)' "$1"
+  perl -0e 'local $/; my $content = <> // ""; exit($content =~ m{^//  Copyright [0-9]{4} TRUEWATCH TECHNOLOGY INC PTE\. LTD\.\n//\n//  Licensed under the Apache License, Version 2\.0 \(the "License"\);\n//  you may not use this file except in compliance with the License\.\n//  You may obtain a copy of the License at\n//\n//      http://www\.apache\.org/licenses/LICENSE-2\.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an "AS IS" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n//  See the License for the specific language governing permissions and\n//  limitations under the License\.\n//\n(?:\n|\z)}m ? 0 : 1)' "$1"
 }
 
 has_truewatch_copyright() {
@@ -98,6 +98,38 @@ has_duplicate_truewatch_copyright() {
   [[ "${count}" -gt 1 ]]
 }
 
+has_duplicate_apache_license() {
+  local count
+  count="$(grep -Ec '^//[[:space:]]*Licensed under the Apache License, Version 2\.0' "$1" || true)"
+  [[ "${count}" -gt 1 ]]
+}
+
+has_duplicate_banner_separator() {
+  perl -0e '
+    local $/;
+    my $content = <> // "";
+    exit($content =~ m{^//[ \t]*\n//[ \t]*\n(?=//  Copyright)}m ? 0 : 1);
+  ' "$1"
+}
+
+has_misplaced_header() {
+  local file="$1"
+  local filename="${file##*/}"
+
+  perl -0e '
+    my ($filename) = @ARGV;
+    local $/;
+    my $content = <STDIN> // "";
+    my $license_index = index($content, "//  Copyright ");
+
+    exit 1 if $license_index < 0;
+    if ($content =~ m{^//[ \t]*\Q$filename\E[ \t]*$}m) {
+      exit($license_index < $-[0] ? 0 : 1);
+    }
+    exit 1;
+  ' "${filename}" < "${file}"
+}
+
 check_file() {
   local rel_path="$1"
   local abs_path="${REPO_ROOT}/${rel_path}"
@@ -110,6 +142,21 @@ check_file() {
 
   if has_duplicate_truewatch_copyright "${abs_path}"; then
     error "${rel_path}: contains duplicate TrueWatch copyright headers"
+    failed=1
+  fi
+
+  if has_duplicate_apache_license "${abs_path}"; then
+    error "${rel_path}: contains duplicate Apache License headers"
+    failed=1
+  fi
+
+  if has_duplicate_banner_separator "${abs_path}"; then
+    error "${rel_path}: contains duplicate separators before the license header"
+    failed=1
+  fi
+
+  if has_misplaced_header "${abs_path}"; then
+    error "${rel_path}: license header appears before the Xcode file banner"
     failed=1
   fi
 

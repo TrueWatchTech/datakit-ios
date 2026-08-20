@@ -19,6 +19,7 @@
 //
 
 #import "FTRUMManager.h"
+#import "FTIssueFieldEnricher.h"
 #import "FTBaseInfoHandler.h"
 #import "FTRUMSessionHandler.h"
 #import "FTMonitorUtils.h"
@@ -130,7 +131,6 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             case UIApplicationStateActive:
                 return FTAppStateRun;
             case UIApplicationStateBackground:
-                return FTAppStateBackground;
             case UIApplicationStateInactive:
             default:
                 return FTAppStateStartUp;
@@ -349,7 +349,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
-            if(metrics.resourceFetchTypeLocalCache){
+            if(metrics.resourceFetchTypeLocalCache && !content.webSocketHandshake){
                 FTRUMResourceDataModel *resourceSuccess = [[FTRUMResourceDataModel alloc]initWithType:FTRUMDataResourceAbandon identifier:key];
                 [self process:resourceSuccess context:context];
             }else{
@@ -395,8 +395,14 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                     [self process:resourceError context:context];
                     
                 }
-                [tags setValue:[self getResourceStatusGroup:content.httpStatusCode] forKey:FT_KEY_RESOURCE_STATUS_GROUP];
+                if (!(content.webSocketHandshake && content.httpStatusCode == 0)) {
+                    [tags setValue:[self getResourceStatusGroup:content.httpStatusCode] forKey:FT_KEY_RESOURCE_STATUS_GROUP];
+                }
                 [tags setValue:content.resourceType forKey:FT_KEY_RESOURCE_TYPE];
+                if (content.webSocketHandshake) {
+                    [tags setValue:FT_RESOURCE_WEBSOCKET_COLLECTION_LEVEL_HANDSHAKE forKey:FT_KEY_RESOURCE_WEBSOCKET_COLLECTION_LEVEL];
+                    [tags setValue:content.webSocketHandshakeState forKey:FT_KEY_RESOURCE_WEBSOCKET_HANDSHAKE_STATE];
+                }
                 [tags setValue:[content.url query] forKey:FT_KEY_RESOURCE_URL_QUERY];
                 
                 NSNumber *responseSize = metrics.responseSize;
@@ -410,7 +416,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                     [tags setValue:responseConnectType forKey:FT_KEY_RESPONSE_CONTENT_TYPE];
                     [tags setValue:responseConnectEncoding forKey:FT_KEY_RESPONSE_CONTENT_ENCODING];
                     NSString *responseHeaderStr = [FTBaseInfoHandler convertToStringData:content.responseHeader];
-                    if (responseSize == nil) {
+                    if (!content.webSocketHandshake && responseSize == nil) {
                         responseSize = content.responseHeader[@"Content-Length"];
                         responseSize = @([responseSize longLongValue] + [responseHeaderStr dataUsingEncoding:NSUTF8StringEncoding].length);
                     }
@@ -420,14 +426,16 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                 if (content.requestHeader) {
                     NSString *requestHeaderStr = [FTBaseInfoHandler convertToStringData:content.requestHeader];
                     [fields setValue:requestHeaderStr forKey:FT_KEY_REQUEST_HEADER];
-                    if (requestSize == nil) {
+                    if (!content.webSocketHandshake && requestSize == nil) {
                         requestSize = content.requestHeader[@"Content-Length"];
                         requestSize = @([requestSize longLongValue] + [requestHeaderStr dataUsingEncoding:NSUTF8StringEncoding].length);
                     }
                 }
                 
-                [fields setValue:responseSize forKey:FT_KEY_RESOURCE_SIZE];
-                [fields setValue:requestSize forKey:FT_KEY_RESOURCE_REQUEST_SIZE];
+                if (!content.webSocketHandshake) {
+                    [fields setValue:responseSize forKey:FT_KEY_RESOURCE_SIZE];
+                    [fields setValue:requestSize forKey:FT_KEY_RESOURCE_REQUEST_SIZE];
+                }
 
                 [fields setValue:metrics.resourceHttpProtocol forKey:FT_KEY_RESOURCE_HTTP_PROTOCOL];
                 [fields setValue:@(metrics.reusedConnection) forKey:FT_KEY_RESOURCE_CONNECTION_REUSE];
@@ -442,6 +450,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                 
                 FTRUMResourceDataModel *resourceSuccess = [[FTRUMResourceDataModel alloc]initWithType:FTRUMDataResourceComplete identifier:key];
                 resourceSuccess.metrics = metrics;
+                resourceSuccess.keepsResourceDuration = content.webSocketHandshake;
                 resourceSuccess.time = time;
                 resourceSuccess.tags = tags;
                 resourceSuccess.fields = fields;
@@ -483,19 +492,53 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 
 
-#pragma mark - error 、 long_task -
+#pragma mark - error / long_task -
 -(void)addErrorWithType:(NSString *)type message:(NSString *)message stack:(NSString *)stack{
-    [self addErrorWithType:type stateStr:FTStringFromAppState(self.appState) message:message stack:stack property:nil time:[NSDate ft_currentNanosecondTimeStamp]];
+    [self addErrorWithType:type stateStr:FTStringFromAppState(self.appState) message:message stack:stack property:nil time:[NSDate ft_currentNanosecondTimeStamp] issueInfo:nil];
 }
 -(void)addErrorWithType:(NSString *)type message:(NSString *)message stack:(NSString *)stack property:(nullable NSDictionary *)property{
-    [self addErrorWithType:type stateStr:FTStringFromAppState(self.appState) message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp]];
+    [self addErrorWithType:type stateStr:FTStringFromAppState(self.appState) message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp] issueInfo:nil];
 }
 - (void)addErrorWithType:(NSString *)type state:(FTAppState)state message:(NSString *)message stack:(NSString *)stack property:(nullable NSDictionary *)property{
-    [self addErrorWithType:type stateStr:FTStringFromAppState(state) message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp]];
+    [self addErrorWithType:type stateStr:FTStringFromAppState(state) message:message stack:stack property:property time:[NSDate ft_currentNanosecondTimeStamp] issueInfo:nil];
 }
 - (void)addErrorWithType:(NSString *)type stateStr:(NSString *)stateStr message:(NSString *)message stack:(NSString *)stack property:(nullable NSDictionary *)property time:(long long)time{
+    [self addErrorWithType:type stateStr:stateStr message:message stack:stack property:property time:time issueInfo:nil];
+}
+- (void)addAutomaticIssueWithCategory:(FTIssueCategory)category
+                            errorType:(NSString *)errorType
+                             appState:(NSString *)appState
+                              message:(nullable NSString *)message
+                                stack:(nullable NSString *)stack
+                           threadName:(nullable NSString *)threadName
+                                 time:(long long)time
+                           historical:(BOOL)historical {
+    FTIssueInfo *issueInfo = [[FTIssueInfo alloc]
+        initWithCategory:category
+        errorType:errorType
+        message:message
+        stack:stack ?: @""
+        occurredAtNanoseconds:time
+        appState:appState
+        threadName:threadName
+        historical:historical];
+    [self addErrorWithType:errorType
+                  stateStr:appState
+                   message:message ?: @""
+                     stack:stack ?: @""
+                  property:nil
+                      time:time
+                 issueInfo:issueInfo];
+}
+- (void)addErrorWithType:(NSString *)type
+                stateStr:(NSString *)stateStr
+                 message:(NSString *)message
+                   stack:(NSString *)stack
+                property:(nullable NSDictionary *)property
+                    time:(long long)time
+               issueInfo:(nullable FTIssueInfo *)issueInfo {
     if (!(type && message && type.length>0 && message.length>0)) {
-        FTInnerLogError(@"[RUM] Failed to add error due to missing required fields. Please ensure 'type'、'message' are provided.");
+        FTInnerLogError(@"[RUM] Failed to add error due to missing required fields. Please ensure 'type' and 'message' are provided.");
         return;
     }
     [[FTModuleManager sharedInstance] postMessageWithKey:FTMessageKeyRumError message:@{@"error_date":@(time),
@@ -515,6 +558,15 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             [tags setValue:FT_LOGGER forKey:FT_KEY_ERROR_SOURCE];
             [tags setValue:stateStr forKey:FT_KEY_ERROR_SITUATION];
             [tags addEntriesFromDictionary:[self.rumDependencies.errorMonitorInfoWrapper errorMonitorInfo]];
+            if (issueInfo && self.rumDependencies.issueFieldEnricher) {
+                NSMutableSet<NSString *> *reservedKeys = [NSMutableSet setWithArray:tags.allKeys];
+                [reservedKeys addObjectsFromArray:fields.allKeys];
+                [reservedKeys addObjectsFromArray:context.allKeys];
+                NSDictionary *customFields =
+                    [self.rumDependencies.issueFieldEnricher fieldsForIssue:issueInfo
+                                                               reservedKeys:reservedKeys];
+                [fields addEntriesFromDictionary:customFields];
+            }
             FTRUMErrorData *model = [[FTRUMErrorData alloc]init];
             model.type = FTRUMDataError;
             model.tags = tags;

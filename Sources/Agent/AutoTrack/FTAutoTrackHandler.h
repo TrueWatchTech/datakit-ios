@@ -31,8 +31,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 #if TARGET_OS_IOS || TARGET_OS_TV
-@class FTDisplayRateMonitor;
 @protocol FTHeatmapIdentifierRegistry;
+@class FTRumConfig;
 typedef CGPoint (^FTHeatmapLocationResolver)(UIView *view);
 @protocol FTUIViewControllerHandler <NSObject>
 -(void)notify_viewDidAppear:(UIViewController *)viewController animated:(BOOL)animated;
@@ -61,6 +61,10 @@ typedef CGPoint (^FTHeatmapLocationResolver)(UIView *view);
 /// Singleton
 + (instancetype)sharedInstance;
 
+- (void)startWithRumConfig:(FTRumConfig *)rumConfig
+       addRumDatasDelegate:(id<FTRumDatasProtocol>)delegate
+   heatmapIdentifierRegistry:(nullable id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegistry;
+
 /// Enable collection
 /// - Parameters:
 ///   - enable: Whether to collect View data
@@ -70,8 +74,7 @@ typedef CGPoint (^FTHeatmapLocationResolver)(UIView *view);
       addRumDatasDelegate:(id<FTRumDatasProtocol>)delegate
               viewHandler:(nullable FTViewTrackingHandler)viewHandler
        swiftUIViewHandler:(nullable id<FTSwiftUIViewTrackingHandler>)swiftUIViewHandler
-            actionHandler:(nullable FTActionTrackingHandler)actionHandler
-           displayMonitor:(nullable FTDisplayRateMonitor *)displayMonitor;
+            actionHandler:(nullable FTActionTrackingHandler)actionHandler;
 
 -(void)startWithTrackView:(BOOL)enable
                    action:(BOOL)enable
@@ -79,7 +82,6 @@ typedef CGPoint (^FTHeatmapLocationResolver)(UIView *view);
               viewHandler:(nullable FTViewTrackingHandler)viewHandler
        swiftUIViewHandler:(nullable id<FTSwiftUIViewTrackingHandler>)swiftUIViewHandler
             actionHandler:(nullable FTActionTrackingHandler)actionHandler
-           displayMonitor:(nullable FTDisplayRateMonitor *)displayMonitor
 heatmapIdentifierRegistry:(nullable id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegistry;
 
 -(void)shutDown;

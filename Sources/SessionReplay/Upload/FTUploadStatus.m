@@ -20,7 +20,7 @@
 //
 
 #import <TargetConditionals.h>
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS || TARGET_OS_OSX
 
 #import "FTUploadStatus.h"
 
@@ -34,6 +34,14 @@
 @end
 
 @implementation FTUploadStatus
+
++ (instancetype)successStatus{
+    FTUploadStatus *status = [[FTUploadStatus alloc] init];
+    status.success = YES;
+    status.needsRetry = NO;
+    status.uploadDebugDescription = @"[success]";
+    return status;
+}
 
 + (instancetype)statusWithHTTPResponse:(nullable NSHTTPURLResponse *)httpResponse
                                  error:(nullable NSError *)error

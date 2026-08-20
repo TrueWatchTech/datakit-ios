@@ -1,5 +1,4 @@
-
-# TrueWatchTech SDK iOS
+# TrueWatchTech SDK for iOS, tvOS, and macOS
 
 ![Cocoapods platforms](https://img.shields.io/badge/dynamic/json?label=platform&color=lightgrey&query=$.platform&uri=https://static.truewatch.com/ft-sdk-package/badge/ios/info.json&link=https://github.com/TrueWatchTech/datakit-ios)
 ![Cocoapods](https://img.shields.io/badge/dynamic/json?label=pod&color=orange&query=$.version&uri=https://static.truewatch.com/ft-sdk-package/badge/ios/version.json&link=https://github.com/TrueWatchTech/datakit-ios)
@@ -11,14 +10,27 @@
 
 ## Introduction
 
-TrueWatchTech Application Monitoring can collect metrics data from various iOS applications and analyze the performance of iOS applications in a visual way.
+TrueWatchTech Application Monitoring collects and analyzes application
+performance data on iOS, tvOS, and macOS.
+
+## Supported Platforms
+
+- iOS 12.0+
+- tvOS 12.0+
+- macOS 10.14+
+
+macOS support previously maintained in
+[TrueWatchTech/datakit-macos](https://github.com/TrueWatchTech/datakit-macos) has
+been consolidated into this repository. Use this repository for source code,
+releases, and issue tracking across all supported Apple platforms.
 
 ## Examples
 
- [TrueWatchTech SDK iOS Demo](https://github.com/TrueWatchTech/datakit-ios/tree/develop/demo)   
+[TrueWatchTech SDK Demo](https://github.com/TrueWatchTech/datakit-ios/tree/develop/demo)
 
 ## Documentation
- [Documentation Center](https://docs.truewatch.com/real-user-monitoring/ios/app-access/)   
+
+[iOS Documentation](https://docs.truewatch.com/real-user-monitoring/ios/app-access/)
 
 ## Open Source Code Usage
 

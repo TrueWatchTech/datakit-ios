@@ -76,7 +76,7 @@
     // custom = YES is mainly to prioritize processing URLSession-level custom provider
     [self.instrumentation.interceptor taskMetricsCollected:task metrics:metrics custom:YES];
     if (@available(iOS 15.0,tvOS 15.0,macOS 12.0, *)) {
-        if(!task.ft_hasCompletion){
+        if(!task.ft_hasCompletion && !task.ft_isWebSocketTask){
             [self dealTaskCompleted:task error:task.error];
         }
     }
@@ -84,6 +84,9 @@
 
 -(void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error{
     [self dealTaskCompleted:task error:error];
+}
+-(void)URLSession:(NSURLSession *)session webSocketTask:(NSURLSessionTask *)webSocketTask didOpenWithProtocol:(NSString *)protocol{
+    [self.instrumentation.interceptor taskWebSocketDidOpen:webSocketTask extraProvider:self.provider];
 }
 -(void)taskReceivedData:(NSURLSessionTask *)task data:(NSData *)data{
     [self.instrumentation.interceptor taskReceivedData:task data:data];
