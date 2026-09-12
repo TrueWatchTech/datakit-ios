@@ -89,7 +89,7 @@ has_truewatch_copyright() {
 }
 
 has_legacy_header_text() {
-  sed -n '1,40p' "$1" | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (TrueWatchCloud|hll)|All rights reserved\.|[Gg][Uu][Aa][Nn][Cc][Ee]|[Jj][Ii][Aa][Gg][Oo][Uu][Yy][Uu][Nn]'
+  sed -n '1,40p' "$1" | grep -E '^[[:space:]]*//' | grep -Eq 'Copyright ©|Copyright [0-9]{3,4} (TrueWatchCloud|hll)|All rights reserved\.|[Gg][Uu][Aa][Nn][Cc][Ee]|[Jj][Ii][Aa][Gg][Oo][Uu][Yy][Uu][Nn]'
 }
 
 has_duplicate_truewatch_copyright() {

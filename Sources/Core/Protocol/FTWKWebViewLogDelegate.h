@@ -1,9 +1,8 @@
 //
-//  FTDateUtil.h
+//  FTWKWebViewLogDelegate.h
 //  FTMobileSDK
 //
-//  Created by hulilei on 2025/7/24.
-//  Copyright 2025 TRUEWATCH TECHNOLOGY INC PTE. LTD.
+//  Copyright 2026 TRUEWATCH TECHNOLOGY INC PTE. LTD.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,14 +21,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FTDateUtil : NSObject
-+ (NSDate *)date;
-/// Returns the absolute timestamp, which has no defined reference point or unit as it is platform dependent. (Nanosecond-level time)
-+ (uint64_t)systemTime;
-/// Monotonic nanoseconds including system sleep. Only differences between values are meaningful.
-+ (uint64_t)continuousTime;
-+ (NSTimeInterval)systemUptime;
-+ (NSDate *)processStartTimestamp;
+@protocol FTWKWebViewLogDelegate <NSObject>
+/// Receives a Browser Log payload. Native application/session linking is eligible
+/// only while WebView RUM is active; Logger still owns the final linking decision.
+- (void)logWebViewEvent:(NSDictionary *)event linkToNativeRum:(BOOL)linkToNativeRum;
 @end
 
 NS_ASSUME_NONNULL_END

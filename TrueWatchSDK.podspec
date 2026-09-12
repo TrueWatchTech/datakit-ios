@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
 	s.name         = "TrueWatchSDK"
-	s.version      = "1.6.8-alpha.2"
+	s.version      = "1.6.8-alpha.5"
 	s.summary      = "TrueWatchTech iOS Data Collection SDK"
 	#s.description  = ""
 	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
 		'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) FT_COCOAPODS=1'
 	}
 
-	#1.6.8-alpha.2 replacing "#{s.version}" will cause an error during pod valid phase
+	#1.6.8-alpha.5 replacing "#{s.version}" will cause an error during pod valid phase
 	s.source       = { :git => "https://github.com/TrueWatchTech/datakit-ios.git", :tag => s.version.to_s }
 
     s.resource_bundle = {
@@ -55,11 +55,6 @@ Pod::Spec.new do |s|
 		e.dependency "#{s.name}/WidgetExtension"
 	end
 
-	s.subspec 'Extension' do |e|
-		e.platform = :ios, '12.0'
-		e.dependency "#{s.name}/WidgetExtension"
-	end
-
 	s.subspec 'Core' do |c|
 		c.ios.deployment_target = '12.0'
 		c.osx.deployment_target = '10.14'
@@ -72,7 +67,7 @@ Pod::Spec.new do |s|
 		end
 
 		c.subspec 'URLSessionAutoInstrumentation' do |a|
-			a.source_files = 'Sources/Core/URLSessionAutoInstrumentation/**/*{.h,.m}'
+			a.source_files = 'Sources/Core/NetworkAutoInstrumentation/**/*{.h,.m}'
 			a.dependency 'TrueWatchSDK/Core/Protocol'
 			a.dependency 'TrueWatchSDK/Core/BaseUtils/Swizzle'
 		end
