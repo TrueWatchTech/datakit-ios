@@ -18,7 +18,6 @@
 //  limitations under the License.
 //
 
-
 #import "FTURLSessionDelegate+Private.h"
 #import "FTURLSessionInstrumentation.h"
 #import "FTURLSessionInterceptor+Private.h"
@@ -76,10 +75,8 @@
     // custom = YES is mainly to prioritize processing URLSession-level custom provider
     FTURLSessionInterceptor *interceptor = (FTURLSessionInterceptor *)self.instrumentation.interceptor;
     [interceptor taskMetricsCollected:task metrics:metrics custom:YES extraProvider:self.provider];
-    if (@available(iOS 15.0,tvOS 15.0,macOS 12.0, *)) {
-        if(!task.ft_hasCompletion && !task.ft_isWebSocketTask){
-            [self dealTaskCompleted:task error:task.error];
-        }
+    if(!task.ft_hasCompletion && !task.ft_isWebSocketTask){
+        [self dealTaskCompleted:task error:task.error];
     }
 }
 
@@ -97,6 +94,9 @@
 }
 -(void)taskCompleted:(NSURLSessionTask *)task error:(NSError *)error{
     [self dealTaskCompleted:task error:error];
+}
+- (void)taskCompleted:(NSURLSessionTask *)task error:(NSError *)error endTime:(uint64_t)endTime {
+    [(id<FTURLSessionInterceptorProtocol>)self.instrumentation.interceptor taskCompleted:task error:error extraProvider:self.provider errorFilter:self.errorFilter endTime:endTime];
 }
 -(void)dealTaskCompleted:(NSURLSessionTask *)task error:(NSError *)error{
     [self.instrumentation.interceptor taskCompleted:task error:error extraProvider:self.provider errorFilter:self.errorFilter];

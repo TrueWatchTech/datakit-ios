@@ -25,14 +25,17 @@
 #import "FTFatalErrorContext.h"
 #import "FTErrorDataProtocol.h"
 #import "FTIssueDataProvider.h"
+#import "FTRUMAppStateHistory.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class FTIssueFieldEnricher;
+@protocol FTRUMNetworkSettledResourcePredicate;
+@protocol FTRUMNextViewActionPredicate;
 
 @interface FTRUMDependencies : NSObject
-@property (nonatomic, assign) int sampleRate;
-@property (nonatomic, assign) int sessionOnErrorSampleRate;
+@property (nonatomic, assign) float sampleRate;
+@property (nonatomic, assign) float sessionOnErrorSampleRate;
 @property (nonatomic, assign) BOOL enableResourceHostIP;
 @property (nonatomic, assign) BOOL enableTraceUserAction;
 @property (nonatomic, copy) NSString *appId;
@@ -44,6 +47,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable, readonly) FTIssueFieldEnricher *issueFieldEnricher;
 @property (atomic, strong) NSDictionary *linkRUMSessionContext;
 @property (atomic, strong, nullable) NSDictionary *lastViewUserCustomDatas;
+@property (nonatomic, strong, nullable) FTRUMAppStateHistory *appStateHistory;
+/// Internal per-View rule injection; not a public SDK configuration option.
+@property (nonatomic, strong, nullable) id<FTRUMNetworkSettledResourcePredicate> networkSettledResourcePredicate;
+/// Internal INV rule injection; default is click within an inclusive three seconds.
+@property (nonatomic, strong, nullable) id<FTRUMNextViewActionPredicate> nextViewActionPredicate;
 
 //The following properties need to be readwrite in rumQueue
 @property (nonatomic, strong) NSNumber *sessionHasReplay;

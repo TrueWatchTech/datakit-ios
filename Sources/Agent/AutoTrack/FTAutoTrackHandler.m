@@ -125,7 +125,6 @@ static BOOL FTViewControllerIsFromSwiftUIBundle(UIViewController *viewController
 #endif
 
 #if FT_HAS_SWIFTUI_VIEW_TRACKING
-API_AVAILABLE(ios(13.0), tvos(13.0))
 @interface FTSwiftUIViewNameExtractor : NSObject
 - (nullable NSString *)extractNameFromViewController:(UIViewController *)viewController;
 @end
@@ -158,6 +157,7 @@ API_AVAILABLE(ios(13.0), tvos(13.0))
 @property (nonatomic, copy) NSString *viewName;
 @property (nonatomic, copy) NSString *identify;
 @property (nonatomic, strong) NSNumber *loadTime;
+@property (nonatomic, strong, nullable) NSNumber *loadStartEpochNs;
 @property (nonatomic, assign) BOOL hasLoadDuration;
 @property (nonatomic, weak, nullable) UIViewController *viewController;
 @property (nonatomic, assign) BOOL isUntrackedModal;
@@ -182,6 +182,7 @@ API_AVAILABLE(ios(13.0), tvos(13.0))
         // UIKit controller). Keep that distinct from a real reload, which is the
         // only path that uses zero.
         NSNumber *loadDuration = viewController.ft_loadDuration;
+        _loadStartEpochNs = viewController.ft_viewLoadStartEpochNs;
         _loadTime = @(-1);
         if(loadDuration != nil){
             _loadTime = loadDuration;
@@ -207,6 +208,7 @@ API_AVAILABLE(ios(13.0), tvos(13.0))
 - (void)resetView{
     _viewControllerUUID = [FTBaseInfoHandler randomUUID];
     _loadTime = @0;
+    _loadStartEpochNs = nil;
 }
 @end
 @interface FTAutoTrackHandler()<FTAppLifeCycleDelegate,FTUIViewControllerHandler,FTUIEventHandler,FTAppLaunchDataDelegate
@@ -227,7 +229,7 @@ API_AVAILABLE(ios(13.0), tvos(13.0))
 @property (nonatomic, strong, nullable) FTViewTrackingHandler uiKitViewTrackingHandler;
 @property (nonatomic, strong, nullable) id<FTSwiftUIViewTrackingHandler> swiftUIViewTrackingHandler;
 #if FT_HAS_SWIFTUI_VIEW_TRACKING
-@property (nonatomic, strong, nullable) FTSwiftUIViewNameExtractor *swiftUIViewNameExtractor API_AVAILABLE(ios(13.0), tvos(13.0));
+@property (nonatomic, strong, nullable) FTSwiftUIViewNameExtractor *swiftUIViewNameExtractor;
 #endif
 
 @property (nonatomic, strong, nullable) FTActionTrackingHandler actionTrackingHandler;
@@ -298,20 +300,19 @@ heatmapIdentifierRegistry:(id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegi
     [self bindSwiftUIRUMActionBridgeIfAvailable];
 #endif
     if (trackView) {
+        [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:self];
         self.viewControllerHandler = self;
         self.uiKitViewTrackingHandler = viewHandler ? viewHandler : [FTDefaultUIKitViewTrackingHandler new];
         self.swiftUIViewTrackingHandler = swiftUIViewHandler;
         [self hookViewControllerLifeCycle];
-        [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:self];
     }else{
+        [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:self];
         self.viewControllerHandler = nil;
         self.uiKitViewTrackingHandler = nil;
         self.swiftUIViewTrackingHandler = nil;
 #if FT_HAS_SWIFTUI_VIEW_TRACKING
         [UIViewController ft_setSwiftUIViewLoadingTimeEnabled:NO];
-        if (@available(iOS 13.0, tvOS 13.0, *)) {
-            self.swiftUIViewNameExtractor = nil;
-        }
+        self.swiftUIViewNameExtractor = nil;
 #endif
     }
     if (trackAction) {
@@ -417,10 +418,6 @@ heatmapIdentifierRegistry:(id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegi
         return;
     }
     [UIViewController ft_invalidatePendingViewLoadDurations];
-    RUMView *current = [self.stack lastObject];
-    if(current){
-        [self.addRumDatasDelegate stopViewWithViewID:current.viewControllerUUID property:nil];
-    }
 }
 -(void)applicationWillEnterForeground{
     if(!self.autoTrackView){
@@ -562,7 +559,11 @@ heatmapIdentifierRegistry:(id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegi
     // Ensure that untracked modal views do not affect the duration of tracked views
     // When an untracked modal view pops up, close the last tracked View; when the modal view is closed, restart tracking the last View
     if(!view.isUntrackedModal){
-        [self.addRumDatasDelegate onCreateView:view.viewName loadTime:view.loadTime];
+        if ([self.addRumDatasDelegate respondsToSelector:@selector(onCreateView:loadTime:loadStartEpochNs:)]) {
+            [self.addRumDatasDelegate onCreateView:view.viewName loadTime:view.loadTime loadStartEpochNs:view.loadStartEpochNs];
+        } else {
+            [self.addRumDatasDelegate onCreateView:view.viewName loadTime:view.loadTime];
+        }
         if (!view.hasLoadDuration && view.viewController != nil) {
             // The handler explicitly chose a controller without loading-time
             // lifecycle instrumentation. Record its consumed first appearance
@@ -582,6 +583,7 @@ heatmapIdentifierRegistry:(id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegi
     }
 }
 -(void)shutDown{
+    [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:self];
     self.addRumDatasDelegate = nil;
     self.viewControllerHandler = nil;
     self.actionHandler = nil;
@@ -591,9 +593,7 @@ heatmapIdentifierRegistry:(id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegi
     [UIViewController ft_setSwiftUIViewLoadingTimeEnabled:NO];
 #endif
 #if FT_HAS_SWIFTUI_VIEW_TRACKING
-    if (@available(iOS 13.0, tvOS 13.0, *)) {
-        self.swiftUIViewNameExtractor = nil;
-    }
+    self.swiftUIViewNameExtractor = nil;
     [self unbindSwiftUIRUMViewBridgeIfNeeded];
 #endif
 #if FT_HAS_SWIFTUI_ACTION_TRACKING
@@ -604,50 +604,38 @@ heatmapIdentifierRegistry:(id<FTHeatmapIdentifierRegistry>)heatmapIdentifierRegi
     self.autoTrackView = NO;
     self.autoTrackAction = NO;
 
-    [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:self];
 }
 
 #if FT_HAS_SWIFTUI_VIEW_TRACKING
 - (void)bindSwiftUIRUMViewBridgeIfAvailable{
-    if (@available(iOS 13.0, tvOS 13.0, *)) {
-        FTSwiftUIRUMViewBridge.handler = self;
-    }
+    FTSwiftUIRUMViewBridge.handler = self;
 }
 
 - (void)unbindSwiftUIRUMViewBridgeIfNeeded{
-    if (@available(iOS 13.0, tvOS 13.0, *)) {
-        if (FTSwiftUIRUMViewBridge.handler == self) {
-            FTSwiftUIRUMViewBridge.handler = nil;
-        }
+    if (FTSwiftUIRUMViewBridge.handler == self) {
+        FTSwiftUIRUMViewBridge.handler = nil;
     }
 }
 #endif
 
 #if FT_HAS_SWIFTUI_ACTION_TRACKING
 - (void)bindSwiftUIRUMActionBridgeIfAvailable{
-    if (@available(iOS 13.0, *)) {
-        FTSwiftUIRUMActionBridge.handler = self;
-    }
+    FTSwiftUIRUMActionBridge.handler = self;
 }
 
 - (void)unbindSwiftUIRUMActionBridgeIfNeeded{
-    if (@available(iOS 13.0, *)) {
-        if (FTSwiftUIRUMActionBridge.handler == self) {
-            FTSwiftUIRUMActionBridge.handler = nil;
-        }
+    if (FTSwiftUIRUMActionBridge.handler == self) {
+        FTSwiftUIRUMActionBridge.handler = nil;
     }
 }
 #endif
 
 #if FT_HAS_SWIFTUI_VIEW_TRACKING
 - (nullable NSString *)extractSwiftUIViewNameFromViewController:(UIViewController *)viewController{
-    if (@available(iOS 13.0, tvOS 13.0, *)) {
-        return [self.swiftUIViewNameExtractor extractNameFromViewController:viewController];
-    }
-    return nil;
+    return [self.swiftUIViewNameExtractor extractNameFromViewController:viewController];
 }
 
-- (FTSwiftUIViewNameExtractor *)swiftUIViewNameExtractor API_AVAILABLE(ios(13.0), tvos(13.0)){
+- (FTSwiftUIViewNameExtractor *)swiftUIViewNameExtractor{
     if (!_swiftUIViewNameExtractor) {
         _swiftUIViewNameExtractor = [FTSwiftUIViewNameExtractor new];
     }

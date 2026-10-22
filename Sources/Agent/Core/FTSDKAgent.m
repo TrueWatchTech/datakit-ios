@@ -61,6 +61,8 @@
 #import "FTRemoteConfigError.h"
 #import "FTDateUtil.h"
 #import "FTAppLaunchTracker.h"
+#import "FTVisitorIDConfig+Private.h"
+#import "FTVisitorIDManager.h"
 #if !TARGET_OS_TV
 #import "FTWKWebViewHandler+Private.h"
 #endif
@@ -171,10 +173,10 @@ static FTSDKAgent *sharedInstance = nil;
     [self.sdkConfig mergeWithRemoteConfigModel:model];
     [self.rumConfig mergeWithRemoteConfigModel:model];
     [self.traceConfig mergeWithRemoteConfigModel:model];
-    [[FTGlobalRumManager sharedInstance] updateSampleRate:self.rumConfig.sampleRate sessionOnErrorSampleRate:self.rumConfig.sessionOnErrorSampleRate];
-    [[FTURLSessionInstrumentation sharedInstance] updateTraceSampleRate:self.traceConfig.sampleRate];
+    [[FTGlobalRumManager sharedInstance] updateSampleRate:self.rumConfig.sessionSamplingRate sessionOnErrorSampleRate:self.rumConfig.sessionOnErrorSamplingRate];
+    [[FTURLSessionInstrumentation sharedInstance] updateTraceSamplingRate:self.traceConfig.traceSamplingRate];
     FTURLConnectionInstrumentation *urlConnectionInstrumentation = [FTURLConnectionInstrumentation existingInstance];
-    [urlConnectionInstrumentation updateTraceSampleRate:self.traceConfig.sampleRate];
+    [urlConnectionInstrumentation updateTraceSamplingRate:self.traceConfig.traceSamplingRate];
     [urlConnectionInstrumentation updateResourceEnabled:self.rumConfig.enableTraceURLConnectionResource];
     [urlConnectionInstrumentation updateTraceEnabled:self.traceConfig.enableAutoTraceURLConnection];
     [FTNetworkInfoManager sharedInstance].setCompressionIntakeRequests(self.sdkConfig.compressIntakeRequests);
@@ -247,7 +249,20 @@ static FTSDKAgent *sharedInstance = nil;
 }
 - (void)applyRUMConfig:(FTRumConfig *)rumConfig{
     FTInnerLogInfo(@"[RUM] APPID:%@",rumConfig.appid);
-    [[FTPresetProperty sharedInstance] setRUMAppID:rumConfig.appid sampleRate:rumConfig.sampleRate sessionOnErrorSampleRate:rumConfig.sessionOnErrorSampleRate rumGlobalContext:rumConfig.globalContext];
+    NSError *visitorError = nil;
+    FTVisitorIDConfig *visitorConfig = [rumConfig.visitorIDConfig validatedCopyWithError:&visitorError];
+    if (rumConfig.visitorIDConfig && !visitorConfig) {
+        FTInnerLogWarning(@"Invalid Visitor ID configuration; Visitor ID is disabled: %@", visitorError.localizedDescription);
+    }
+    [[FTVisitorIDManager sharedInstance]
+        configureWithEnabled:visitorConfig != nil
+                  headerName:visitorConfig.header
+                         ttl:visitorConfig.ttlHours * 60.0 * 60.0
+                  urlMatcher:visitorConfig ? ^BOOL(NSURL *url) {
+                      return [visitorConfig matchesURL:url];
+                  } : nil];
+    [[FTURLSessionInstrumentation sharedInstance] setVisitorIDEnabled:visitorConfig != nil];
+    [[FTPresetProperty sharedInstance] setRUMAppID:rumConfig.appid sampleRate:rumConfig.sessionSamplingRate sessionOnErrorSampleRate:rumConfig.sessionOnErrorSamplingRate rumGlobalContext:rumConfig.globalContext];
     [[FTTrackDataManager sharedInstance] setRUMCacheLimitCount:rumConfig.rumCacheLimitCount discardNew:rumConfig.rumDiscardType == FTRUMDiscard];
     [[FTGlobalRumManager sharedInstance] setRumConfig:rumConfig writer:[FTTrackDataManager sharedInstance].dataWriterWorker];
     [[FTURLSessionInstrumentation sharedInstance]setEnableAutoRumTrace:rumConfig.enableTraceUserResource
@@ -269,6 +284,7 @@ static FTSDKAgent *sharedInstance = nil;
         [FTLogger sharedInstance].linkRumDataProvider = [FTGlobalRumManager sharedInstance].rumManager;
     }
 #if !TARGET_OS_TV
+    [FTWKWebViewHandler sharedInstance].visitorIDProvider = [FTVisitorIDManager sharedInstance];
     [[FTWKWebViewHandler sharedInstance] startWithEnableTraceWebView:rumConfig.enableTraceWebView
                                                        rumDelegate:[FTGlobalRumManager sharedInstance].rumManager];
 #endif
@@ -302,7 +318,7 @@ static FTSDKAgent *sharedInstance = nil;
 - (void)applyTraceConfig:(FTTraceConfig *)traceConfig{
     [[FTURLSessionInstrumentation sharedInstance] setTraceEnableAutoTrace:traceConfig.enableAutoTrace
                                                         enableLinkRumData:traceConfig.enableLinkRumData
-                                                               sampleRate:traceConfig.sampleRate
+                                                        traceSamplingRate:traceConfig.traceSamplingRate
                                                                 traceType:(NetworkTraceType)traceConfig.networkTraceType
                                                          traceInterceptor:traceConfig.traceInterceptor
                                                               serviceName:self.sdkConfig.service
@@ -310,7 +326,7 @@ static FTSDKAgent *sharedInstance = nil;
     [[FTURLConnectionInstrumentation sharedInstance]
         setTraceEnableAutoTrace:traceConfig.enableAutoTraceURLConnection
         enableLinkRumData:traceConfig.enableLinkRumData
-        sampleRate:traceConfig.sampleRate
+        traceSamplingRate:traceConfig.traceSamplingRate
         traceType:(NetworkTraceType)traceConfig.networkTraceType
         traceInterceptor:traceConfig.traceInterceptor
         serviceName:self.sdkConfig.service];
@@ -490,10 +506,13 @@ static FTSDKAgent *sharedInstance = nil;
     [FTSDKAgent shutDown];
 }
 - (void)releaseInternalResources {
+    id<FTSessionReplayLifecycle> replay = [[FTModuleManager sharedInstance] getRegisterService:@protocol(FTSessionReplayLifecycle)];
+    [replay shutDown];
     [[FTLogger sharedInstance] shutDown];
     [[FTURLConnectionInstrumentation existingInstance] shutDown];
     [[FTGlobalRumManager sharedInstance] shutDown];
     [[FTURLSessionInstrumentation sharedInstance] shutDown];
+    [[FTVisitorIDManager sharedInstance] shutDown];
     [[FTRemoteConfigManager sharedInstance] shutDown];
     [[FTDataFilterManager sharedInstance] shutDown];
     [FTTrackDataManager shutDown];
@@ -524,6 +543,9 @@ static FTSDKAgent *sharedInstance = nil;
     @catch (NSException *exception) {
         FTInnerLogError(@"%@ error: %@", self, exception);
     }
+}
++ (void)resetVisitorID{
+    [[FTVisitorIDManager sharedInstance] reset];
 }
 - (void)syncProcess{
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];

@@ -29,16 +29,18 @@
 #import "FTSDKCompat.h"
 #import "FTConstants.h"
 #import "FTErrorMonitorInfo.h"
-#import "FTReadWriteHelper.h"
 #import "FTModuleManager.h"
 #import "NSError+FTDescription.h"
 #import "FTPresetProperty.h"
 #import "FTNetworkConnectivity.h"
 #import "NSDate+FTUtil.h"
+#import <limits.h>
+#import <math.h>
 #import "FTRUMContext.h"
 #import "FTMessageReceiver.h"
 #import "FTRUMViewHandler.h"
 #import "FTAppLifeCycle.h"
+#import "FTVisitorIDManager+Private.h"
 #if FT_HAS_UIKIT
 #import <UIKit/UIKit.h>
 #endif
@@ -60,15 +62,26 @@ NSString *FTStringFromAppState(FTAppState state) {
             return @"unknown";
     }
 }
+
+static NSString *FTRUMIntervalState(FTAppState state) {
+    switch (state) {
+        case FTAppStateRun: return FTStringFromRUMAppState(FTRUMAppStateForegroundOnly);
+        case FTAppStateBackground: return FTStringFromRUMAppState(FTRUMAppStateBackgroundOnly);
+        default: return FTStringFromRUMAppState(FTRUMAppStateUnknown);
+    }
+}
 void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 
-@interface FTRUMManager()<FTRUMSessionProtocol,FTMessageReceiver,FTAppLifeCycleDelegate>
+@interface FTRUMManager()<FTRUMSessionProtocol,FTMessageReceiver,FTRUMAppStateHistoryDelegate>
 @property (nonatomic, strong) FTRUMDependencies *rumDependencies;
+@property (nonatomic, assign) BOOL initialBackground;
 @property (nonatomic, strong) FTRUMSessionHandler *sessionHandler;
-@property (nonatomic, strong) FTReadWriteHelper<NSMutableDictionary *> *preViewDuration;
+// Accessed only on rumQueue; loading data is consumed by the next matching ViewStart.
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSDictionary *> *preViewDuration;
 @property (nonatomic, strong) dispatch_queue_t rumQueue;
 @property (atomic,copy,readwrite) NSString *viewReferrer;
 @property (atomic,copy,nullable) NSString *viewReferrerId;
+- (nullable NSString *)currentVisitorIDSnapshot;
 @end
 @implementation FTRUMManager
 -(instancetype)initWithRumDependencies:(FTRUMDependencies *)dependencies{
@@ -76,13 +89,16 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     if(self){
         _rumDependencies = dependencies;
         self.appState = [self initialAppState];
-        _preViewDuration = [[FTReadWriteHelper alloc]initWithValue:[NSMutableDictionary new]] ;
+        dependencies.appStateHistory = [[FTRUMAppStateHistory alloc] initWithState:FTRUMIntervalState(self.appState)
+                                                                          timeNs:[NSDate ft_currentNanosecondTimeStamp] background:self.initialBackground];
+        _preViewDuration = [NSMutableDictionary new];
         _rumQueue = dispatch_queue_create("com.ft.rum", DISPATCH_QUEUE_SERIAL);
         dispatch_queue_set_specific(_rumQueue, FTRUMQueueIdentityKey, &FTRUMQueueIdentityKey, NULL);
         [[FTModuleManager sharedInstance] addMessageReceiver:self];
-        [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:self];
-        [self notifyRumInit];
         self.assistant = self;
+        dependencies.appStateHistory.delegate = self;
+        [dependencies.appStateHistory startMonitoring];
+        [self notifyRumInit];
     }
     return self;
 }
@@ -125,9 +141,11 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     if ([UIApplication respondsToSelector:@selector(sharedApplication)]) {
         UIApplication *application = [UIApplication performSelector:@selector(sharedApplication)];
         if (!application) {
-            return FTAppStateStartUp;
+            return FTAppStateUnknown;
         }
-        switch (application.applicationState) {
+        UIApplicationState initialState = application.applicationState;
+        self.initialBackground = initialState == UIApplicationStateBackground;
+        switch (initialState) {
             case UIApplicationStateActive:
                 return FTAppStateRun;
             case UIApplicationStateBackground:
@@ -136,32 +154,40 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                 return FTAppStateStartUp;
         }
     }
-    return FTAppStateStartUp;
+    return FTAppStateUnknown;
 #elif FT_HOST_MAC
     return [NSApplication sharedApplication].active ? FTAppStateRun : FTAppStateUnknown;
 #else
-    return FTAppStateStartUp;
+    return FTAppStateUnknown;
 #endif
 }
 #pragma mark ========== RUM App State ==========
--(void)applicationDidBecomeActive{
-    self.appState = FTAppStateRun;
+- (void)appStateHistory:(FTRUMAppStateHistory *)history didChangeState:(FTRUMAppState)state time:(NSDate *)time {
+    switch (state) {
+        case FTRUMAppStateForegroundOnly: self.appState = FTAppStateRun; break;
+        case FTRUMAppStateBackgroundOnly: self.appState = FTAppStateBackground; break;
+        default: self.appState = FTAppStateUnknown; break;
+    }
+    if (state != FTRUMAppStateBackgroundOnly) return;
+    BOOL timeComparable = history.isTimeComparable;
+    dispatch_async(self.rumQueue, ^{
+        @try {
+            FTRUMAppStateChangeModel *model = [[FTRUMAppStateChangeModel alloc] initWithAppState:state time:time timeComparable:timeComparable];
+            [self process:model context:[self rumDynamicProperty]];
+        } @catch (NSException *exception) {
+            FTInnerLogError(@"exception %@", exception);
+        }
+    });
 }
--(void)applicationWillResignActive{
-#if FT_HOST_MAC
-    self.appState = FTAppStateUnknown;
-#endif
-}
--(void)applicationDidEnterBackground{
-    self.appState = FTAppStateBackground;
-}
--(void)updateSampleRate:(int)sampleRate sessionOnErrorSampleRate:(int)sessionOnErrorSampleRate{
+-(void)updateSampleRate:(float)sampleRate sessionOnErrorSampleRate:(float)sessionOnErrorSampleRate{
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             self.rumDependencies.sampleRate = sampleRate;
             self.rumDependencies.sessionOnErrorSampleRate = sessionOnErrorSampleRate;
             FTRUMDataModel *model = [[FTRUMDataModel alloc]init];
             model.type = FTRUMSampleRateUpdate;
+            model.visitorIDSnapshot = visitorID;
             [self process:model context:@{}];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -170,10 +196,12 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 #pragma mark - Session -
 -(void)notifyRumInit{
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             FTRUMDataModel *model = [[FTRUMDataModel alloc]init];
             model.type = FTRUMViewPlaceholder;
+            model.visitorIDSnapshot = visitorID;
             [self process:model context:@{}];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -182,50 +210,90 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 #pragma mark - View -
 -(void)onCreateView:(NSString *)viewName loadTime:(NSNumber *)loadTime{
-    [self.preViewDuration concurrentWrite:^(NSMutableDictionary * _Nonnull value) {
-        [value setValue:loadTime forKey:viewName];
-    }];
+    NSString *name = [viewName copy];
+    dispatch_async(self.rumQueue, ^{
+        @try {
+            [self.preViewDuration setValue:loadTime ? @{@"duration": loadTime} : nil forKey:name];
+        } @catch (NSException *exception) {
+            FTInnerLogError(@"exception %@",exception);
+        }
+    });
+}
+
+- (void)onCreateView:(NSString *)viewName loadTime:(NSNumber *)loadTime loadStartEpochNs:(nullable NSNumber *)loadStartEpochNs {
+    if (viewName.length == 0 || loadTime == nil) {
+        return;
+    }
+    NSMutableDictionary *info = [@{@"duration": loadTime} mutableCopy];
+    if ([loadStartEpochNs isKindOfClass:NSNumber.class] && isfinite(loadStartEpochNs.doubleValue) &&
+        [loadStartEpochNs compare:@0] == NSOrderedDescending &&
+        [loadStartEpochNs compare:@(LLONG_MAX)] != NSOrderedDescending) {
+        info[@"load_start_epoch_ns"] = @(loadStartEpochNs.longLongValue);
+    }
+    NSString *name = [viewName copy];
+    NSDictionary *loadingInfo = [info copy];
+    dispatch_async(self.rumQueue, ^{
+        @try {
+            self.preViewDuration[name] = loadingInfo;
+        } @catch (NSException *exception) {
+            FTInnerLogError(@"exception %@",exception);
+        }
+    });
 }
 -(void)startViewWithName:(NSString *)viewName{
     [self startViewWithName:viewName property:nil];
 }
 -(void)startViewWithName:(NSString *)viewName property:(nullable NSDictionary *)property{
-    [self startViewWithViewID:[FTBaseInfoHandler randomUUID] viewName:viewName property:property];
+    [self startViewWithName:viewName property:property trackingType:FTRUMViewTrackingTypeManual];
+}
+- (void)startViewWithName:(NSString *)viewName property:(nullable NSDictionary *)property trackingType:(FTRUMViewTrackingType)trackingType {
+    [self startViewWithViewID:[FTBaseInfoHandler randomUUID] viewName:viewName property:property trackingType:trackingType];
 }
 -(void)startViewWithViewID:(NSString *)viewId viewName:(NSString *)viewName property:(nullable NSDictionary *)property{
-    __block NSNumber *duration = @0;
+    [self startViewWithViewID:viewId viewName:viewName property:property trackingType:FTRUMViewTrackingTypeAutomatic];
+}
+- (void)startViewWithViewID:(NSString *)viewId viewName:(NSString *)viewName property:(nullable NSDictionary *)property trackingType:(FTRUMViewTrackingType)trackingType {
+    if (trackingType != FTRUMViewTrackingTypeManual && trackingType != FTRUMViewTrackingTypeAutomatic) {
+        FTInnerLogError(@"[RUM] Failed to start view due to invalid tracking type.");
+        return;
+    }
     if (!(viewId&&viewId.length>0&&viewName&&viewName.length>0)) {
         FTInnerLogError(@"[RUM] Failed to start view due to missing required fields. Please ensure 'viewName' are provided.");
         return;
     }
-    [self.preViewDuration concurrentRead:^(NSMutableDictionary * _Nonnull value) {
-        if ([value.allKeys containsObject:viewName]) {
-            duration = value[viewName];
-            [value removeObjectForKey:viewName];
-        }
-    }];
-    
+    // Capture event data before queueing so a busy rumQueue cannot shift the boundary.
     NSDate *time = [NSDate date];
+    NSString *visitorID = [self currentVisitorIDSnapshot];
+    NSString *name = [viewName copy];
     dispatch_async(self.rumQueue, ^{
         @try {
+            NSDictionary *info = self.preViewDuration[name];
+            NSNumber *duration = info[@"duration"] ?: @0;
+            NSNumber *loadingStartEpochNs = info[@"load_start_epoch_ns"];
+            [self.preViewDuration removeObjectForKey:name];
             NSDictionary *context = [self rumDynamicProperty];
-            FTRUMViewModel *viewModel = [[FTRUMViewModel alloc]initWithViewID:viewId viewName:viewName viewReferrer:self.viewReferrer];
+            FTRUMViewModel *viewModel = [[FTRUMViewModel alloc]initWithViewID:viewId viewName:name viewReferrer:self.viewReferrer];
             viewModel.time = time;
             viewModel.loading_time = duration?:@0;
+            viewModel.loading_start_epoch_ns = duration.longLongValue > 0 && loadingStartEpochNs.longLongValue < [time ft_nanosecondTimeStamp] ? loadingStartEpochNs : nil;
+            viewModel.trackingType = trackingType;
             viewModel.type = FTRUMDataViewStart;
             viewModel.fields = property;
+            viewModel.visitorIDSnapshot = visitorID;
             [self process:viewModel context:context];
-            self.viewReferrer = viewName;
-            self.viewReferrerId = self.rumDependencies.sessionHasReplay != nil ? viewId : nil;
+            self.viewReferrer = name;
+            self.viewReferrerId = viewId;
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
         }
     });
 }
 -(void)updateViewLoadingTime:(NSNumber *)duration{
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             FTRUMViewLoadingModel *viewModel = [[FTRUMViewLoadingModel alloc]initWithDuration:duration];
+            viewModel.visitorIDSnapshot = visitorID;
             [self process:viewModel context:@{}];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -241,6 +309,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 -(void)stopViewWithViewID:(NSString *)viewId property:(nullable NSDictionary *)property{
     NSDate *time = [NSDate date];
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
@@ -252,6 +321,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             viewModel.time = time;
             viewModel.type = FTRUMDataViewStop;
             viewModel.fields = property;
+            viewModel.visitorIDSnapshot = visitorID;
             [self process:viewModel context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -264,6 +334,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 - (void)startAction:(NSString *)actionName actionType:(NSString *)actionType property:(NSDictionary *)property heatmapAttributes:(FTHeatmapAttributes *)heatmapAttributes{
     NSDate *time = [NSDate date];
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
@@ -272,6 +343,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             actionModel.type = FTRUMDataStartAction;
             actionModel.fields = property;
             actionModel.heatmapAttributes = heatmapAttributes;
+            actionModel.visitorIDSnapshot = visitorID;
             [self process:actionModel context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -280,6 +352,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 - (void)addAction:(NSString *)actionName actionType:(NSString *)actionType property:(NSDictionary *)property{
     NSDate *time = [NSDate date];
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
@@ -287,6 +360,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             actionModel.time = time;
             actionModel.type = FTRUMDataAddAction;
             actionModel.fields = property;
+            actionModel.visitorIDSnapshot = visitorID;
             [self process:actionModel context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -294,6 +368,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     });
 }
 - (void)addLaunch:(NSString *)name type:(NSString *)type launchTime:(NSDate *)time duration:(NSNumber *)duration property:(nullable NSDictionary *)property{
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
@@ -302,6 +377,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             launchModel.action_name = name;
             launchModel.action_type = type;
             launchModel.fields = property;
+            launchModel.visitorIDSnapshot = visitorID;
             [self process:launchModel context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -316,11 +392,13 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 - (void)startResourceWithKey:(NSString *)key property:(nullable NSDictionary *)property{
     [self startResourceWithKey:key property:property time:[NSDate date]];
 }
-- (void)startResourceWithKey:(NSString *)key property:(nullable NSDictionary *)property time:(NSDate *)time{
+- (void)startResourceWithKey:(NSString *)key property:(nullable NSDictionary *)property time:(NSDate *)time {
     if (!key) {
         FTInnerLogError(@"[RUM] Failed to start resource due to missing required fields. Please ensure 'key' are provided.");
         return;
     }
+    FTVisitorIDManager *visitorIDManager = [FTVisitorIDManager sharedInstance];
+    NSString *visitorID = [visitorIDManager consumeResourceVisitorIDForKey:key] ?: [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
@@ -332,6 +410,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                 [fields addEntriesFromDictionary:networkFields];
             }
             resourceStart.fields = fields;
+            resourceStart.visitorIDSnapshot = visitorID;
             [self process:resourceStart context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -348,11 +427,13 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
         return;
     }
     NSDate *time = [NSDate date];
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
             if(metrics.resourceFetchTypeLocalCache && !content.webSocketHandshake){
                 FTRUMResourceDataModel *resourceSuccess = [[FTRUMResourceDataModel alloc]initWithType:FTRUMDataResourceAbandon identifier:key];
+                resourceSuccess.visitorIDSnapshot = visitorID;
                 [self process:resourceSuccess context:context];
             }else{
                 NSMutableDictionary *tags = [NSMutableDictionary new];
@@ -394,6 +475,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                     resourceError.time = time;
                     resourceError.tags = errorTags;
                     resourceError.fields = errorField;
+                    resourceError.visitorIDSnapshot = visitorID;
                     [self process:resourceError context:context];
                     
                 }
@@ -457,6 +539,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                 resourceSuccess.time = time;
                 resourceSuccess.tags = tags;
                 resourceSuccess.fields = fields;
+                resourceSuccess.visitorIDSnapshot = visitorID;
                 [self process:resourceSuccess context:context];
             }
         } @catch (NSException *exception) {
@@ -482,12 +565,14 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
         FTInnerLogError(@"[RUM] Failed to stop resource due to missing required fields. Please ensure 'key' are provided.");
         return;
     }
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
             FTRUMResourceDataModel *resource = [[FTRUMResourceDataModel alloc]initWithType:FTRUMDataResourceStop identifier:key];
             resource.time = time;
             resource.fields = property;
+            resource.visitorIDSnapshot = visitorID;
             [self process:resource context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -549,6 +634,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     [[FTModuleManager sharedInstance] postMessageWithKey:FTMessageKeyRumError message:@{@"error_date":@(time),
                                                                                  @"error_crash":@(NO)
                                                                                } sync:NO];
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     [self syncProcess:^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
@@ -577,6 +663,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             model.tags = tags;
             model.fields = fields;
             model.tm = time;
+            model.visitorIDSnapshot = visitorID;
             [self process:model context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -591,6 +678,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
         FTInnerLogError(@"[RUM] Failed to add longtask due to missing required fields. Please ensure 'stack' and 'duration' are provided.");
         return;
     }
+    NSString *visitorID = [self currentVisitorIDSnapshot];
     dispatch_async(self.rumQueue, ^{
         @try {
             NSDictionary *context = [self rumDynamicProperty];
@@ -605,6 +693,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
             model.tags = @{};
             model.fields = fields;
             model.tm = time;
+            model.visitorIDSnapshot = visitorID;
             [self process:model context:context];
         } @catch (NSException *exception) {
             FTInnerLogError(@"exception %@",exception);
@@ -632,7 +721,25 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 
 #pragma mark - FTRUMSessionProtocol -
 -(BOOL)process:(FTRUMDataModel *)model context:(nonnull NSDictionary *)context{
+    if (model.type != FTRUMDataWebViewJSBData) {
+        if (model.visitorIDSnapshot.length > 0) {
+            NSMutableDictionary *managedContext = [context mutableCopy] ?: [NSMutableDictionary dictionary];
+            managedContext[FT_VISITOR_ID] = model.visitorIDSnapshot;
+            context = [managedContext copy];
+            if (model.tags[FT_VISITOR_ID] != nil) {
+                NSMutableDictionary *tags = [model.tags mutableCopy];
+                [tags removeObjectForKey:FT_VISITOR_ID];
+                model.tags = [tags copy];
+            }
+            if (model.fields[FT_VISITOR_ID] != nil) {
+                NSMutableDictionary *fields = [model.fields mutableCopy];
+                [fields removeObjectForKey:FT_VISITOR_ID];
+                model.fields = [fields copy];
+            }
+        }
+    }
     FTRUMSessionHandler *current  = self.sessionHandler;
+    if (!current && model.type == FTRUMDataAppStateChange) return YES;
     if (current) {
         current.appState = self.appState;
         if ([self manage:self.sessionHandler byPropagatingData:model context:context] == nil) {
@@ -670,6 +777,9 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     }
     return @{};
 }
+- (nullable NSString *)currentVisitorIDSnapshot{
+    return [FTVisitorIDManager sharedInstance].snapshot.value;
+}
 -(void)getLinkRUMDataWithCompletion:(void (^)(NSDictionary * _Nullable))completion{
     dispatch_async(self.rumQueue, ^{
         if (completion) {
@@ -682,7 +792,9 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 }
 #pragma mark ========== FTWKWebViewRumDelegate =============
 - (NSString *)getLastHasReplayViewID{
-    return self.viewReferrerId;
+    return self.rumDependencies.sessionHasReplay != nil
+        ? self.viewReferrerId
+        : nil;
 }
 -(NSString *)getLastViewName{
     return self.viewReferrer;
@@ -693,6 +805,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
 - (void)bindSRInfo:(NSDictionary *)info containerViewID:(NSString *)viewID{
     if (viewID && info) {
         NSDictionary *context = [self rumDynamicProperty];
+        NSString *visitorID = [self currentVisitorIDSnapshot];
         dispatch_async(self.rumQueue, ^{
             @try {
                 FTRUMSRLinkInfoData *model = [[FTRUMSRLinkInfoData alloc]init];
@@ -700,6 +813,7 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
                 model.tags = @{};
                 model.view_id = viewID;
                 model.fields = info;
+                model.visitorIDSnapshot = visitorID;
                 [self process:model context:context];
             } @catch (NSException *exception) {
                 FTInnerLogError(@"exception %@",exception);
@@ -719,7 +833,8 @@ void *FTRUMQueueIdentityKey = &FTRUMQueueIdentityKey;
     }
 }
 - (void)dealloc{
-    [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:self];
+    self.rumDependencies.appStateHistory.delegate = nil;
+    [self.rumDependencies.appStateHistory stopMonitoring];
     [[FTModuleManager sharedInstance] removeMessageReceiver:self];
 }
 @end

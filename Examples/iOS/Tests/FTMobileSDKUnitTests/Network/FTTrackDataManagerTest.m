@@ -44,6 +44,19 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t networkQueue;
 @end
 
+@interface FTUploadSchedulingProbe : FTDataUploadWorker
+@property (nonatomic, assign) NSUInteger timerSchedules;
+@end
+@interface FTDataUploadWorker (FTUploadSchedulingProbe)
+- (void)scheduleDelayedUploadTimer;
+@end
+@implementation FTUploadSchedulingProbe
+- (void)scheduleDelayedUploadTimer {
+    self.timerSchedules++;
+    [super scheduleDelayedUploadTimer];
+}
+@end
+
 @implementation FTTrackDataManagerTest
 
 - (void)setUp {
@@ -286,6 +299,28 @@
         [FTTrackDataManager shutDown];
     }];
     XCTAssertTrue(interval<0.1);
+}
+- (void)testContinuousAutoFlushKeepsFirstUploadDeadline {
+    FTUploadSchedulingProbe *worker = [[FTUploadSchedulingProbe alloc] initWithSyncPageSize:10 syncSleepTime:0];
+    @try {
+        // Queue a burst before the timer runs. New requests must join the
+        // existing reservation instead of pushing its deadline back.
+        dispatch_sync(worker.networkQueue, ^{
+            for (NSUInteger i = 0; i < 100; i++) [worker flushWithSleep:YES];
+        });
+        dispatch_sync(worker.networkQueue, ^{});
+        XCTAssertEqual(worker.timerSchedules, 1u);
+        [NSThread sleepForTimeInterval:0.2];
+        dispatch_sync(worker.networkQueue, ^{});
+        XCTAssertTrue(worker.isUploading);
+        XCTAssertFalse(worker.hasPendingUpload);
+        [worker cancelSynchronously];
+        [worker flushWithSleep:YES];
+        dispatch_sync(worker.networkQueue, ^{});
+        XCTAssertEqual(worker.timerSchedules, 2u);
+    } @finally {
+        [worker cancelSynchronously];
+    }
 }
 - (void)testDelayedUploadReservesUploadSlotBeforeUploadStarts{
     [FTTrackDataManager startWithAutoSync:NO syncPageSize:10 syncSleepTime:0];
@@ -824,7 +859,8 @@
             [logRequestStarted fulfill];
         }
         if ([uploadType isEqualToString:@"logging"]) {
-            dispatch_semaphore_wait(allowLogResponse, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)));
+            // Keep this request in flight until the test explicitly completes shutdown.
+            dispatch_semaphore_wait(allowLogResponse, DISPATCH_TIME_FOREVER);
             NSString *data = [FTJSONUtil convertToJsonData:@{@"data":@"retry later",@"code":@501}];
             return [OHHTTPStubsResponse responseWithData:[data dataUsingEncoding:NSUTF8StringEncoding] statusCode:501 headers:nil];
         }
@@ -845,7 +881,7 @@
         [self addLogBacklog:30 prefix:@"testLargeBacklogRetryShutdownStopsNextPassAndKeepsPendingData-log"];
 
         [[FTTrackDataManager sharedInstance] flushSyncData];
-        [self waitForExpectations:@[logRequestStarted] timeout:2];
+        [self waitForExpectations:@[logRequestStarted] timeout:5];
 
         [FTTrackDataManager shutDown];
         dispatch_semaphore_signal(allowLogResponse);
@@ -865,8 +901,9 @@
         XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getDatasCountWithType:FT_DATA_TYPE_RUM], 6);
         XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getDatasCountWithType:FT_DATA_TYPE_LOGGING], 30);
     } @finally {
-        dispatch_semaphore_signal(allowLogResponse);
         [FTTrackDataManager shutDown];
+        dispatch_semaphore_signal(allowLogResponse);
+        dispatch_sync(worker.networkQueue, ^{});
         [OHHTTPStubs removeStub:stub];
     }
 }
@@ -1105,7 +1142,8 @@
             }
         }
         if (shouldWait) {
-            dispatch_semaphore_wait(allowResponse, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)));
+            // Hold the response until shutdown, regardless of how late the test thread resumes.
+            dispatch_semaphore_wait(allowResponse, DISPATCH_TIME_FOREVER);
         }
         NSString *data = [FTJSONUtil convertToJsonData:@{@"data":@"Hello World!",@"code":@403}];
         return [OHHTTPStubsResponse responseWithData:[data dataUsingEncoding:NSUTF8StringEncoding] statusCode:403 headers:nil];
@@ -1117,18 +1155,25 @@
     [FTTrackDataManager startWithAutoSync:NO syncPageSize:1 syncSleepTime:0];
     [[FTTrackDataManager sharedInstance] addTrackData:[FTModelHelper createRUMModel:@"testShutdownStopsRetryForInFlightFailedUpload"] type:FTAddDataRUM];
     FTDataUploadWorker *worker = [FTTrackDataManager sharedInstance].dataUploadWorker;
-    [[FTTrackDataManager sharedInstance] flushSyncData];
-    [self waitForExpectations:@[requestStarted] timeout:2];
+    @try {
+        [[FTTrackDataManager sharedInstance] flushSyncData];
+        [self waitForExpectations:@[requestStarted] timeout:5];
 
-    [FTTrackDataManager shutDown];
-    dispatch_semaphore_signal(allowResponse);
-    dispatch_sync(worker.networkQueue, ^{});
+        [FTTrackDataManager shutDown];
+        dispatch_semaphore_signal(allowResponse);
+        dispatch_sync(worker.networkQueue, ^{});
 
-    @synchronized (self) {
-        XCTAssertEqual(requestCount, 1);
+        @synchronized (self) {
+            XCTAssertEqual(requestCount, 1);
+        }
+        XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getUploadDatasCount], 1);
+    } @finally {
+        // Always unblock the stub, including when an expectation or assertion fails.
+        [FTTrackDataManager shutDown];
+        dispatch_semaphore_signal(allowResponse);
+        dispatch_sync(worker.networkQueue, ^{});
+        [OHHTTPStubs removeStub:stub];
     }
-    XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getUploadDatasCount], 1);
-    [OHHTTPStubs removeStub:stub];
 }
 - (void)testShutdownCommitsSuccessfulInFlightUploadAndStopsNextBatch{
     [FTTrackDataManager shutDown];
@@ -1151,7 +1196,8 @@
             }
         }
         if (shouldWait) {
-            dispatch_semaphore_wait(allowResponse, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)));
+            // Hold the response until shutdown, regardless of how late the test thread resumes.
+            dispatch_semaphore_wait(allowResponse, DISPATCH_TIME_FOREVER);
         }
         NSString *data = [FTJSONUtil convertToJsonData:@{@"data":@"Hello World!",@"code":@200}];
         return [OHHTTPStubsResponse responseWithData:[data dataUsingEncoding:NSUTF8StringEncoding] statusCode:200 headers:nil];
@@ -1164,18 +1210,25 @@
     [[FTTrackDataManager sharedInstance] addTrackData:[FTModelHelper createRUMModel:@"testShutdownCommitsSuccessfulInFlightUploadAndStopsNextBatch-1"] type:FTAddDataRUM];
     [[FTTrackDataManager sharedInstance] addTrackData:[FTModelHelper createRUMModel:@"testShutdownCommitsSuccessfulInFlightUploadAndStopsNextBatch-2"] type:FTAddDataRUM];
     FTDataUploadWorker *worker = [FTTrackDataManager sharedInstance].dataUploadWorker;
-    [[FTTrackDataManager sharedInstance] flushSyncData];
-    [self waitForExpectations:@[requestStarted] timeout:2];
+    @try {
+        [[FTTrackDataManager sharedInstance] flushSyncData];
+        [self waitForExpectations:@[requestStarted] timeout:5];
 
-    [FTTrackDataManager shutDown];
-    dispatch_semaphore_signal(allowResponse);
-    dispatch_sync(worker.networkQueue, ^{});
+        [FTTrackDataManager shutDown];
+        dispatch_semaphore_signal(allowResponse);
+        dispatch_sync(worker.networkQueue, ^{});
 
-    @synchronized (self) {
-        XCTAssertEqual(requestCount, 1);
+        @synchronized (self) {
+            XCTAssertEqual(requestCount, 1);
+        }
+        XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getUploadDatasCount], 1);
+    } @finally {
+        // Always unblock the stub, including when an expectation or assertion fails.
+        [FTTrackDataManager shutDown];
+        dispatch_semaphore_signal(allowResponse);
+        dispatch_sync(worker.networkQueue, ^{});
+        [OHHTTPStubs removeStub:stub];
     }
-    XCTAssertEqual([[FTTrackerEventDBTool sharedManager] getUploadDatasCount], 1);
-    [OHHTTPStubs removeStub:stub];
 }
 - (void)testRequestCreationFailureStopsUploadWithoutRetry{
     [FTTrackDataManager shutDown];

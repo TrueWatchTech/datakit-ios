@@ -75,11 +75,17 @@ static NSObject *sharedInstanceLock;
 - (void)onCreateView:(NSString *)viewName loadTime:(NSNumber *)loadTime{
     [self.rumManager onCreateView:viewName loadTime:loadTime];
 }
+- (void)onCreateView:(NSString *)viewName loadTime:(NSNumber *)loadTime loadStartEpochNs:(NSNumber *)loadStartEpochNs {
+    [self.rumManager onCreateView:viewName loadTime:loadTime loadStartEpochNs:loadStartEpochNs];
+}
 - (void)startViewWithName:(NSString *)viewName {
     [self.rumManager startViewWithName:viewName];
 }
 - (void)startViewWithName:(NSString *)viewName property:(NSDictionary *)property{
     [self.rumManager startViewWithName:viewName property:[property ft_deepCopy]];
+}
+- (void)startViewWithName:(NSString *)viewName property:(nullable NSDictionary *)property trackingType:(FTRUMViewTrackingType)trackingType {
+    [self.rumManager startViewWithName:viewName property:[property ft_deepCopy] trackingType:trackingType];
 }
 - (void)stopView{
     [self.rumManager stopView];
@@ -157,10 +163,12 @@ static NSObject *sharedInstanceLock;
                                 errorInfoWrapper:(FTErrorMonitorInfo *)errorInfoWrapper{
     FTRUMDependencies *dependencies = [[FTRUMDependencies alloc]init];
     dependencies.appId = rumConfig.appid;
+    dependencies.nextViewActionPredicate = rumConfig.nextViewActionPredicate;
+    dependencies.networkSettledResourcePredicate = rumConfig.networkSettledResourcePredicate;
     dependencies.monitor = monitor;
     dependencies.writer = writer;
-    dependencies.sessionOnErrorSampleRate = rumConfig.sessionOnErrorSampleRate;
-    dependencies.sampleRate = rumConfig.sampleRate;
+    dependencies.sessionOnErrorSampleRate = rumConfig.sessionOnErrorSamplingRate;
+    dependencies.sampleRate = rumConfig.sessionSamplingRate;
     dependencies.enableResourceHostIP = rumConfig.enableResourceHostIP;
     dependencies.enableTraceUserAction = rumConfig.enableTraceUserAction;
     dependencies.errorMonitorInfoWrapper = errorInfoWrapper;
@@ -223,7 +231,7 @@ static NSObject *sharedInstanceLock;
 - (void)setupWebViewAndExternalDataWithRumConfig:(FTRumConfig *)rumConfig{
     [FTExternalDataManager sharedManager].delegate = self.rumManager;
 }
--(void)updateSampleRate:(int)sampleRate sessionOnErrorSampleRate:(int)sessionOnErrorSampleRate{
+-(void)updateSampleRate:(float)sampleRate sessionOnErrorSampleRate:(float)sessionOnErrorSampleRate{
     [self.rumManager updateSampleRate:sampleRate sessionOnErrorSampleRate:sessionOnErrorSampleRate];
 }
 #pragma mark ========== FTRunloopDetectorDelegate ==========

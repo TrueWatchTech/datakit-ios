@@ -20,6 +20,7 @@
 
 #import <XCTest/XCTest.h>
 #import "TestLongTaskVC.h"
+#import "DemoViewController.h"
 #import "FTMobileAgent.h"
 #import "FTMobileAgent+Private.h"
 #import "FTTrackerEventDBTool.h"
@@ -30,14 +31,32 @@
 #import <KIF/KIF.h>
 #import "FTModelHelper.h"
 #import "FTRUMManager.h"
+#import "FTRUMDependencies.h"
 #import "FTGlobalRumManager+Private.h"
 #import "FTLongTaskManager+Test.h"
 #import "FTTestUtils.h"
+#import "FTAppLifeCycle.h"
+#import "FTDateUtil.h"
 @interface FTLongTaskTest : KIFTestCase
 @property (nonatomic, copy, nullable) FTIssueDataProvider issueDataProvider;
+@property (nonatomic, strong) UIWindow *testWindow;
+@property (nonatomic, strong) UIWindow *hostWindow;
 @end
 @implementation FTLongTaskTest
 -(void)setUp{
+    [super setUp];
+    self.hostWindow = UIApplication.sharedApplication.keyWindow;
+    // Own the navigation state rather than relying on the preceding KIF test's page or tab.
+    if (self.hostWindow.windowScene) {
+        self.testWindow = [[UIWindow alloc] initWithWindowScene:self.hostWindow.windowScene];
+    } else {
+        self.testWindow = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
+    }
+    DemoViewController *home = [DemoViewController new];
+    home.title = @"home";
+    self.testWindow.rootViewController = [[UINavigationController alloc] initWithRootViewController:home];
+    [self.testWindow makeKeyAndVisible];
+    [tester waitForTappableViewWithAccessibilityLabel:@"TrackAppLongTask"];
     NSString *pathString = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject];
     pathString = [pathString stringByAppendingPathComponent:@"FTLongTask.txt"];
     NSError *error;
@@ -45,8 +64,14 @@
 }
 -(void)tearDown{
     self.issueDataProvider = nil;
-    [[tester waitForViewWithAccessibilityLabel:@"home"] tap];
-    [NSThread sleepForTimeInterval:1];
+    // KIF failures can skip the shutdown at the end of a test body.
+    [FTMobileAgent shutDown];
+    self.testWindow.hidden = YES;
+    self.testWindow.rootViewController = nil;
+    self.testWindow = nil;
+    [self.hostWindow makeKeyAndVisible];
+    self.hostWindow = nil;
+    [super tearDown];
 }
 - (void)initSDKWithEnableTrackAppANR:(BOOL)enable longTask:(BOOL)longTask{
     NSProcessInfo *processInfo = [NSProcessInfo processInfo];
@@ -68,7 +93,7 @@
     [self initSDKWithEnableTrackAppANR:YES longTask:YES];
     NSInteger lastCount = [[FTTrackerEventDBTool sharedManager] getDatasCountWithType:FT_DATA_TYPE_RUM];
     
-    [[tester waitForViewWithAccessibilityLabel:@"TrackAppLongTask"] tap];
+    [tester tapViewWithAccessibilityLabel:@"TrackAppLongTask"];
     
     XCTestExpectation *expect = [self expectationWithDescription:@"Request timeout!"];
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -92,9 +117,50 @@
     [FTMobileAgent shutDown];
 }
 
+- (void)testLongTaskUsesObservedIntervalWhileANRKeepsErrorSituation {
+    [self initSDKWithEnableTrackAppANR:YES longTask:YES];
+    [FTModelHelper startViewWithName:@"tracked-anr-state"];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+    FTLongTaskManager *manager = [[FTGlobalRumManager sharedInstance] valueForKey:@"longTaskManager"];
+    long long startTime = [NSDate ft_currentNanosecondTimeStamp] - 6000000000LL;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"dependencies"];
+    id<FTRUMAppStateHistoryDelegate> stateDelegate = dependencies.appStateHistory.delegate;
+    [dependencies.appStateHistory stopMonitoring];
+    dependencies.appStateHistory = [[FTRUMAppStateHistory alloc] initWithState:@"foreground"
+                                                                          timeNs:startTime - 1];
+    dependencies.appStateHistory.delegate = stateDelegate;
+    [dependencies.appStateHistory startMonitoring];
+    [manager startLongTask:startTime];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
+    [manager endLongTask];
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+
+    __block BOOL foundLongTask = NO;
+    __block BOOL foundANR = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_LONG_TASK]) {
+            foundLongTask = YES;
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground_and_background");
+            XCTAssertEqualObjects(fields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_SDK_INIT);
+            XCTAssertNil(fields[@"process_start_time_ns"]);
+        }
+        if ([source isEqualToString:FT_RUM_SOURCE_ERROR] && [tags[FT_KEY_ERROR_TYPE] isEqualToString:@"anr_error"]) {
+            foundANR = YES;
+            XCTAssertNil(fields[@"app_state"]);
+            XCTAssertNotNil(tags[FT_KEY_ERROR_SITUATION]);
+            XCTAssertEqualObjects(fields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_SDK_INIT);
+            XCTAssertNil(fields[@"process_start_time_ns"]);
+        }
+    }];
+    XCTAssertTrue(foundLongTask);
+    XCTAssertTrue(foundANR);
+    [FTMobileAgent shutDown];
+}
+
 - (void)testNoTrackLongTask{
     [self initSDKWithEnableTrackAppANR:NO longTask:NO];
-    [[tester waitForViewWithAccessibilityLabel:@"TrackAppLongTask"] tap];
+    [tester tapViewWithAccessibilityLabel:@"TrackAppLongTask"];
     
     XCTestExpectation *expect = [self expectationWithDescription:@"Request Time!"];
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -357,6 +423,7 @@
             XCTAssertTrue([fields[FT_KEY_VIEW_UPDATE_TIME] isEqual:@2]);
             XCTAssertTrue([fields[FT_KEY_VIEW_ERROR_COUNT] isEqual:@1]);
             XCTAssertTrue([fields[FT_KEY_TIME_SPENT] isEqual:@5667554048]);
+            XCTAssertEqualObjects(fields[@"app_state"], @"unknown");
             XCTAssertEqualWithAccuracy([fields[FT_KEY_VIEW_LONG_TASK_RATE] doubleValue], 0.9613205417816246, 0.000001);
             hasView = YES;
         }

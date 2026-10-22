@@ -28,7 +28,7 @@
 #import "FTInnerLog.h"
 #import <objc/runtime.h>
 
-NSString * const FTURLConnectionRequestOwnerPropertyKey = @"com.truewatch.sdk.urlconnection.owner";
+NSString * const FTURLConnectionRequestOwnerPropertyKey = @"com.ft.sdk.urlconnection.owner";
 
 BOOL FTRequestIsOwnedByURLConnection(NSURLRequest *request) {
     if (!request) {
@@ -194,15 +194,15 @@ static NSUInteger nextGeneration;
 
 - (void)setTraceEnableAutoTrace:(BOOL)enabled
               enableLinkRumData:(BOOL)enableLinkRumData
-                     sampleRate:(int)sampleRate
+              traceSamplingRate:(float)traceSamplingRate
                       traceType:(NetworkTraceType)traceType
                traceInterceptor:(TraceInterceptor)traceInterceptor
                     serviceName:(NSString *)serviceName {
-    self.tracer = [[FTTracer alloc] initWithSampleRate:sampleRate
-                                             traceType:traceType
-                                           serviceName:serviceName
-                                       enableAutoTrace:enabled
-                                     enableLinkRumData:enableLinkRumData];
+    self.tracer = [[FTTracer alloc] initWithTraceSamplingRate:traceSamplingRate
+                                                    traceType:traceType
+                                                  serviceName:serviceName
+                                              enableAutoTrace:enabled
+                                            enableLinkRumData:enableLinkRumData];
     self.traceInterceptor = traceInterceptor;
     self.shouldTraceInterceptor = enabled;
     if (enabled) {
@@ -210,8 +210,8 @@ static NSUInteger nextGeneration;
     }
 }
 
-- (void)updateTraceSampleRate:(int)sampleRate {
-    [self.tracer updateTraceSampleRate:sampleRate];
+- (void)updateTraceSamplingRate:(float)traceSamplingRate {
+    [self.tracer updateTraceSamplingRate:traceSamplingRate];
 }
 
 - (void)updateResourceEnabled:(BOOL)enabled {

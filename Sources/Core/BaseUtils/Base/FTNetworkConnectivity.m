@@ -141,7 +141,8 @@ typedef NS_ENUM(NSInteger, FTNetworkStatus) {
     return @{FT_KEY_NETWORK_AVAILABLE:@(self.networkAvailable)};
 }
 -(void)setNetworkStatus:(FTNetworkStatus)networkStatus{
-    self.networkType = [self networkTypeWithStatus:networkStatus];
+    _networkStatus = networkStatus;
+    self.networkType = [self networkTypeWithStatus:_networkStatus];
 }
 - (void)connectivityChanged{
     NSArray *observers = nil;
@@ -208,12 +209,10 @@ typedef NS_ENUM(NSInteger, FTNetworkStatus) {
             if (!currentStatus) {
                 return FTConnectivityUnknown;
             }
-            if (@available(iOS 14.1, *)) {
-                NSArray *typeStrings5G = @[CTRadioAccessTechnologyNRNSA,
-                                           CTRadioAccessTechnologyNR];
-                if ([typeStrings5G containsObject:currentStatus]) {
-                    return @"5G";
-                }
+            NSArray *typeStrings5G = @[CTRadioAccessTechnologyNRNSA,
+                                       CTRadioAccessTechnologyNR];
+            if ([typeStrings5G containsObject:currentStatus]) {
+                return @"5G";
             }
             if ([typeStrings4G containsObject:currentStatus]) {
                 return @"4G";

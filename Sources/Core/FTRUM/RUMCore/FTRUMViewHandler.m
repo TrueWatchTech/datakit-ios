@@ -19,9 +19,13 @@
 //
 
 #import "FTRUMViewHandler.h"
+#import "FTRUMViewMetrics.h"
+#import "FTRUMNetworkSettledMetric.h"
+#import "FTRUMDependencies.h"
 #import "FTRUMActionHandler.h"
 #import "FTRUMResourceHandler.h"
 #import "FTConstants.h"
+#import "FTInternalConstants.h"
 #import "NSDate+FTUtil.h"
 #import "FTBaseInfoHandler.h"
 #import "FTMonitorItem.h"
@@ -42,6 +46,13 @@
 @property (nonatomic, assign) NSInteger viewActionCount;
 @property (nonatomic, assign) BOOL didReceiveStartData;
 @property (nonatomic, strong) NSDate *viewStartTime;
+@property (nonatomic, strong, nullable, readwrite) FTRUMViewMetrics *metrics;
+@property (nonatomic, strong, nullable) FTRUMNetworkSettledMetric *networkMetric;
+@property (nonatomic, strong, nullable) NSNumber *interactionTime;
+@property (nonatomic, strong, nullable) NSNumber *networkSettledTime;
+@property (nonatomic, assign) BOOL closed;
+@property (nonatomic, strong) NSDate *latestEventTime;
+@property (nonatomic, assign) long long loadingStartEpochNs;
 @property (nonatomic, assign) BOOL needUpdateView;
 @property (nonatomic, strong) FTMonitorItem *monitorItem;
 @property (nonatomic, strong) NSMutableDictionary *viewProperty;//Stored in field
@@ -60,14 +71,19 @@
     if (self) {
         self.assistant = self;
         self.isActiveView = YES;
+        _trackingType = model.trackingType;
         self.fallbackView = NO;
         self.updateTime = 0;
         self.view_id = model.view_id;
         self.view_name = model.view_name;
         self.view_referrer = model.view_referrer;
         self.loading_time = model.loading_time;
+        self.loadingStartEpochNs = model.loading_start_epoch_ns ? model.loading_start_epoch_ns.longLongValue : [model.time ft_nanosecondTimeStamp];
         self.didReceiveStartData = NO;
         self.viewStartTime = model.time;
+        self.latestEventTime = model.time;
+        self.metrics = [[FTRUMViewMetrics alloc] initWithStartNs:model.tm predicate:rumDependencies.nextViewActionPredicate];
+        self.networkMetric = [[FTRUMNetworkSettledMetric alloc] initWithStartNs:model.tm viewName:model.view_name predicate:rumDependencies.networkSettledResourcePredicate];
         self.resourceHandlers = [NSMutableDictionary new];
         self.viewProperty = [NSMutableDictionary new];
         self.rumDependencies = rumDependencies;
@@ -85,7 +101,44 @@
     }
     return self;
 }
+- (void)setFallbackView:(BOOL)fallbackView {
+    _fallbackView = fallbackView;
+    if (fallbackView) {
+        // Fallbacks preserve their ordinary event lifecycle, but own no timing metrics.
+        self.metrics = nil;
+        self.previousViewMetrics = nil;
+        self.networkMetric = nil;
+        self.interactionTime = nil;
+        self.networkSettledTime = nil;
+    }
+}
 - (BOOL)process:(FTRUMDataModel *)model context:(nonnull NSDictionary *)context{
+    if (self.closed) return NO;
+    if ([model isKindOfClass:FTRUMResourceModel.class]) {
+        NSString *owner = ((FTRUMResourceModel *)model).ownerViewID;
+        if (owner && ![owner isEqualToString:self.view_id]) return YES;
+    }
+    if ([model.time compare:self.latestEventTime] == NSOrderedDescending) self.latestEventTime = model.time;
+    if (model.type == FTRUMDataAppStateChange) {
+        FTRUMAppStateChangeModel *stateModel = (FTRUMAppStateChangeModel *)model;
+        if (stateModel.appState != FTRUMAppStateBackgroundOnly || !self.isActiveView || self.fallbackView ||
+            self.trackingType != FTRUMViewTrackingTypeAutomatic ||
+            (stateModel.timeComparable && [model.time compare:self.viewStartTime] == NSOrderedAscending)) {
+            return self.isActiveView || self.resourceHandlers.count > 0;
+        }
+        // Reuse Stop so the associated Action closes at the same lifecycle boundary.
+        FTRUMViewModel *stopModel = [[FTRUMViewModel alloc] initWithViewID:self.view_id viewName:self.view_name viewReferrer:self.view_referrer];
+        stopModel.type = FTRUMDataViewStop;
+        stopModel.time = model.time;
+        return [self process:stopModel context:context];
+    }
+    if (model.type == FTRUMDataViewStop) {
+        FTRUMViewModel *stopModel = (FTRUMViewModel *)model;
+        // A duplicate or unrelated Stop must not affect this View or its Action.
+        if (!self.isActiveView || ![self.view_id isEqualToString:stopModel.view_id]) {
+            return self.isActiveView || self.resourceHandlers.count > 0;
+        }
+    }
     self.needUpdateView = NO;
     NSDate *viewEndTime = model.time;
     self.actionHandler =(FTRUMActionHandler *)[self.assistant manage:(FTRUMHandler *)self.actionHandler byPropagatingData:model context:context];
@@ -108,6 +161,7 @@
             if (self.isActiveView) {
                 FTRUMViewLoadingModel *loadingModel = (FTRUMViewLoadingModel *)model;
                 self.loading_time = loadingModel.duration;
+                self.loadingStartEpochNs = [self.viewStartTime ft_nanosecondTimeStamp];
             }
             break;
         case FTRUMDataViewStop:{
@@ -121,6 +175,7 @@
             }
         }
             break;
+
         case FTRUMDataStartAction:
             if (self.isActiveView && self.actionHandler == nil) {
                 [self startAction:model];
@@ -162,11 +217,14 @@
                 [self writeErrorData:model context:context];
             }
             break;
-        case FTRUMDataResourceStart:
-            if (self.isActiveView) {
-                [self startResource:(FTRUMResourceDataModel *)model];
+        case FTRUMDataResourceStart: {
+            FTRUMResourceDataModel *resource = (FTRUMResourceDataModel *)model;
+            BOOL belongsHere = !resource.ownerViewID || [resource.ownerViewID isEqualToString:self.view_id];
+            if (belongsHere && (self.isActiveView || self.resourceHandlers[resource.identifier]) && !self.resourceHandlers[resource.identifier]) {
+                [self startResource:resource];
             }
             break;
+        }
         case FTRUMDataLongTask:
             if (self.isActiveView) {
                 self.viewLongTaskCount++;
@@ -195,13 +253,31 @@
     
     BOOL hasNoPendingResources = self.resourceHandlers.count == 0;
     BOOL shouldComplete = !self.isActiveView && hasNoPendingResources;
+    [self updateNetworkSettledTime];
+    if (self.needUpdateView) self.interactionTime = [self.previousViewMetrics interactionToViewAt:self.metrics.startNs name:self.view_name];
     if (shouldComplete) {
-        [self.actionHandler writeActionData:[NSDate date] context:context];
+        [self.actionHandler writeActionData:viewEndTime context:context];
     }
     if (self.needUpdateView) {
         [self writeViewDataWithContext:context viewEndTime:viewEndTime];
     }
+    self.closed = shouldComplete;
     return !shouldComplete;
+}
+
+- (void)updateNetworkSettledTime {
+    NSNumber *value = [self.networkMetric valueWithHistory:self.rumDependencies.appStateHistory];
+    if (value == self.networkSettledTime || (value && self.networkSettledTime && [value isEqualToNumber:self.networkSettledTime])) return;
+    self.networkSettledTime = value;
+    self.needUpdateView = YES;
+}
+
+- (void)refreshInteractionMetricWithContext:(NSDictionary *)context {
+    if (self.closed) return;
+    NSNumber *value = [self.previousViewMetrics interactionToViewAt:self.metrics.startNs name:self.view_name];
+    if (value == self.interactionTime || (value && self.interactionTime && [value isEqualToNumber:self.interactionTime])) return;
+    self.interactionTime = value;
+    [self writeViewDataWithContext:context viewEndTime:self.latestEventTime];
 }
 
 - (BOOL)isHotLaunchActionModel:(FTRUMDataModel *)model {
@@ -217,8 +293,11 @@
 - (void)updateViewStartTimeIfEarlierThan:(NSDate *)time {
     if (time && [time compare:self.viewStartTime] == NSOrderedAscending) {
         self.viewStartTime = time;
+        [self.metrics moveStartEarlierTo:[time ft_nanosecondTimeStamp]];
+        [self.networkMetric moveStartEarlierTo:[time ft_nanosecondTimeStamp]];
     }
 }
+
 
 - (void)writeLaunchData:(FTRUMLaunchDataModel *)model context:(NSDictionary *)context {
     NSMutableDictionary *tags = [NSMutableDictionary dictionary];
@@ -247,6 +326,8 @@
 - (void)startAction:(FTRUMDataModel *)model{
     __weak typeof(self) weakSelf = self;
     FTRUMActionHandler *actionHandler = [[FTRUMActionHandler alloc]initWithModel:(FTRUMActionModel *)model context:self.context dependencies:self.rumDependencies];
+    FTRUMViewMetrics *metrics = self.metrics;
+    actionHandler.acceptedActionHandler = ^(long long startNs, NSString *name, NSString *type) { [metrics recordActionStart:startNs name:name type:type]; };
     actionHandler.handler = ^{
         __strong __typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf) return;
@@ -261,6 +342,8 @@
     __weak typeof(self) weakSelf = self;
     FTRUMActionHandler *actionHandler = [[FTRUMActionHandler alloc]initWithModel:(FTRUMActionModel *)model context:self.context dependencies:self.rumDependencies];
     model.type = FTRUMDataStopAction;
+    FTRUMViewMetrics *metrics = self.metrics;
+    actionHandler.acceptedActionHandler = ^(long long startNs, NSString *name, NSString *type) { [metrics recordActionStart:startNs name:name type:type]; };
     actionHandler.handler = ^{
         __strong __typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf) return;
@@ -271,7 +354,7 @@
 }
 - (void)startResource:(FTRUMResourceDataModel *)model{
     __weak typeof(self) weakSelf = self;
-    FTRUMResourceHandler *resourceHandler = [[FTRUMResourceHandler alloc] initWithModel:model context:self.context dependencies:self.rumDependencies];
+    FTRUMResourceHandler *resourceHandler = [[FTRUMResourceHandler alloc] initWithModel:model context:self.context dependencies:self.rumDependencies networkMetric:self.networkMetric];
     resourceHandler.resourceHandler = ^(BOOL add){
         __strong __typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf) return;
@@ -301,6 +384,12 @@
     NSMutableDictionary *fields = [NSMutableDictionary new];
     [fields addEntriesFromDictionary:model.fields];
     [fields addEntriesFromDictionary:self.context.sessionState.sessionFields];
+    if (model.type == FTRUMDataLongTask) {
+        long long eventStart = model.tm;
+        long long duration = [model.fields[FT_DURATION] longLongValue];
+        fields[@"app_state"] = [self.rumDependencies.appStateHistory stateFrom:eventStart
+                                                                                              duration:duration];
+    }
     if (self.rumDependencies.sessionHasReplay != nil) {
         BOOL sessionHasReplay = self.sessionHasReplay || self.rumDependencies.sessionHasReplay.boolValue;
         [fields setValue:@(sessionHasReplay) forKey:FT_SESSION_HAS_REPLAY];
@@ -370,6 +459,16 @@
         [fields setValue:self.loading_time forKey:FT_KEY_LOADING_TIME];
     }
     [fields addEntriesFromDictionary:self.context.sessionState.sessionFields];
+    // These are SDK-owned duration fields. Custom View/session properties cannot fabricate them.
+    [fields removeObjectForKey:FT_KEY_INTERACTION_TO_NEXT_VIEW_TIME];
+    [fields removeObjectForKey:FT_KEY_NETWORK_SETTLED_TIME];
+    [fields setValue:self.interactionTime forKey:FT_KEY_INTERACTION_TO_NEXT_VIEW_TIME];
+    [fields setValue:self.networkSettledTime forKey:FT_KEY_NETWORK_SETTLED_TIME];
+    long long viewEndNs = [viewEndTime ft_nanosecondTimeStamp];
+    long long stateStartNs = self.loadingStartEpochNs;
+    fields[@"app_state"] = viewEndNs == stateStartNs
+        ? [self.rumDependencies.appStateHistory stateAt:stateStartNs]
+        : [self.rumDependencies.appStateHistory stateFrom:stateStartNs to:viewEndNs];
 
     long long time = [self.viewStartTime ft_nanosecondTimeStamp];
     [self.rumDependencies.writer rumWrite:FT_RUM_SOURCE_VIEW tags:tags fields:fields dynamicContext:context?:@{} time:time updateTime:[viewEndTime ft_nanosecondTimeStamp]];

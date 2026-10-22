@@ -1,7 +1,87 @@
+# 1.6.8
+
+1. **Breaking:** Raised minimum supported versions to iOS 15, tvOS 15, and macOS 12.
+2. Added opt-in SDK-managed Visitor ID support through `FTRumConfig.visitorIDConfig`, including a configurable TTL, automatic request header injection for matching URLSession requests, native RUM correlation, manual reset, and host allowlist-controlled Visitor ID sharing in WebViews.
+3. Added RUM View metrics `interaction_to_next_view_time` and `network_settled_time` to measure the time from a click interaction to the next View start and the time from a View start until its initial network requests complete, respectively. Matching rules are configurable through `FTRumConfig.nextViewActionPredicate` and `networkSettledResourcePredicate`.
+4. Added automatic NSURLConnection RUM Resource collection and Trace correlation, enabled through `FTRumConfig.enableTraceURLConnectionResource` and `FTTraceConfig.enableAutoTraceURLConnection`; both default to disabled.
+5. Added WebView Log Bridge support through `FTLoggerConfig.enableWebViewLog` for Browser Logger API calls, console logs, and JavaScript error logs, using the shared host allowlist and supporting remote configuration.
+6. Added macOS Electron RUM and Session Replay integration, including Full Mode, Native-owned Mixed Mode, multi-process isolation, and Universal native runtime package distribution.
+7. Added automatic Session Replay shutdown when `FTSDKAgent.shutDown` is called, stopping recording and uploads.
+8. Unified RUM, Log, Trace, and Session Replay sampling APIs with support for fractional percentages, preserving compatibility with deprecated APIs and legacy remote configuration behavior.
+9. Added event interval-based `app_state` reporting for View, Resource, and LongTask events, and `session_start_reason` for native RUM events. Requests that complete later, cached data, and historical ANRs retain the start reason of their associated session; older cached data without this information uses `unknown`. Improved View and Action handling during app foreground and background transitions.
+10. Fixed RUM Resource timing and WebSocket handshake failure classification, and prevented request initiation from being blocked by asynchronous Trace storage.
+11. Improved Long Task detection under delayed scheduling and prevented RunLoop state updates from blocking the main thread. Fixed duplicate ANR reports after RUM session renewal.
+12. Fixed automatic uploads being indefinitely delayed by continuous data writes and corrected network connectivity status updates.
+13. Added general-purpose external Session Replay integration APIs so framework and engine recorders can reuse RUM context, segment storage, image resources, and replay metadata, while coordinating native recorder pause and resume.
+---
+
+# 1.6.8-beta.4
+
+1. same as 1.6.8-beta.1
+---
+
+# 1.6.8-beta.3
+
+1. same as 1.6.8-beta.1
+---
+
+# 1.6.8-beta.2
+
+1. same as 1..6.8-beta.1
+---
+
+# 1.6.8-beta.1
+
+1. Reduced overhead in automatic UIKit View loading-time collection and removed synchronous waits when passing loading data to RUM processing.
+2. Marked `FTRumConfig.nextViewActionPredicate` as unavailable in app extensions and included View timing predicates in configuration debug output.
+3. Fixed Electron Native Runtime validation failures caused by merged Objective-C Categories, with independent checks for arm64 and x86_64.
+---
+
+# 1.6.8-alpha.11
+
+1. Added native Visitor ID sharing in WebViews, with access to the current identifier subject to the WebView host allowlist.
+2. Added RUM View metrics `interaction_to_next_view_time` and `network_settled_time` to measure the time from a click to the next View start and the time for a View's initial network requests to complete. Matching rules are configurable through `FTRumConfig.nextViewActionPredicate` and `networkSettledResourcePredicate`; synthetic fallback Views are excluded.
+3. Added automatic Session Replay shutdown when `FTSDKAgent.shutDown` is called, stopping recording and uploads without exposing a standalone Replay shutdown API.
+4. Removed the `process_start_time_ns` field from RUM events and persisted Session state.
+5. Improved Long Task detection under delayed scheduling and prevented RunLoop state updates from blocking the main thread.
+6. Fixed automatic View tracking order so requests started in `viewDidAppear` are attributed to the newly visible View, without duplicate View events.
+---
+
+# 1.6.8-alpha.10
+
+1. Exposed public APIs required for React Native and Flutter Swift Package Manager integrations, including custom Session Replay recorders, wireframe builders, and external recording.
+2. Improved external Session Replay write ordering, image resource handling for error-sampled sessions, and repeated initialization safety.
+3. Added opt-in SDK-managed Visitor ID support through `FTRumConfig.visitorIDConfig`, including persistent identifiers with configurable fixed TTL, automatic custom-header injection for matching URLSession requests, native RUM `visitor_id` correlation, and manual reset via `+[FTSDKAgent resetVisitorID]`.
+4. Added RUM session start reasons, process start timestamps, and interval-based app state reporting; improved automatic View and Action handling during background transitions.
+5. Fixed prewarmed app launch duration measurement to start from runtime initialization.
+---
+
+# 1.6.8-alpha.9
+
+1. Fixed automatic uploads being indefinitely delayed by continuous data writes by preserving the first scheduled upload deadline.
+---
+# 1.6.8-alpha.8
+
+1. **Breaking:** Raised minimum supported versions to iOS 15, tvOS 15, and macOS 12.
+2. Added optional local SDK diagnostics through CocoaPods (`TrueWatchSDK/Diagnostics`) and Swift Package Manager (`TrueWatchDiagnostics`), with independent lifecycle, bounded storage, and export. Collection is disabled by default and diagnostics are not uploaded automatically.
+3. Added diagnostic observations for storage, batch selection, retries, cleanup, and SDK HTTP upload attempts.
+4. Unified RUM, Log, Trace, and Session Replay sampling APIs with support for fractional percentages, preserving deprecated APIs and legacy remote configuration behavior.
+5. Improved external Session Replay write validation and separated external recorder APIs into dedicated public headers.
+6. Fixed network connectivity status updates and duplicate ANR reports after RUM session renewal.
+7. Completed Widget Extension framework umbrella header exports.
+---
+# 1.6.8-alpha.7
+
+1. Improved multi-process isolation and simplified child process configuration for macOS Electron Native-owned Mixed Mode.
+---
+# 1.6.8-alpha.6
+1. Added macOS Electron Universal runtime packaging and GitHub Actions publishing, with arm64, x86_64, and SHA-256 verification.
+2. Added macOS Electron Full Mode and Native-owned Mixed Mode integration examples.
+3. Merge from 1.6.8-alpha.5.
+---
 # 1.6.8-alpha.5
 1. Merge from 1.6.8-alpha.2 and 1.6.8-alpha.4.
 ---
-
 # 1.6.8-alpha.4
 1. Added automatic NSURLConnection RUM Resource collection and Trace correlation, independently enabled through `FTRumConfig.enableTraceURLConnectionResource` and `FTTraceConfig.enableAutoTraceURLConnection`; both default to disabled.
 2. Added WebView Log Bridge support through `FTLoggerConfig.enableWebViewLog` for Browser Logger API calls and automatic Console and JavaScript error logs, with reduced main-thread processing overhead.
@@ -10,11 +90,17 @@
 5. Fixed numeric conversion overflow at Int64 boundaries in heatmap data.
 6. Fixed RUM Resource timing and WebSocket handshake rejection classification.
 ---
-
+# 1.6.8-alpha.3
+1. Added the macOS `TrueWatchElectronNative` static Swift Package Manager product for building the Electron native runtime bridge.
+2. Reorganized the Electron integration so the Native SDK owns the bridge and Node-API addon sources, while the standalone Electron Adapter repository owns JavaScript adapter code, packaging, and host integration.
+---
 # 1.6.8-alpha.2
 1. Added reusable external Session Replay recorder control for framework integrations, including external-only recording, owner-aware native capture switching, linked RUM context access, enriched segment writes, and image resource storage.
 ---
-
+# 1.6.8-alpha.1
+1. Added `TrueWatchElectronWebView` integration through Swift Package Manager and CocoaPods for macOS Electron Web RUM and Session Replay.
+2. Added Electron Full Mode and Native-owned Mixed Mode, including automatic/manual BrowserWindow attachment and authenticated cross-process Bridge communication.
+---
 # 1.6.7
 1. Added RUM Resource collection for WebSocket handshake requests.
 2. Added `FTRumConfig.issueDataProvider` to attach validated custom fields and historical context to automatically collected Crash and ANR RUM Errors.

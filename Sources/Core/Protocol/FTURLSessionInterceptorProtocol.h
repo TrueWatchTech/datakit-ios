@@ -18,7 +18,6 @@
 //  limitations under the License.
 //
 
-
 #ifndef FTURLSessionInterceptorProtocol_h
 #define FTURLSessionInterceptorProtocol_h
 #import "FTRumResourceProtocol.h"
@@ -95,6 +94,9 @@ typedef BOOL (^SessionTaskErrorFilter)(NSError *_Nonnull error);
 ///
 /// When passing to rum, first call -stopResource, then call -addResourceWithKey
 - (void)taskCompleted:(NSURLSessionTask *)task error:(nullable NSError *)error;
+/// Internal boundary captured before the application completion callback.
+- (void)taskCompleted:(NSURLSessionTask *)task error:(nullable NSError *)error endTime:(uint64_t)endTime;
+- (void)taskCompleted:(NSURLSessionTask *)task error:(nullable NSError *)error extraProvider:(nullable ResourcePropertyProvider)extraProvider errorFilter:(nullable SessionTaskErrorFilter)errorFilter endTime:(uint64_t)endTime;
 
 /// Request end -stopResource
 /// - Parameters:

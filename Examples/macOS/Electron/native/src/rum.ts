@@ -1,0 +1,135 @@
+import { truewatchRum } from '@truewatchtech/browser-rum'
+import { truewatchLogs } from '@truewatchtech/browser-logs'
+
+type RumConfiguration = Parameters<typeof truewatchRum.init>[0]
+export type WebRumStatus = 'active' | 'error'
+export type WebLogLevel = 'debug' | 'info' | 'warn' | 'error'
+
+const bridgeOnlyConfiguration = {
+  // Browser SDK initialization placeholders; events go through the checked bridge.
+  applicationId: 'native-bridge',
+  datakitOrigin: 'http://127.0.0.1:9529',
+} as const
+
+let active = false
+let logsActive = false
+
+function value(name: string): string {
+  return String(import.meta.env[name] || '').trim()
+}
+
+export function initializeWebRUM(info: NativeHostInfo): WebRumStatus {
+  const allowedTracingURL = value('VITE_FT_ALLOWED_TRACING_URL')
+  if (typeof window.FTWebViewJavascriptBridge?.sendEvent !== 'function') {
+    console.error('[TrueWatch Web RUM] Native SDK bridge is unavailable')
+    return 'error'
+  }
+
+  const traceMatcher = allowedTracingURL === '*'
+    ? /.*/
+    : allowedTracingURL
+  const sessionReplay = info.capabilities?.replay === true &&
+    value('VITE_FT_SESSION_REPLAY') !== 'false'
+  const webLogs = info.capabilities?.log === true
+
+  truewatchRum.init({
+    ...bridgeOnlyConfiguration,
+    service: value('VITE_FT_SERVICE') || 'orbitdesk-native-electron',
+    env: value('VITE_FT_ENV') || 'development',
+    version: '1.0.0',
+    sessionSampleRate: 100,
+    sessionReplaySampleRate: sessionReplay ? 100 : 0,
+    trackUserInteractions: true,
+    trackViewsManually: true,
+    sessionPersistence: 'local-storage',
+    ...(traceMatcher
+      ? {
+          allowedTracingUrls: [traceMatcher],
+          traceType: 'ddtrace' as RumConfiguration['traceType'],
+        }
+      : {}),
+    beforeSend: (event) => {
+      if (import.meta.env.DEV) console.debug('[TrueWatch Web RUM]', event.type)
+      return true
+    },
+  })
+
+  if (import.meta.env.DEV) {
+    truewatchRum.stopSession()
+    truewatchRum.startSession({ sessionSampleRate: 100 })
+  }
+
+  const globalContext = {
+    hybrid_architecture: 'native-owner-electron-child-process',
+    electron_instance_id: info.instanceID,
+    electron_process_id: info.processID,
+    electron_web_contents_id: info.webContentsID,
+    electron_surface: info.surface,
+    electron_version: info.electronVersion,
+    desktop_arch: info.arch,
+  }
+  truewatchRum.setGlobalContext(globalContext)
+  if (webLogs) {
+    truewatchLogs.init({
+      datakitOrigin: bridgeOnlyConfiguration.datakitOrigin,
+      service: value('VITE_FT_SERVICE') || 'orbitdesk-native-electron',
+      env: value('VITE_FT_ENV') || 'development',
+      version: '1.0.0',
+      sessionSampleRate: 100,
+      sessionPersistence: 'local-storage',
+      forwardErrorsToLogs: true,
+      beforeSend: (event) => {
+        if (import.meta.env.DEV) {
+          console.debug('[TrueWatch Web Logs]', event.status, event.message)
+        }
+        return true
+      },
+    })
+    truewatchLogs.setGlobalContext(globalContext)
+    logsActive = true
+  }
+  truewatchRum.startView({ name: `Electron · ${surfaceTitle(info.surface)}` })
+  if (sessionReplay) {
+    truewatchRum.startSessionReplayRecording({ force: true })
+    window.setTimeout(() => {
+      window.nativeHost?.setReplayRecording(truewatchRum.isRecording())
+    }, 1000)
+  }
+  active = true
+  sendLog('OrbitDesk external Renderer initialized', {
+    source: 'renderer_startup',
+    surface: info.surface,
+  })
+  return 'active'
+}
+
+export function trackAction(name: string, context?: Record<string, unknown>): void {
+  if (active) truewatchRum.addAction(name, context)
+}
+
+export function reportError(error: Error, context?: Record<string, unknown>): void {
+  if (active) truewatchRum.addError(error, context)
+}
+
+export function sendLog(
+  message: string,
+  context?: Record<string, unknown>,
+  level: WebLogLevel = 'info',
+  error?: Error,
+): boolean {
+  if (!logsActive) return false
+  if (level === 'debug') truewatchLogs.logger.debug(message, context, error)
+  else if (level === 'warn') truewatchLogs.logger.warn(message, context, error)
+  else if (level === 'error') truewatchLogs.logger.error(message, context, error)
+  else truewatchLogs.logger.info(message, context, error)
+  return true
+}
+
+function surfaceTitle(surface: string): string {
+  return ({
+    dashboard: 'Operations Dashboard',
+    tasks: 'Task Center',
+    requests: 'Request Lab',
+    popup: 'Electron Popup',
+  } as Record<string, string>)[surface] || surface
+}

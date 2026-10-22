@@ -43,7 +43,7 @@
 @property (nonatomic, assign) long long lastProcessFatalErrorTime;
 @property (nonatomic, strong) dispatch_queue_t errorSampledConsumeQueue;
 
-- (void)writeSource:(NSString *)source
+- (BOOL)writeSource:(NSString *)source
                  op:(NSString *)op
         contextTags:(NSDictionary *)contextTags
                tags:(NSDictionary *)tags
@@ -94,10 +94,20 @@
         FTInnerLogError(@"exception %@",exception);
     }
 }
+- (BOOL)rumWriteAccepted:(NSString *)source tags:(NSDictionary *)tags fields:(NSDictionary *)fields dynamicContext:(NSDictionary *)dynamicContext time:(long long)time {
+    @try {
+        NSDictionary *context = [NSObject ft_normalizedDictionaryWithObject:dynamicContext];
+        return [self writeSource:source op:self.isCache ? FT_DATA_TYPE_RUM_CACHE : FT_DATA_TYPE_RUM
+                    contextTags:context tags:tags fields:fields time:time updateTime:0 cache:self.isCache];
+    } @catch (NSException *exception) {
+        FTInnerLogError(@"exception %@", exception);
+        return NO;
+    }
+}
 - (void)rumWriteAssembledData:(NSString *)source tags:(NSDictionary *)tags fields:(NSDictionary *)fields time:(long long)time{
     [self writeSource:source op:FT_DATA_TYPE_RUM contextTags:nil tags:tags fields:fields time:time updateTime:0 cache:NO];
 }
-- (void)writeSource:(NSString *)source
+- (BOOL)writeSource:(NSString *)source
                  op:(NSString *)op
         contextTags:(NSDictionary *)contextTags
                tags:(NSDictionary *)tags
@@ -106,9 +116,12 @@
          updateTime:(long long)updateTime
               cache:(BOOL)cache {
     if (![source isKindOfClass:NSString.class] || source.length == 0 || ![op isKindOfClass:NSString.class] || op.length == 0) {
-        return;
+        return NO;
     }
     BOOL webViewLog = [op isEqualToString:FT_DATA_TYPE_LOGGING]
+        && [tags[FT_IS_WEBVIEW] respondsToSelector:@selector(boolValue)]
+        && [tags[FT_IS_WEBVIEW] boolValue];
+    BOOL webViewRUM = ([op isEqualToString:FT_DATA_TYPE_RUM] || [op isEqualToString:FT_DATA_TYPE_RUM_CACHE])
         && [tags[FT_IS_WEBVIEW] respondsToSelector:@selector(boolValue)]
         && [tags[FT_IS_WEBVIEW] boolValue];
     FTPresetProperty *preset = [FTPresetProperty sharedInstance];
@@ -116,6 +129,7 @@
     NSDictionary *eventFields = [preset applyModifier:fields];
     NSDictionary *safeContextTags = [NSObject ft_normalizedDictionaryWithObject:contextTags];
     NSMutableDictionary *tagsDict = [eventTags mutableCopy] ?: [NSMutableDictionary dictionary];
+    id browserVisitorID = webViewRUM ? eventTags[FT_VISITOR_ID] : nil;
     [tagsDict addEntriesFromDictionary:safeContextTags];
     NSDictionary *eventPkgInfo = [eventTags[FT_SDK_PKG_INFO] isKindOfClass:NSDictionary.class]
         ? eventTags[FT_SDK_PKG_INFO] : nil;
@@ -133,6 +147,13 @@
             pkgInfo[@"web"] = browserSDKVersion;
         }
         tagsDict[FT_IS_WEBVIEW] = @(YES);
+    }
+    if (webViewRUM) {
+        if (browserVisitorID) {
+            tagsDict[FT_VISITOR_ID] = browserVisitorID;
+        } else {
+            [tagsDict removeObjectForKey:FT_VISITOR_ID];
+        }
     }
     if (pkgInfo.count > 0) {
         tagsDict[FT_SDK_PKG_INFO] = [pkgInfo copy];
@@ -159,12 +180,12 @@
                                                                     tags:recordTags
                                                                   fields:recordFields
                                                      remoteFilterChecked:&remoteFilterChecked]) {
-            return;
+            return NO;
         }
     }
     FTRecordModel *model = [[FTRecordModel alloc] initWithSource:source op:op tags:recordTags fields:recordFields tm:time];
     if (!model) {
-        return;
+        return NO;
     }
     // View updates keep the event time in payload, but use updateTime for DB tm
     // so error-sampled cache deletion/expiration evaluates the active view by update time.
@@ -182,6 +203,7 @@
     if (cache && [source isEqualToString:FT_RUM_SOURCE_ERROR]) {
         [self lastErrorTimeInterval:model.tm];
     }
+    return YES;
 }
 - (void)extensionRumWrite:(NSString *)source tags:(NSDictionary *)tags fields:(NSDictionary *)fields time:(long long)time{
     if (![source isKindOfClass:NSString.class] || source.length == 0) {

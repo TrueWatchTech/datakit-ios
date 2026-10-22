@@ -1,4 +1,4 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.5
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,11 +6,12 @@ import PackageDescription
 let package = Package(
     name: "TrueWatchSDK",
     platforms: [
-        .iOS(.v12),
-        .macOS(.v10_14),
-        .tvOS(.v12),
+        .iOS(.v15),
+        .macOS(.v12),
+        .tvOS(.v15),
     ],
     products: [
+        .library(name: "TrueWatchDiagnostics", targets: ["TrueWatchDiagnostics"]),
         .library(
             name: "TrueWatchSDK",
             targets: [
@@ -24,69 +25,97 @@ let package = Package(
         ),
         .library(
             name: "TrueWatchSessionReplay",
+            targets: ["TrueWatchSessionReplay"]
+        ),
+        .library(
+            name: "TrueWatchElectronWebView",
             targets: [
+                "TrueWatchSDK",
+                "_AgentShared",
+                "_FTBaseUtils",
+                "_FTLogger",
                 "TrueWatchSessionReplay",
-                "TrueWatchSessionReplaySwiftUI",
+                "TrueWatchElectronWebView",
             ]
+        ),
+        .library(
+            name: "TrueWatchElectronNative",
+            type: .static,
+            targets: ["TrueWatchElectronNative"]
         ),
     ],
     dependencies: [],
     targets: [
+        .target(name: "TrueWatchDiagnostics", dependencies: ["_FTBaseUtils"],
+                path: "Sources/Diagnostics", publicHeadersPath: "include"),
         // MARK: - TrueWatchSDK
         .target(
             name: "TrueWatchSDK",
             dependencies: [
-                "_TrueWatchSDKObjC",
-                "TrueWatchSDKSwiftUI",
-            ],
-            path: "Sources/SwiftPM",
-            sources: ["TrueWatchSDK.swift"]
-        ),
-        .target(
-            name: "_TrueWatchSDKObjC",
-            dependencies: [
                 "_TrueWatchSDKCore",
-                "_AgentExtension",
-                "_AgentExternalData",
-                "_AgentConfig",
-                "TrueWatchSDKSwiftUI",
+                "_AgentShared",
+                "_TrueWatchSDKSwiftSupport",
+                "_FTRUM",
+                "_FTURLSessionAutoInstrumentation",
+                "_FTLogger",
+                "_FTBaseUtils",
+                "_FTProtocol",
+                "_FTVisitorID",
             ],
             path: "Sources",
             sources: [
                 "Agent/Core",
                 "Agent/AutoTrack",
             ],
-            publicHeadersPath: "Agent/Core",
+            publicHeadersPath: "Agent/Public",
             cSettings: [
                 .headerSearchPath("Agent/Core"),
                 .headerSearchPath("Agent/AutoTrack"),
+                .headerSearchPath("Agent/Config"),
+                .headerSearchPath("Agent/ExternalData"),
+                .headerSearchPath("Core/include"),
                 .headerSearchPath("Core/FTRUM/Heatmap"),
                 .headerSearchPath("Core/DataFilter")
             ]
         ),
         .target(
             name: "TrueWatchSDKSwiftUI",
-            path: "Sources/Agent/SwiftUI"
+            dependencies: [
+                "TrueWatchSDK",
+                "_TrueWatchSDKSwiftSupport",
+            ],
+            path: "Sources/Agent/SwiftUI",
+            exclude: [
+                "FTSwiftUIRUMBridge.swift",
+                "FTSwiftUIViewNameExtractor.swift",
+            ],
+            sources: [
+                "FTRUMSwiftUI.swift",
+                "FTSwiftUIRUMViewModifier.swift",
+            ]
         ),
         .target(
-            name: "_AgentConfig",
+            name: "_TrueWatchSDKSwiftSupport",
+            path: "Sources/Agent/SwiftUI",
+            exclude: [
+                "FTRUMSwiftUI.swift",
+                "FTSwiftUIRUMViewModifier.swift",
+            ],
+            sources: [
+                "FTSwiftUIRUMBridge.swift",
+                "FTSwiftUIViewNameExtractor.swift",
+            ]
+        ),
+        .target(
+            name: "_AgentShared",
             dependencies: [
-                "_FTBaseUtils_Base",
+                "_FTBaseUtils",
                 "_FTRUM",
                 "_FTProtocol",
             ],
             path: "Sources/Agent",
-            sources: ["Config"],
-            publicHeadersPath: "Config"
-        ),
-        .target(
-            name: "_AgentExternalData",
-            dependencies: [
-                "_FTProtocol",
-                "_FTBaseUtils_Base",
-            ],
-            path: "Sources/Agent/ExternalData",
-            publicHeadersPath: "."
+            sources: ["Config", "ExternalData", "Extension"],
+            publicHeadersPath: "Shared/Public"
         ),
         .target(
             name: "_FTProtocol",
@@ -97,9 +126,9 @@ let package = Package(
         .target(
             name: "_FTRUM",
             dependencies: [
-                "_FTBaseUtils_Base",
-                "_FTBaseUtils_Thread",
+                "_FTBaseUtils",
                 "_FTProtocol",
+                "_FTVisitorID",
             ],
             path: "Sources/Core/FTRUM",
             cSettings: [
@@ -116,7 +145,8 @@ let package = Package(
             name: "_FTURLSessionAutoInstrumentation",
             dependencies: [
                 "_FTProtocol",
-                "_FTBaseUtils_Swizzle",
+                "_FTBaseUtils",
+                "_FTVisitorID",
             ],
             path: "Sources/Core/NetworkAutoInstrumentation",
             publicHeadersPath: "."
@@ -124,30 +154,26 @@ let package = Package(
         .target(
             name: "_FTLogger",
             dependencies: [
-                "_FTBaseUtils_Base",
+                "_FTBaseUtils",
                 "_FTProtocol",
             ],
             path: "Sources/Core/Logger",
             publicHeadersPath: "."
         ),
-        .testTarget(
-            name: "FTLoggerTests",
-            dependencies: ["_FTLogger"],
-            path: "Tests/FTLoggerTests"
+        .target(
+            name: "_FTVisitorID",
+            dependencies: ["_FTBaseUtils", "_FTProtocol"],
+            path: "Sources/Core/VisitorID",
+            publicHeadersPath: "."
         ),
 
         // MARK: - BaseUtils
         .target(
-            name: "_FTBaseUtils_Base",
+            name: "_FTBaseUtils",
             dependencies: ["_FTBaseUtils_Thread"],
-            path: "Sources/Core/BaseUtils/Base",
-            publicHeadersPath: "."
-        ),
-        .target(
-            name: "_FTBaseUtils_Swizzle",
-            dependencies: ["_FTBaseUtils_Base"],
-            path: "Sources/Core/BaseUtils/Swizzle",
-            publicHeadersPath: "."
+            path: "Sources/Core/BaseUtils",
+            sources: ["Base", "Swizzle"],
+            publicHeadersPath: "include"
         ),
         .target(
             name: "_FTBaseUtils_Thread",
@@ -156,26 +182,22 @@ let package = Package(
 
         // MARK: - TrueWatchWidgetExtension
         .target(
-            name: "_AgentExtension",
-            dependencies: ["_FTBaseUtils_Base"],
-            path: "Sources/Agent/Extension",
-            publicHeadersPath: "."
-        ),
-        .target(
             name: "TrueWatchWidgetExtension",
             dependencies: [
-                "_AgentExtension",
+                "_AgentShared",
                 "_FTRUM",
                 "_FTURLSessionAutoInstrumentation",
-                "_AgentExternalData",
                 "_FTLogger",
-                "_AgentConfig",
             ],
             path: "Sources/WidgetExtension",
             resources: [
                 .copy("../Resources/PrivacyInfo.xcprivacy"),
             ],
-            publicHeadersPath: "."
+            publicHeadersPath: ".",
+            cSettings: [
+                .headerSearchPath("../Agent/Config"),
+                .headerSearchPath("../Agent/ExternalData"),
+            ]
         ),
 
         // MARK: - TrueWatchSDKCore
@@ -185,6 +207,7 @@ let package = Package(
                 "_FTRUM",
                 "_FTURLSessionAutoInstrumentation",
                 "_FTLogger",
+                "_FTProtocol",
             ],
             path: "Sources",
             sources: [
@@ -196,8 +219,9 @@ let package = Package(
             resources: [
                 .copy("Resources/PrivacyInfo.xcprivacy"),
             ],
-            publicHeadersPath: "Core/include",
+            publicHeadersPath: "Core/Public",
             cSettings: [
+                .headerSearchPath("Core/include"),
                 .headerSearchPath("Core/DataManager/Upload"),
                 .headerSearchPath("Core/DataManager/Storage"),
                 .headerSearchPath("Core/DataManager/Storage/fmdb"),
@@ -209,7 +233,10 @@ let package = Package(
         // MARK: - TrueWatchSessionReplay
         .target(
             name: "TrueWatchSessionReplay",
-            dependencies: ["_TrueWatchSDKCore"],
+            dependencies: [
+                "_TrueWatchSDKCore",
+                "_TrueWatchSessionReplaySwiftUI",
+            ],
             path: "Sources/SessionReplay",
             exclude: [
                 "Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder/SwiftUI",
@@ -217,6 +244,7 @@ let package = Package(
             publicHeadersPath: "Public",
             cSettings: [
                 .headerSearchPath("../.."),
+                .headerSearchPath("../Core/include"),
                 .headerSearchPath("."),
                 .headerSearchPath("Processor/Builders"),
                 .headerSearchPath("DataStore"),
@@ -238,8 +266,59 @@ let package = Package(
             ]
         ),
         .target(
-            name: "TrueWatchSessionReplaySwiftUI",
+            name: "_TrueWatchSessionReplaySwiftUI",
             path: "Sources/SessionReplay/Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder/SwiftUI"
+        ),
+        // MARK: - TrueWatchElectronWebView
+        .target(
+            name: "TrueWatchElectronWebView",
+            dependencies: [
+                "_TrueWatchSDKCore",
+                "_FTProtocol",
+                "TrueWatchSessionReplay",
+            ],
+            path: "Sources/ElectronWebView",
+            publicHeadersPath: "Public",
+            cSettings: [
+                .headerSearchPath("."),
+                .headerSearchPath("../SessionReplay"),
+                .headerSearchPath("../SessionReplay/Processor/Builders"),
+                .headerSearchPath("../SessionReplay/Recorder"),
+                .headerSearchPath("../SessionReplay/Recorder/SRWireframe"),
+                .headerSearchPath("../SessionReplay/Recorder/SRWireframe/ViewTreeSnapshot"),
+                .headerSearchPath("../SessionReplay/Recorder/SRWireframe/ViewTreeSnapshot/ViewsRecorder"),
+            ]
+        ),
+        .target(
+            name: "TrueWatchElectronNative",
+            dependencies: [
+                "TrueWatchSDK",
+                "_AgentShared",
+                "_FTBaseUtils",
+                "_FTLogger",
+                "TrueWatchSessionReplay",
+                "TrueWatchElectronWebView",
+            ],
+            path: "Sources/ElectronNative/Bridge",
+            publicHeadersPath: "Public",
+            linkerSettings: [
+                .linkedFramework("AppKit"),
+            ]
+        ),
+        .testTarget(
+            name: "TrueWatchElectronWebViewTests",
+            dependencies: [
+                "TrueWatchElectronWebView",
+                "_TrueWatchSDKCore",
+                "_FTRUM",
+                "_FTProtocol",
+            ],
+            path: "Tests/TrueWatchElectronWebViewTests"
+        ),
+        .testTarget(
+            name: "TrueWatchElectronNativeTests",
+            dependencies: ["TrueWatchElectronNative", "TrueWatchSessionReplay", "TrueWatchSDK", "_TrueWatchSDKCore", "_FTProtocol"],
+            path: "Tests/TrueWatchElectronNativeTests"
         ),
     ]
 )

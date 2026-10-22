@@ -45,12 +45,9 @@ static char *FTSRAppKitNodeIDsKey = "FTSRAppKitNodeIDsKey";
 }
 
 - (BOOL)usesDarkMode {
-    if (@available(macOS 10.14, *)) {
-        NSAppearanceName bestMatch = [self.effectiveAppearance
-            bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
-        return [bestMatch isEqualToString:NSAppearanceNameDarkAqua];
-    }
-    return NO;
+    NSAppearanceName bestMatch = [self.effectiveAppearance
+        bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
+    return [bestMatch isEqualToString:NSAppearanceNameDarkAqua];
 }
 
 @end

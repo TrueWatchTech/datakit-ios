@@ -19,7 +19,7 @@
 //
 
 #import "FTRUMDependencies.h"
-#import "FTConstants.h"
+#import "FTRUMViewTimingPredicates.h"
 #import "FTIssueFieldEnricher.h"
 
 @interface FTRUMDependencies ()
@@ -27,6 +27,14 @@
 @end
 
 @implementation FTRUMDependencies
+- (instancetype)init {
+    if ((self = [super init])) {
+        _nextViewActionPredicate = [FTRUMTimeBasedNextViewActionPredicate new];
+        _networkSettledResourcePredicate = [FTRUMTimeBasedNetworkSettledPredicate new];
+    }
+    return self;
+}
+
 
 - (void)setIssueDataProvider:(nullable FTIssueDataProvider)issueDataProvider {
     _issueDataProvider = [issueDataProvider copy];
@@ -43,6 +51,8 @@
     dependencies.enableTraceUserAction = self.enableTraceUserAction;
     dependencies.appId = self.appId;
     dependencies.writer = self.writer;
+    dependencies.networkSettledResourcePredicate = self.networkSettledResourcePredicate;
+    dependencies.nextViewActionPredicate = self.nextViewActionPredicate;
     dependencies.errorMonitorInfoWrapper = self.errorMonitorInfoWrapper;
     dependencies.monitor = self.monitor;
     dependencies.fatalErrorContext = self.fatalErrorContext;
@@ -51,6 +61,7 @@
     dependencies.sampledForErrorReplay = self.sampledForErrorReplay;
     dependencies.sessionReplaySampledFields = self.sessionReplaySampledFields;
     dependencies.sessionReplayStats = self.sessionReplayStats;
+    dependencies.appStateHistory = self.appStateHistory;
     return dependencies;
 }
 @end

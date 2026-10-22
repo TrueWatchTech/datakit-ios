@@ -17,6 +17,7 @@
 #if TARGET_OS_IOS || TARGET_OS_OSX
 
 #import "FTRumSessionReplay.h"
+#import "FTRumSessionReplay+ExternalRecorder.h"
 #import "FTResourcesFeature.h"
 #import "FTFeatureUpload.h"
 #import "FTFileWriter.h"
@@ -45,13 +46,15 @@
     return self;
 }
 @end
-@interface FTRumSessionReplay ()
+@interface FTRumSessionReplay ()<FTSessionReplayLifecycle>
 @property (nonatomic, strong) dispatch_queue_t readWriteQueue;
+@property (nonatomic, strong) dispatch_queue_t contextQueue;
 @property (nonatomic, strong) FTCoreDirectory *coreDirectory;
 @property (nonatomic, strong) FTPerformancePreset *performancePreset;
 @property (nonatomic, strong) NSMutableDictionary<NSString*,FTFeatureStores*>*stores;
 @property (nonatomic, strong) NSMutableDictionary<NSString*,id<FTRemoteFeature>>*features;
 @property (nonatomic, copy) NSString *source;
+- (nullable FTSessionReplayFeature *)sessionReplayFeature;
 @end
 @implementation FTRumSessionReplay
 static FTRumSessionReplay *sharedInstance = nil;
@@ -67,6 +70,7 @@ static dispatch_once_t onceToken;
     if(self){
         _coreDirectory = [[FTCoreDirectory alloc]initWithSubdirectoryPath:@"com.ft"];
         _readWriteQueue = dispatch_queue_create("com.ft.file.readwrite", 0);
+        _contextQueue = dispatch_queue_create("com.ft.replay.context", DISPATCH_QUEUE_SERIAL);
         _performancePreset = [[FTPerformancePreset alloc]init];
         _stores = [NSMutableDictionary new];
         _features = [NSMutableDictionary new];
@@ -74,7 +78,12 @@ static dispatch_once_t onceToken;
     return self;
 }
 - (void)startWithSessionReplayConfig:(FTSessionReplayConfig *)config{
-    if(config.sampleRate<=0&&config.sessionReplayOnErrorSampleRate<=0){
+    @synchronized (self) {
+    if ([self sessionReplayFeature]) {
+        FTInnerLogInfo(@"[session-replay] already initialized; reusing existing feature stores");
+        return;
+    }
+    if(config.sessionReplaySamplingRate<=0&&config.sessionReplayOnErrorSamplingRate<=0){
         FTInnerLogWarning(@"[session-replay] skipped: both sampleRate and sessionReplayOnErrorSampleRate are disabled");
         return;
     }
@@ -94,7 +103,9 @@ static dispatch_once_t onceToken;
     [self.features setValue:resourcesFeature forKey:resourcesFeature.name];
     [sessionReplayFeature startWithRecordStorage:srStore.storage resourceStorage:resourceStore.storage resourceDataStore:resourceDataStore];
     [sessionReplayFeature startRecording];
+    [[FTModuleManager sharedInstance] registerService:@protocol(FTSessionReplayLifecycle) instance:self];
     FTInnerLogInfo(@"[session-replay] initialized success");
+    }
 }
 - (FTFeatureStores *)registerFeature:(id<FTRemoteFeature>)feature{
     FTFeatureDirectories *directories = [self.coreDirectory featureDirectoriesForFeatureName:feature.name];
@@ -102,6 +113,7 @@ static dispatch_once_t onceToken;
         FTPerformancePreset *performancePreset = [self.performancePreset updateWithOverride:feature.performanceOverride];
         FTFeatureStorage *storage = [[FTFeatureStorage alloc]initWithFeatureName:feature.name
                                                                            queue:self.readWriteQueue
+                                                                    contextQueue:self.contextQueue
                                                                      directories:directories
                                                                      performance:performancePreset];
         FTFeatureUpload *upload = [FTFeatureUpload createWithFeatureName:feature.name
@@ -117,15 +129,33 @@ static dispatch_once_t onceToken;
     return nil;
 }
 
-- (FTSessionReplayFeature *)sessionReplayFeature {
-    id feature = self.features[@"session-replay"];
-    if ([feature isKindOfClass:FTSessionReplayFeature.class]) {
-        return feature;
+- (void)shutDown {
+    @synchronized (self) {
+        [[self sessionReplayFeature] shutDown];
+        for (FTFeatureStores *store in self.stores.allValues) {
+            [store.storage invalidate];
+            [store.upload cancel];
+        }
+        [self.features removeAllObjects];
+        [self.stores removeAllObjects];
     }
-    return nil;
 }
 
-- (NSDictionary *)currentExternalRUMContext {
+- (FTSessionReplayFeature *)sessionReplayFeature {
+    @synchronized (self) {
+        id feature = self.features[@"session-replay"];
+        if ([feature isKindOfClass:FTSessionReplayFeature.class]) {
+            return feature;
+        }
+        return nil;
+    }
+}
+
+@end
+
+@implementation FTRumSessionReplay (ExternalRecorder)
+
+- (NSDictionary<NSString *, id> *)currentExternalRUMContext {
     return [[self sessionReplayFeature] currentExternalRUMContext];
 }
 
@@ -151,6 +181,10 @@ static dispatch_once_t onceToken;
 
 - (NSString *)saveExternalImageResourceData:(NSData *)data mimeType:(NSString *)mimeType {
     return [[self sessionReplayFeature] saveExternalImageResourceData:data mimeType:mimeType];
+}
+
+- (void)updateExternalRecordCount:(NSUInteger)count viewID:(NSString *)viewID {
+    [[self sessionReplayFeature] setExternalRecordCountForViewID:viewID count:count];
 }
 
 @end

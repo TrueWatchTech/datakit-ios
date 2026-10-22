@@ -55,17 +55,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// - Parameters:
 ///   - enableAutoTrace: Whether to enable automatic link tracing
 ///   - enableLinkRumData: Whether to associate with RUM
-///   - sampleRate: Sampling rate
+///   - traceSamplingRate: Trace sampling rate percentage in the range [0, 100]
 ///   - traceType: Link type
 ///   - serviceName: serviceName
 - (void)setTraceEnableAutoTrace:(BOOL)enableAutoTrace
               enableLinkRumData:(BOOL)enableLinkRumData
-                     sampleRate:(int)sampleRate
+              traceSamplingRate:(float)traceSamplingRate
                       traceType:(NetworkTraceType)traceType
                traceInterceptor:(TraceInterceptor)traceInterceptor
                     serviceName:(NSString *)serviceName;
 
-- (void)updateTraceSampleRate:(int)sampleRate;
+- (void)updateTraceSamplingRate:(float)traceSamplingRate;
 
 
 /// Set RUM resource data processing object that conforms to FTRumResourceProtocol
@@ -73,6 +73,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// HTTP resource data collected by this module should be passed to the RUM module
 /// - Parameter handler: RUM module data receiving object
 - (void)setRumResourceHandler:(id<FTRumResourceProtocol>)handler;
+
+/// Enables Visitor ID request interception independently from Trace and RUM Resource switches.
+- (void)setVisitorIDEnabled:(BOOL)enabled;
 
 /// Set URL filtering
 /// - Parameter intakeUrlHandler: Callback to determine whether to collect, return YES to collect, NO to filter out

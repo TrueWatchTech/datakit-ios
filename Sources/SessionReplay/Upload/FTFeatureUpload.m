@@ -19,6 +19,7 @@
 //  limitations under the License.
 //
 
+#import "FTDiagnosticsBridge.h"
 #import <TargetConditionals.h>
 #if TARGET_OS_IOS || TARGET_OS_OSX
 
@@ -59,6 +60,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
 @property (nonatomic, strong) NSDictionary *context;
 @property (nonatomic, copy) NSString *featureName;
 @property (nonatomic, strong) FTUploadStatus *lastUploadStatus;
+@property (atomic, assign) BOOL cancelled;
 @end
 @implementation FTFeatureUpload
 @synthesize readWork = _readWork;
@@ -105,11 +107,12 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
     }
     return self;
 }
+
 - (void)startReadWork{
     __weak typeof(self) weakSelf = self;
     dispatch_block_t readWorkItem = dispatch_block_create(0, ^{
         __strong __typeof(weakSelf) strongSelf = weakSelf;
-        if (!strongSelf) {
+        if (!strongSelf || strongSelf.cancelled) {
             return;
         }
         [strongSelf.cacheWriter cleanup];
@@ -169,7 +172,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
     dispatch_block_t uploadWork = dispatch_block_create(0, ^{
         @autoreleasepool {
             __strong __typeof(weakSelf) strongSelf = weakSelf;
-            if (!strongSelf) return;
+            if (!strongSelf || strongSelf.cancelled) return;
             if(files.count == 0){
                 [strongSelf scheduleNextCycle];
                 return;
@@ -181,6 +184,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
             FTBatch *batch = [strongSelf.fileReader readBatch:file];
             if(batch){
                 FTUploadStatus *uploadStatus = [strongSelf flushWithEvent:batch.events parameters:parameters];
+                if (strongSelf.cancelled) return;
                 if(uploadStatus.success){
                     [strongSelf.requestBuilder.classSerialGenerator increaseRequestSerialNumber];
                     if(mutableFiles.count == 0){
@@ -191,6 +195,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
                     [strongSelf.fileReader markBatchAsRead:batch];
                 }else{
                     strongSelf.lastUploadStatus = uploadStatus;
+                    [FTDiagnosticsBridge record:@"retry" channel:@"replay" count:1 bytes:-1 reason:@"retry_scheduled"];
                     [strongSelf.delay increase];
                     FTInnerLogWarning(@"[NETWORK][%@] Upload failed, will retry: %@, next retry delay: %.3fs",strongSelf.featureName,uploadStatus.debugDescription,strongSelf.delay.current);
                     [strongSelf scheduleNextCycle];
@@ -208,12 +213,13 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
     dispatch_async(self.queue, uploadWork);
 }
 - (void)scheduleNextCycle{
-    if(self.readWork){
+    if(!self.cancelled && self.readWork){
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_delay.current * NSEC_PER_SEC)), self.queue, self.readWork);
     }
 }
 #pragma mark upload
 -(FTUploadStatus *)flushWithEvent:(id)event parameters:(NSDictionary *)parameters{
+    if (self.cancelled) return [FTUploadStatus statusWithHTTPResponse:nil error:nil previousStatus:nil];
     @try {
         __block FTUploadStatus *uploadStatus = nil;
         __weak typeof(self) weakSelf = self;
@@ -221,7 +227,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
         [self.requestBuilder requestWithEvents:event parameters:parameters];
         [self.httpClient sendRequest:self.requestBuilder completion:^(NSHTTPURLResponse * _Nullable httpResponse, NSData * _Nullable data, NSError * _Nullable error) {
             __strong __typeof(weakSelf) strongSelf = weakSelf;
-            if (!strongSelf) {
+            if (!strongSelf || strongSelf.cancelled) {
                 dispatch_semaphore_signal(flushSemaphore); 
                 return;
             }
@@ -244,6 +250,17 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
     }
 
     return [FTUploadStatus statusWithHTTPResponse:nil error:nil previousStatus:self.lastUploadStatus];
+}
+- (void)cancel {
+    self.cancelled = YES;
+    [self.uploadConditions cancel];
+    [self.httpClient cancel];
+    dispatch_block_t uploadWork = self.uploadWork;
+    dispatch_block_t readWork = self.readWork;
+    if (uploadWork) dispatch_block_cancel(uploadWork);
+    if (readWork) dispatch_block_cancel(readWork);
+    self.uploadWork = nil;
+    self.readWork = nil;
 }
 - (void)cancelSynchronously{
     [self.uploadConditions cancel];
@@ -298,6 +315,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
         }
         NSArray<NSArray<FTEnrichedResource *> *> *groupedResources = [self groupedResourcesByUploadContext:resources];
         for (NSUInteger idx = 0; idx < groupedResources.count; idx++) {
+            if (self.cancelled) return [FTUploadStatus statusWithHTTPResponse:nil error:nil previousStatus:nil];
             NSArray<FTEnrichedResource *> *resourceGroup = groupedResources[idx];
             NSDictionary *groupParameters = [self parametersForResources:resourceGroup baseParameters:parameters];
             NSMutableArray<NSString *> *files = [NSMutableArray new];
@@ -337,6 +355,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
 }
 
 - (FTUploadStatus *)checkImageWithEvent:(id)event parameters:(NSDictionary *)parameters content:(NSDictionary **)content{
+    if (self.cancelled) return [FTUploadStatus statusWithHTTPResponse:nil error:nil previousStatus:nil];
     __weak typeof(self) weakSelf = self;
     __block NSDictionary *responseContent = nil;
     __block FTUploadStatus *uploadStatus = nil;
@@ -344,7 +363,7 @@ static NSString * const FTReplayAssetsTagsKey = @"tags";
     [self.checkRequest requestWithEvents:event parameters:parameters];
     [self.httpClient sendRequest:self.checkRequest completion:^(NSHTTPURLResponse * _Nullable httpResponse, NSData * _Nullable data, NSError * _Nullable error) {
         __strong __typeof(weakSelf) strongSelf = weakSelf;
-        if (!strongSelf) {
+        if (!strongSelf || strongSelf.cancelled) {
             dispatch_semaphore_signal(flushSemaphore);
             return;
         }

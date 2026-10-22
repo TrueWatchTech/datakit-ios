@@ -203,18 +203,28 @@ rewrite_file_to_stdout() {
       $text =~ s{^(//\s*Copyright\s+(?:©\s*)?[0-9]{3,4}\s+(?:(?:[Ss]hanghai\s+)?$old_brand(?:\s+Information\s+Technology\s+Co\.,\s+Ltd\.)?|TRUEWATCH TECHNOLOGY INC PTE\. LTD\.|TrueWatchCloud\.?|hll\.?)(?:\s+All rights reserved\.)?\s*\n)}{}mg;
       $text =~ s{^(//\s*\n(?=//\s*Licensed under the Apache License, Version 2\.0 \(the "License"\);))}{}mg;
       $text =~ s{
-        ^//\s*Licensed\ under\ the\ Apache\ License,\ Version\ 2\.0\ \(the\ "License"\);\n
-        ^//\s*you\ may\ not\ use\ this\ file\ except\ in\ compliance\ with\ the\ License\.\n
-        ^//\s*You\ may\ obtain\ a\ copy\ of\ the\ License\ at\n
-        ^//\s*\n
-        ^//\s*http://www\.apache\.org/licenses/LICENSE-2\.0\n
-        ^//\s*\n
-        ^//\s*Unless\ required\ by\ applicable\ law\ or\ agreed\ to\ in\ writing,\ software\n
-        ^//\s*distributed\ under\ the\ License\ is\ distributed\ on\ an\ "AS\ IS"\ BASIS,\n
-        ^//\s*WITHOUT\ WARRANTIES\ OR\ CONDITIONS\ OF\ ANY\ KIND,\ either\ express\ or\ implied\.\n
-        ^//\s*See\ the\ License\ for\ the\ specific\ language\ governing\ permissions\ and\n
-        ^//\s*limitations\ under\ the\ License\.\n
-        ^//\s*\n?
+        ^//[\t\ ]*Copyright[\t\ ]+(?:©[\t\ ]*)?[0-9]{3,4}[\t\ ]+
+        (?:Shanghai[\t\ ]+TrueWatch[\t\ ]+Information[\t\ ]+Technology[\t\ ]+Co\.,[\t\ ]+Ltd\.|DataFlux-cn\.?|TrueWatchCloud\.?|hll\.?)
+        (?:[\t\ ]+All[\t\ ]+rights[\t\ ]+reserved\.)?[\t\ ]*\n
+        (?:^//[\t\ ]*\n)?
+      }{}xmg;
+      $text =~ s{
+        ^//[\t\ ]*Licensed\ under\ the\ Apache\ License,\ Version\ 2\.0\ \(the\ "License"\);\n
+        ^//[\t\ ]*you\ may\ not\ use\ this\ file\ except\ in\ compliance\ with\ the\ License\.\n
+        ^//[\t\ ]*You\ may\ obtain\ a\ copy\ of\ the\ License\ at\n
+        ^//[\t\ ]*\n
+        ^//[\t\ ]*http://www\.apache\.org/licenses/LICENSE-2\.0\n
+        ^//[\t\ ]*\n
+        ^//[\t\ ]*Unless\ required\ by\ applicable\ law\ or\ agreed\ to\ in\ writing,\ software\n
+        ^//[\t\ ]*distributed\ under\ the\ License\ is\ distributed\ on\ an\ "AS\ IS"\ BASIS,\n
+        ^//[\t\ ]*WITHOUT\ WARRANTIES\ OR\ CONDITIONS\ OF\ ANY\ KIND,\ either\ express\ or\ implied\.\n
+        ^//[\t\ ]*See\ the\ License\ for\ the\ specific\ language\ governing\ permissions\ and\n
+        ^//[\t\ ]*limitations\ under\ the\ License\.\n
+        ^//[\t\ ]*\n?
+      }{}xmg;
+      $text =~ s{
+        ^//[\t\ ]*Licensed\ under\ the\ Apache\ License,\ Version\ 2\.0\ \(the\ "License"\);\n
+        (?:^//[^\n]*\n)*
       }{}xmg;
 
       $text =~ s{^//[ \t]*Licensed under the Apache License, Version 2\.0 \(the "License"\);\n(?:^//[ \t]*you may not use this file except in compliance with the License\.\n)?(?:^//[ \t]*\n)?}{}mg;

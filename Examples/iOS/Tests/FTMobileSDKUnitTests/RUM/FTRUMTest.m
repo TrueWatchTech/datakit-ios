@@ -27,14 +27,17 @@
 #import "FTMobileSDK.h"
 #import "FTMobileAgent+Private.h"
 #import "NSDate+FTUtil.h"
+#import "FTDateUtil.h"
 #import "NSString+FTAdd.h"
 #import "FTRecordModel.h"
 #import "FTJSONUtil.h"
 #import "FTRUMManager.h"
+#import "FTRUMAppStateHistory.h"
+#import "FTRUMDependencies.h"
 #import "FTRUMSessionHandler.h"
 #import "FTGlobalRumManager+Private.h"
 #import "UIView+FTAutoTrack.h"
-#import "FTExternalDataManager.h"
+#import "FTExternalDataManager+FrameworkIntegration.h"
 #import "FTResourceContentModel.h"
 #import "FTResourceMetricsModel.h"
 #import "FTURLSessionInterceptor.h"
@@ -48,7 +51,7 @@
 #import "FTLoggerConfig+Private.h"
 #import "FTRumConfig+Private.h"
 #import "FTAutoTrackHandler.h"
-#import "DemoViewController.h"
+#import "UIViewController+FTAutoTrack.h"
 #import "FTRUMContext.h"
 #import "FTRUMViewHandler.h"
 #import "FTCrashReportWrapper.h"
@@ -59,6 +62,20 @@
 #import "FTAppLifeCycle.h"
 #import "FTHeatmap.h"
 #import "FTCrash.h"
+#import "FTLongTaskANRData.h"
+#import "FTModuleManager.h"
+#import "FTReadWriteHelper.h"
+#import <objc/runtime.h>
+
+// A shared UIKit fixture for iOS and tvOS lifecycle tests.
+@interface FTRUMLifecycleTestViewController : UIViewController
+@end
+@implementation FTRUMLifecycleTestViewController
+@end
+
+@interface FTModuleManager (RUMDeallocationTest)
+- (void)syncProcess;
+@end
 
 @interface FTTestCrashReportWrapper : FTCrashReportWrapper
 @end
@@ -90,6 +107,87 @@
 
 @end
 
+@interface FTTestAutoViewLifecycle : NSObject <FTAppLifeCycleDelegate>
+@property (nonatomic, assign) NSUInteger stopCount;
+@property (nonatomic, copy, nullable) dispatch_block_t foregroundCallback;
+@end
+
+@implementation FTTestAutoViewLifecycle
+- (void)applicationDidEnterBackground {
+    self.stopCount += 1;
+}
+- (void)applicationWillEnterForeground {
+    if (self.foregroundCallback) self.foregroundCallback();
+}
+@end
+
+@interface FTTestAppStateHistory : FTRUMAppStateHistory
+@property (nonatomic, strong) NSDate *now;
+@end
+@implementation FTTestAppStateHistory
+- (NSDate *)lifecycleDate {
+    return self.now;
+}
+@end
+
+@interface FTTestAppStateHistoryDelegate : NSObject <FTRUMAppStateHistoryDelegate>
+@property (nonatomic, assign) NSUInteger changeCount;
+@property (nonatomic, strong) NSDate *eventTime;
+@property (nonatomic, assign) FTRUMAppState state;
+@property (nonatomic, copy) NSString *recordedState;
+@end
+@implementation FTTestAppStateHistoryDelegate
+- (void)appStateHistory:(FTRUMAppStateHistory *)history didChangeState:(FTRUMAppState)state time:(NSDate *)time {
+    self.changeCount += 1;
+    self.eventTime = time;
+    self.state = state;
+    self.recordedState = [history stateAt:[time ft_nanosecondTimeStamp]];
+}
+@end
+
+@interface FTRUMManager (RUMProcessingTest)
+- (BOOL)process:(FTRUMDataModel *)model context:(NSDictionary *)context;
+@end
+
+@interface FTTestColdStartRUMManager : FTRUMManager
+@end
+@implementation FTTestColdStartRUMManager
+- (FTAppState)initialAppState {
+    return FTAppStateStartUp;
+}
+@end
+
+@interface FTTestRUMProcessingManager : FTRUMManager
+@property (nonatomic, assign) NSUInteger processedModelCount;
+@end
+@implementation FTTestRUMProcessingManager
+- (BOOL)process:(FTRUMDataModel *)model context:(NSDictionary *)context {
+    self.processedModelCount += 1;
+    return [super process:model context:context];
+}
+@end
+
+// Capture the manager's queue output before session processing changes the models.
+@interface FTLoadingHandoffTestManager : FTRUMManager
+@property (nonatomic, strong) NSMutableArray<FTRUMViewModel *> *startedViews;
+@property (nonatomic, copy) NSString *testVisitorID;
+@end
+@implementation FTLoadingHandoffTestManager
+- (BOOL)process:(FTRUMDataModel *)model context:(NSDictionary *)context {
+    if (model.type == FTRUMDataViewStart) {
+        if (!self.startedViews) self.startedViews = [NSMutableArray array];
+        [self.startedViews addObject:(FTRUMViewModel *)model];
+    }
+    return YES;
+}
+- (NSString *)currentVisitorIDSnapshot {
+    return self.testVisitorID;
+}
+@end
+
+#import <limits.h>
+#import <math.h>
+
 @interface FTRUMTest : XCTestCase
 @property (nonatomic, copy) NSString *url;
 @property (nonatomic, copy) NSString *appid;
@@ -107,6 +205,10 @@
 -(void)tearDown{
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
     [FTMobileAgent shutDown];
+}
+- (id<FTAppLifeCycleDelegate>)lifecycleForManager:(FTRUMManager *)manager {
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    return (id<FTAppLifeCycleDelegate>)dependencies.appStateHistory;
 }
 - (void)testInitialAppStateUpdatesFatalErrorContext{
     FTRUMDependencies *dependencies = [[FTRUMDependencies alloc]init];
@@ -128,19 +230,1004 @@
     XCTAssertEqualObjects(FTStringFromAppState((FTAppState)(FTAppStateBackground + 1)), @"unknown");
     XCTAssertEqualObjects(FTStringFromAppState((FTAppState)NSUIntegerMax), @"unknown");
 }
+
+- (void)testStopViewKeepsExistingSelectorWithoutTimestampOverride {
+    XCTAssertTrue([FTRUMManager instancesRespondToSelector:@selector(stopViewWithViewID:property:)]);
+    XCTAssertFalse([FTRUMManager instancesRespondToSelector:NSSelectorFromString(@"stopViewWithViewID:property:time:")]);
+}
+
+- (void)testLongTaskANRDataRoundTripPreservesTimingAndStack {
+    NSDictionary *data = @{
+        @"startDate": @(100000000000LL),
+        @"duration": @(2000000000LL),
+        @"mainThreadBacktrace": @"stack"
+    };
+    FTLongTaskANRData *restored = [[FTLongTaskANRData alloc] initWithDictionary:data];
+    XCTAssertNotNil(restored);
+    XCTAssertEqual(restored.startTimeNs, 100000000000LL);
+    XCTAssertEqual(restored.durationNs, 2000000000LL);
+    XCTAssertEqualObjects(restored.mainThreadBacktrace, @"stack");
+    NSDictionary *serialized = restored.convertToDictionary;
+    XCTAssertEqualObjects(serialized, (@{
+        @"startDate": @(100000000000LL),
+        @"duration": @(2000000000LL),
+        @"mainThreadBacktrace": @"stack",
+        @"isANR": @NO
+    }));
+    FTLongTaskANRData *roundTrip = [[FTLongTaskANRData alloc] initWithDictionary:serialized];
+    XCTAssertEqual(roundTrip.startTimeNs, 100000000000LL);
+    XCTAssertEqual(roundTrip.durationNs, 2000000000LL);
+    XCTAssertEqualObjects(roundTrip.mainThreadBacktrace, @"stack");
+}
+
+- (void)testAppStateHistoryUsesMetricInterval {
+    FTRUMAppStateHistory *timeline = [[FTRUMAppStateHistory alloc] initWithState:@"foreground" timeNs:100];
+    [timeline recordState:@"background" timeNs:200];
+    [timeline recordState:@"foreground" timeNs:300];
+
+    XCTAssertEqualObjects([timeline stateFrom:150 to:180], @"foreground");
+    XCTAssertEqualObjects([timeline stateFrom:150 to:200], @"foreground");
+    XCTAssertEqualObjects([timeline stateAt:200], @"background");
+    XCTAssertEqualObjects([timeline stateFrom:200 to:200], @"unknown");
+    XCTAssertEqualObjects([timeline stateFrom:150 duration:100], @"foreground_and_background");
+    XCTAssertEqualObjects([timeline stateFrom:150 to:250], @"foreground_and_background");
+    XCTAssertEqualObjects([timeline stateFrom:210 to:280], @"background");
+    XCTAssertEqualObjects([timeline stateFrom:50 to:180], @"unknown");
+
+    [timeline recordState:@"unknown" timeNs:400];
+    XCTAssertEqualObjects([timeline stateFrom:350 to:450], @"foreground");
+    XCTAssertEqualObjects([timeline stateAt:400], @"unknown");
+    [timeline recordState:@"background" timeNs:500];
+    XCTAssertEqualObjects([timeline stateFrom:350 to:550], @"foreground_and_background");
+}
+
+- (void)testAppStateHistoryIgnoresUnknownSegmentsWhenKnownStatesExist {
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"unknown" timeNs:100];
+    [history recordState:@"foreground" timeNs:200];
+    [history recordState:@"unknown" timeNs:300];
+    [history recordState:@"background" timeNs:400];
+    [history recordState:@"unknown" timeNs:500];
+
+    NSArray<NSDictionary *> *cases = @[
+        @{@"start": @100, @"end": @200, @"state": @"unknown"},
+        @{@"start": @100, @"end": @250, @"state": @"foreground"},
+        @{@"start": @200, @"end": @350, @"state": @"foreground"},
+        @{@"start": @300, @"end": @450, @"state": @"background"},
+        @{@"start": @400, @"end": @550, @"state": @"background"},
+        @{@"start": @100, @"end": @400, @"state": @"foreground"},
+        @{@"start": @100, @"end": @550, @"state": @"foreground_and_background"},
+        @{@"start": @500, @"end": @550, @"state": @"unknown"},
+        @{@"start": @50, @"end": @550, @"state": @"unknown"}
+    ];
+    for (NSDictionary *testCase in cases) {
+        long long start = [testCase[@"start"] longLongValue];
+        long long end = [testCase[@"end"] longLongValue];
+        XCTAssertEqualObjects([history stateFrom:start to:end], testCase[@"state"]);
+        XCTAssertEqualObjects([history stateFrom:start duration:end - start], testCase[@"state"]);
+    }
+    XCTAssertEqualObjects([history stateAt:150], @"unknown");
+    XCTAssertEqualObjects([history stateAt:350], @"unknown");
+}
+
+- (void)testColdStartLongTaskBeforeFirstViewUsesKnownForegroundInterval {
+    [self setRumConfig];
+    FTRUMManager *originalManager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [[originalManager valueForKey:@"rumDependencies"] copy];
+    dependencies.fatalErrorContext = [[FTFatalErrorContext alloc] initWithErrorInfoProvider:nil];
+    FTTestColdStartRUMManager *manager = [[FTTestColdStartRUMManager alloc] initWithRumDependencies:dependencies];
+    [manager syncProcess];
+    NSString *initialState = [dependencies.appStateHistory stateAt:[NSDate ft_currentNanosecondTimeStamp]];
+    XCTAssertEqual(manager.appState, FTAppStateStartUp);
+    XCTAssertEqualObjects(initialState, @"unknown");
+    [dependencies.appStateHistory stopMonitoring];
+    FTTestAppStateHistory *history = [[FTTestAppStateHistory alloc] initWithState:initialState timeNs:1791541735965618176LL];
+    history.delegate = (id<FTRUMAppStateHistoryDelegate>)manager;
+    dependencies.appStateHistory = history;
+    [history startMonitoring];
+    history.now = [NSDate dateWithTimeIntervalSince1970:1791541736901592064LL / 1e9];
+    [(id<FTAppLifeCycleDelegate>)history applicationWillEnterForeground];
+    XCTAssertEqual(manager.appState, FTAppStateRun);
+
+    dispatch_queue_t rumQueue = [manager valueForKey:@"rumQueue"];
+    dispatch_suspend(rumQueue);
+    @try {
+        [manager addLongTaskWithStack:@"cold-start-before-first-view"
+                            duration:@(1132723712LL)
+                           startTime:1791541736002983168LL];
+        // A later transition must not enter the original LongTask interval.
+        [history recordState:@"background" timeNs:1791541737135706880LL];
+    } @finally {
+        dispatch_resume(rumQueue);
+    }
+    [manager syncProcess];
+    __block NSUInteger count = 0;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] timeCallBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, long long time, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_LONG_TASK] && [fields[FT_KEY_LONG_TASK_STACK] isEqualToString:@"cold-start-before-first-view"]) {
+            XCTAssertEqual(time, 1791541736002983168LL);
+            XCTAssertEqualObjects(fields[FT_DURATION], @(1132723712LL));
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground");
+            XCTAssertEqualObjects(tags[FT_KEY_VIEW_NAME], @"RootView");
+            count += 1;
+        }
+    }];
+    XCTAssertEqual(count, 1U);
+    [history stopMonitoring];
+}
+
+- (void)testAppStateHistoryRejectsInvalidIntervalsAndLateTransitions {
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground" timeNs:100];
+    [history recordState:@"background" timeNs:200];
+
+    XCTAssertEqualObjects([history stateFrom:150 duration:0], @"unknown");
+    XCTAssertEqualObjects([history stateFrom:LLONG_MAX - 1 duration:2], @"unknown");
+    XCTAssertTrue([history recordState:@"foreground" timeNs:150]);
+    XCTAssertEqualObjects([history stateAt:200], @"unknown");
+    XCTAssertEqualObjects([history stateFrom:110 to:160], @"unknown");
+    XCTAssertEqualObjects([history stateFrom:210 to:220], @"unknown");
+}
+
+- (void)testClockRegressionDoesNotSuppressAutoViewLifecycle {
+    FTRUMDependencies *dependencies = [FTRUMDependencies new];
+    FTRUMManager *manager = [[FTRUMManager alloc] initWithRumDependencies:dependencies];
+    FTTestAutoViewLifecycle *autoView = [FTTestAutoViewLifecycle new];
+    [dependencies.appStateHistory recordState:@"foreground"
+                                      timeNs:[NSDate ft_currentNanosecondTimeStamp] + 1000000000LL];
+    [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:autoView];
+    @try {
+        [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
+        XCTAssertEqual(autoView.stopCount, 1U);
+        XCTAssertEqual(manager.appState, FTAppStateBackground);
+    } @finally {
+        [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:autoView];
+    }
+    [manager syncProcess];
+}
+
+- (void)testAppStateHistoryDropsExpiredCoverage {
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground" timeNs:100];
+    for (long long time = 101; time <= 230; time++) {
+        NSString *state = time % 2 == 0 ? @"foreground" : @"background";
+        [history recordState:state timeNs:time];
+    }
+    XCTAssertEqualObjects([history stateFrom:100 to:101], @"unknown");
+    XCTAssertEqualObjects([history stateFrom:220 to:222], @"foreground_and_background");
+}
+
+- (void)testHistoryMonitoringRecordsBeforeCallbackAndStopsCleanly {
+    FTTestAppStateHistory *history = [[FTTestAppStateHistory alloc] initWithState:@"background" timeNs:100000000000LL];
+    FTTestAppStateHistoryDelegate *delegate = [FTTestAppStateHistoryDelegate new];
+    history.delegate = delegate;
+    history.now = [NSDate dateWithTimeIntervalSince1970:101];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+    XCTAssertEqual(delegate.changeCount, 0U);
+    [history startMonitoring];
+    [history startMonitoring];
+    @try {
+        [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+        XCTAssertEqual(delegate.changeCount, 1U);
+        XCTAssertEqual(delegate.state, FTRUMAppStateForegroundOnly);
+        XCTAssertEqual([delegate.eventTime ft_nanosecondTimeStamp], 101000000000LL);
+        XCTAssertEqualObjects(delegate.recordedState, @"foreground");
+        XCTAssertEqualObjects([history stateFrom:100000000000LL duration:2000000000LL], @"foreground_and_background");
+        history.now = [NSDate dateWithTimeIntervalSince1970:102];
+        [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidBecomeActiveNotification object:nil];
+        XCTAssertEqual(delegate.changeCount, 1U);
+    } @finally {
+        [history stopMonitoring];
+    }
+    history.now = [NSDate dateWithTimeIntervalSince1970:103];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
+    XCTAssertEqual(delegate.changeCount, 1U);
+}
+
+- (void)testHistorySubscriptionDoesNotRetainHistory {
+    __weak FTRUMAppStateHistory *weakHistory;
+    @autoreleasepool {
+        FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground" timeNs:100];
+        weakHistory = history;
+        [history startMonitoring];
+    }
+    XCTAssertNil(weakHistory);
+}
+
+- (void)testHistoryUpdatesRUMBeforeAnEarlierRegisteredForegroundDelegate {
+    FTRUMDependencies *dependencies = [FTRUMDependencies new];
+    dependencies.fatalErrorContext = [[FTFatalErrorContext alloc] initWithErrorInfoProvider:nil];
+    FTTestAutoViewLifecycle *autoView = [FTTestAutoViewLifecycle new];
+    [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:autoView];
+    FTRUMManager *manager = [[FTRUMManager alloc] initWithRumDependencies:dependencies];
+    [[self lifecycleForManager:manager] applicationDidEnterBackground];
+    __block NSUInteger callbacks = 0;
+    autoView.foregroundCallback = ^{
+        callbacks += 1;
+        XCTAssertEqual(manager.appState, FTAppStateRun);
+        XCTAssertEqualObjects(dependencies.fatalErrorContext.currentContextModel.appState, @"run");
+        XCTAssertEqualObjects([dependencies.appStateHistory stateAt:[NSDate ft_currentNanosecondTimeStamp]], @"foreground");
+    };
+    @try {
+        [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+        XCTAssertEqual(callbacks, 1U);
+    } @finally {
+        autoView.foregroundCallback = nil;
+        [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:autoView];
+    }
+    [manager syncProcess];
+}
+
+- (void)testHistoryUpdatesImmediatelyWithoutEnqueuingRUMData {
+    FTRUMDependencies *dependencies = [FTRUMDependencies new];
+    FTTestRUMProcessingManager *manager = [[FTTestRUMProcessingManager alloc] initWithRumDependencies:dependencies];
+    [manager syncProcess];
+    NSUInteger processedBeforeLifecycle = manager.processedModelCount;
+    [dependencies.appStateHistory stopMonitoring];
+    FTTestAppStateHistory *history = [[FTTestAppStateHistory alloc] initWithState:@"background" timeNs:100000000000LL];
+    history.delegate = (id<FTRUMAppStateHistoryDelegate>)manager;
+    dependencies.appStateHistory = history;
+    history.now = [NSDate dateWithTimeIntervalSince1970:101];
+    [history startMonitoring];
+    FTTestAutoViewLifecycle *autoView = [FTTestAutoViewLifecycle new];
+    autoView.foregroundCallback = ^{
+        // Advance the controlled clock as if a downstream delegate were slow.
+        history.now = [NSDate dateWithTimeIntervalSince1970:111];
+    };
+    [[FTAppLifeCycle sharedInstance] addAppLifecycleDelegate:autoView];
+    dispatch_queue_t queue = [manager valueForKey:@"rumQueue"];
+    dispatch_suspend(queue);
+    @try {
+        [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+        XCTAssertEqual(manager.appState, FTAppStateRun);
+        XCTAssertEqual(manager.processedModelCount, processedBeforeLifecycle);
+        XCTAssertEqualObjects([history stateAt:101000000000LL], @"foreground");
+        XCTAssertEqualObjects([history stateFrom:100000000000LL to:101000000000LL], @"background");
+    } @finally {
+        [[FTAppLifeCycle sharedInstance] removeAppLifecycleDelegate:autoView];
+        autoView.foregroundCallback = nil;
+        dispatch_resume(queue);
+    }
+    [manager syncProcess];
+    XCTAssertEqual(manager.processedModelCount, processedBeforeLifecycle);
+    XCTAssertEqualObjects([history stateAt:101000000000LL], @"foreground");
+}
+
+- (void)testManagerDeallocationStopsRetainedHistorySubscription {
+    FTRUMDependencies *dependencies = [FTRUMDependencies new];
+    __weak FTRUMManager *weakManager;
+    @autoreleasepool {
+        FTRUMManager *manager = [[FTRUMManager alloc] initWithRumDependencies:dependencies];
+        weakManager = manager;
+        [manager syncProcess];
+        // Initialization also registers the manager asynchronously on the message bus.
+        [[FTModuleManager sharedInstance] syncProcess];
+    }
+    XCTAssertNil(weakManager);
+    XCTAssertNil(dependencies.appStateHistory.delegate);
+    XCTAssertFalse([[dependencies.appStateHistory valueForKey:@"monitoring"] boolValue]);
+}
+
+- (void)testManagerDeallocationAfterDelayedMessageBusRegistrationStopsHistory {
+    FTRUMDependencies *dependencies = [FTRUMDependencies new];
+    FTModuleManager *messageBus = [FTModuleManager sharedInstance];
+    dispatch_queue_t messageQueue = [messageBus valueForKey:@"queue"];
+    __weak FTRUMManager *weakManager;
+    dispatch_suspend(messageQueue);
+    @try {
+        @autoreleasepool {
+            FTRUMManager *manager = [[FTRUMManager alloc] initWithRumDependencies:dependencies];
+            weakManager = manager;
+            [manager syncProcess];
+        }
+        @autoreleasepool {
+            // A pending registration legitimately retains the manager until it runs.
+            XCTAssertNotNil(weakManager);
+        }
+        XCTAssertTrue([[dependencies.appStateHistory valueForKey:@"monitoring"] boolValue]);
+    } @finally {
+        dispatch_resume(messageQueue);
+    }
+    [messageBus syncProcess];
+    XCTAssertNil(weakManager);
+    XCTAssertNil(dependencies.appStateHistory.delegate);
+    XCTAssertFalse([[dependencies.appStateHistory valueForKey:@"monitoring"] boolValue]);
+}
+
+- (void)testViewAndResourceTrackBackgroundUntilResourceStops {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    id<FTAppLifeCycleDelegate> lifecycle = [self lifecycleForManager:manager];
+    [lifecycle applicationDidBecomeActive];
+    NSString *key = [FTBaseInfoHandler randomUUID];
+    [manager startViewWithName:@"tracker-pending-resource"];
+    [manager startResourceWithKey:key];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL initiallyForeground = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"tracker-pending-resource"]) {
+            initiallyForeground = [fields[@"app_state"] isEqualToString:@"foreground"];
+        }
+    }];
+    XCTAssertTrue(initiallyForeground);
+
+    [lifecycle applicationDidEnterBackground];
+    [manager stopResourceWithKey:key];
+    FTResourceContentModel *content = [FTResourceContentModel new];
+    content.url = [NSURL URLWithString:@"https://example.com/tracker"];
+    content.httpMethod = @"GET";
+    content.httpStatusCode = 200;
+    [manager addResourceWithKey:key metrics:nil content:content];
+    [manager syncProcess];
+
+    __block BOOL viewMixed = NO;
+    __block BOOL resourceMixed = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"tracker-pending-resource"]) {
+            viewMixed |= [fields[@"app_state"] isEqualToString:@"foreground_and_background"];
+        }
+        if ([source isEqualToString:FT_RUM_SOURCE_RESOURCE] && [tags[FT_KEY_RESOURCE_ID] isEqualToString:key]) {
+            resourceMixed = [fields[@"app_state"] isEqualToString:@"foreground_and_background"];
+        }
+    }];
+    XCTAssertTrue(viewMixed);
+    XCTAssertTrue(resourceMixed);
+}
+
+- (void)testManualViewBackgroundStopUsesLifecycleTimeline {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    id<FTAppLifeCycleDelegate> lifecycle = [self lifecycleForManager:manager];
+    [lifecycle applicationDidBecomeActive];
+    [manager startViewWithName:@"tracker-background-stop"];
+    [lifecycle applicationDidEnterBackground];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] &&
+            [tags[FT_KEY_VIEW_NAME] isEqualToString:@"tracker-background-stop"] &&
+            ![fields[FT_KEY_IS_ACTIVE] boolValue]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground_and_background");
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testAutomaticViewStopsAfterHistoryRecordsBackgroundWithPendingResource {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    [[self lifecycleForManager:manager] applicationDidBecomeActive];
+
+    FTRUMLifecycleTestViewController *controller = [FTRUMLifecycleTestViewController new];
+    [[FTAutoTrackHandler sharedInstance].viewControllerHandler notify_viewDidAppear:controller animated:NO];
+    [manager syncProcess];
+    NSString *viewID = [[manager valueForKey:@"sessionHandler"] getCurrentViewID];
+    XCTAssertNotNil(viewID);
+
+    NSString *resourceKey = [FTBaseInfoHandler randomUUID];
+    [manager startResourceWithKey:resourceKey];
+    [manager syncProcess];
+    dispatch_queue_t rumQueue = [manager valueForKey:@"rumQueue"];
+    dispatch_suspend(rumQueue);
+    @try {
+        [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
+    } @finally {
+        dispatch_resume(rumQueue);
+    }
+    [manager syncProcess];
+    XCTAssertEqual(manager.appState, FTAppStateBackground);
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    XCTAssertEqualObjects(dependencies.fatalErrorContext.currentContextModel.appState, @"background");
+
+    __block BOOL stoppedViewFound = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_ID] isEqualToString:viewID] && ![fields[FT_KEY_IS_ACTIVE] boolValue]) {
+            stoppedViewFound = YES;
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground");
+        }
+    }];
+    XCTAssertTrue(stoppedViewFound);
+
+    [manager stopResourceWithKey:resourceKey];
+    FTResourceContentModel *content = [FTResourceContentModel new];
+    content.url = [NSURL URLWithString:@"https://example.com/background-resource"];
+    content.httpMethod = @"GET";
+    content.httpStatusCode = 200;
+    [manager addResourceWithKey:resourceKey metrics:nil content:content];
+    [manager syncProcess];
+
+    __block BOOL mixedResourceFound = NO;
+    __block BOOL mixedViewFound = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_RESOURCE] && [tags[FT_KEY_RESOURCE_ID] isEqualToString:resourceKey]) {
+            mixedResourceFound = YES;
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground_and_background");
+        } else if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_ID] isEqualToString:viewID] && ![fields[FT_KEY_IS_ACTIVE] boolValue]) {
+            mixedViewFound |= [fields[@"app_state"] isEqualToString:@"foreground_and_background"];
+        }
+    }];
+    XCTAssertTrue(mixedResourceFound);
+    XCTAssertTrue(mixedViewFound);
+}
+
+- (void)testManualViewCrossingBackgroundUsesLifecycleTimeline {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    [[FTAutoTrackHandler sharedInstance] shutDown];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidBecomeActiveNotification object:nil];
+    [manager startViewWithName:@"manual-background-view"];
+    [manager syncProcess];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL foundMixedView = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"manual-background-view"]) {
+            foundMixedView |= [fields[@"app_state"] isEqualToString:@"foreground_and_background"];
+        }
+    }];
+    XCTAssertTrue(foundMixedView);
+}
+
+- (void)testAutomaticViewRestartsAfterHistoryRecordsForeground {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    [[self lifecycleForManager:manager] applicationDidBecomeActive];
+
+    FTRUMLifecycleTestViewController *controller = [FTRUMLifecycleTestViewController new];
+    [[FTAutoTrackHandler sharedInstance].viewControllerHandler notify_viewDidAppear:controller animated:NO];
+    [manager syncProcess];
+    NSString *previousViewID = [[manager valueForKey:@"sessionHandler"] getCurrentViewID];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+    [manager syncProcess];
+
+    NSString *currentViewID = [[manager valueForKey:@"sessionHandler"] getCurrentViewID];
+    XCTAssertNotNil(currentViewID);
+    XCTAssertNotEqualObjects(currentViewID, previousViewID);
+    __block BOOL restartedViewFound = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_ID] isEqualToString:currentViewID]) {
+            restartedViewFound = YES;
+            XCTAssertTrue([fields[FT_KEY_IS_ACTIVE] boolValue]);
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground");
+        }
+    }];
+    XCTAssertTrue(restartedViewFound);
+}
+
+- (void)testResourceStateStopsAtStopResourceRatherThanAddResource {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    id<FTAppLifeCycleDelegate> lifecycle = [self lifecycleForManager:manager];
+    [lifecycle applicationDidBecomeActive];
+    [manager startViewWithName:@"tracker-stopped-resource"];
+    NSString *key = [FTBaseInfoHandler randomUUID];
+    [manager startResourceWithKey:key];
+    [manager stopResourceWithKey:key];
+    [lifecycle applicationDidEnterBackground];
+    FTResourceContentModel *content = [FTResourceContentModel new];
+    content.url = [NSURL URLWithString:@"https://example.com/stopped"];
+    content.httpMethod = @"GET";
+    content.httpStatusCode = 200;
+    [manager addResourceWithKey:key metrics:nil content:content];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_RESOURCE] && [tags[FT_KEY_RESOURCE_ID] isEqualToString:key]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground");
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testLifecycleChangesKeepManualActionUntilViewStops {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    id<FTAppLifeCycleDelegate> lifecycle = [self lifecycleForManager:manager];
+    [lifecycle applicationDidBecomeActive];
+    [manager startViewWithName:@"tracker-action-view"];
+    [manager startAction:@"tracker-action" actionType:@"click" property:nil];
+    NSString *key = [FTBaseInfoHandler randomUUID];
+    [manager startResourceWithKey:key];
+    [manager syncProcess];
+    FTRUMSessionHandler *session = [manager valueForKey:@"sessionHandler"];
+    FTRUMViewHandler *view = [[session valueForKey:@"viewHandlers"] lastObject];
+    FTRUMActionHandler *action = [view valueForKey:@"actionHandler"];
+    XCTAssertNotNil(action);
+
+    [lifecycle applicationDidEnterBackground];
+    [manager syncProcess];
+    XCTAssertEqual([manager valueForKey:@"sessionHandler"], session);
+    XCTAssertEqual([view valueForKey:@"actionHandler"], action);
+    [lifecycle applicationWillEnterForeground];
+    [manager syncProcess];
+    XCTAssertEqual([view valueForKey:@"actionHandler"], action);
+    [manager stopView];
+    [manager syncProcess];
+    XCTAssertNil([view valueForKey:@"actionHandler"]);
+    [manager stopResourceWithKey:key];
+    FTResourceContentModel *content = [FTResourceContentModel new];
+    content.url = [NSURL URLWithString:@"https://example.com/action"];
+    content.httpMethod = @"GET";
+    content.httpStatusCode = 200;
+    [manager addResourceWithKey:key metrics:nil content:content];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_ACTION] && [tags[FT_KEY_ACTION_NAME] isEqualToString:@"tracker-action"]) {
+            found = YES;
+            XCTAssertNil(fields[@"app_state"]);
+            XCTAssertEqualObjects(fields[FT_KEY_ACTION_RESOURCE_COUNT], @0);
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testLongTaskUsesOriginalIntervalAfterQueueDelay {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    long long start = [NSDate ft_currentNanosecondTimeStamp] - 10000000000LL;
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground" timeNs:start];
+    [history recordState:@"background" timeNs:start + 1000000000LL];
+    [history recordState:@"foreground" timeNs:start + 3000000000LL];
+    dependencies.appStateHistory = history;
+    [manager startViewWithName:@"tracker-long-task"];
+    [manager syncProcess];
+
+    NSArray<NSDictionary *> *cases = @[
+        @{@"stack": @"foreground", @"start": @(start), @"duration": @(1000000000LL), @"state": @"foreground"},
+        @{@"stack": @"mixed", @"start": @(start), @"duration": @(2000000000LL), @"state": @"foreground_and_background"},
+        @{@"stack": @"background", @"start": @(start + 1000000000LL), @"duration": @(1000000000LL), @"state": @"background"},
+        @{@"stack": @"restored-foreground", @"start": @(start + 3000000000LL), @"duration": @(1000000000LL), @"state": @"foreground"},
+        @{@"stack": @"missing-coverage", @"start": @(start - 1000000000LL), @"duration": @(1000000000LL), @"state": @"unknown"},
+        @{@"stack": @"zero-duration", @"start": @(start), @"duration": @0, @"state": @"unknown"}
+    ];
+    NSMutableDictionary<NSString *, NSDictionary *> *expectedByStack = [NSMutableDictionary dictionary];
+    dispatch_queue_t rumQueue = [manager valueForKey:@"rumQueue"];
+    dispatch_suspend(rumQueue);
+    @try {
+        for (NSDictionary *testCase in cases) {
+            expectedByStack[testCase[@"stack"]] = testCase;
+            [manager addLongTaskWithStack:testCase[@"stack"]
+                                duration:testCase[@"duration"]
+                               startTime:[testCase[@"start"] longLongValue]
+                                property:@{@"test_context": @"kept"}];
+        }
+        // A transition after every measured interval must not affect its result.
+        [history recordState:@"background" timeNs:start + 5000000000LL];
+    } @finally {
+        dispatch_resume(rumQueue);
+    }
+    [manager syncProcess];
+
+    __block NSUInteger foundCount = 0;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] timeCallBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, long long time, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_LONG_TASK]) {
+            NSDictionary *expected = expectedByStack[fields[FT_KEY_LONG_TASK_STACK]];
+            XCTAssertNotNil(expected);
+            XCTAssertEqual(time, [expected[@"start"] longLongValue]);
+            XCTAssertEqualObjects(fields[FT_DURATION], expected[@"duration"]);
+            XCTAssertEqualObjects(fields[@"app_state"], expected[@"state"]);
+            XCTAssertEqualObjects(fields[@"test_context"], @"kept");
+            foundCount += 1;
+        }
+    }];
+    XCTAssertEqual(foundCount, cases.count);
+}
+
+- (void)testViewLoadingCacheWritesFollowRUMQueueOrder {
+    FTRUMManager *manager = [[FTRUMManager alloc] initWithRumDependencies:[FTRUMDependencies new]];
+    [manager syncProcess];
+    dispatch_queue_t queue = [manager valueForKey:@"rumQueue"];
+    __block NSDictionary *beforeCreate;
+    __block NSDictionary *afterCreate;
+    // Read both representations so this regression also runs against the old
+    // helper: its separate queue incorrectly makes the write visible early.
+    NSDictionary *(^snapshot)(void) = ^NSDictionary *{
+        id cache = [manager valueForKey:@"preViewDuration"];
+        return [cache isKindOfClass:FTReadWriteHelper.class] ? [cache currentValue] : [cache copy];
+    };
+    dispatch_suspend(queue);
+    @try {
+        dispatch_async(queue, ^{ beforeCreate = snapshot(); });
+        [manager onCreateView:@"ordered" loadTime:@60000000];
+        dispatch_async(queue, ^{ afterCreate = snapshot(); });
+    } @finally {
+        dispatch_resume(queue);
+    }
+    [manager syncProcess];
+    XCTAssertEqual(beforeCreate.count, 0u);
+    XCTAssertEqualObjects(afterCreate[@"ordered"][@"duration"], @60000000);
+}
+
+- (void)testViewLoadingHandoffConsumesInSubmissionOrder {
+    FTLoadingHandoffTestManager *manager = [[FTLoadingHandoffTestManager alloc] initWithRumDependencies:[FTRUMDependencies new]];
+    [manager syncProcess];
+    dispatch_queue_t queue = [manager valueForKey:@"rumQueue"];
+    dispatch_suspend(queue);
+    @try {
+        [manager onCreateView:@"same" loadTime:@60000000 loadStartEpochNs:@1000000000];
+        [manager startViewWithName:@"same"];
+        [manager startViewWithName:@"same"];
+        // A late creation is available only to a subsequent start.
+        [manager onCreateView:@"same" loadTime:@(-1)];
+        [manager startViewWithName:@"same"];
+        [manager onCreateView:@"same" loadTime:@10];
+        [manager onCreateView:@"same" loadTime:@20];
+        [manager startViewWithName:@"same"];
+        // The legacy overload clears on nil; the precise overload ignores nil.
+        NSNumber *missingDuration = nil;
+        [manager onCreateView:@"same" loadTime:@30];
+        [manager onCreateView:@"same" loadTime:missingDuration];
+        [manager startViewWithName:@"same"];
+        [manager onCreateView:@"same" loadTime:@40];
+        [manager onCreateView:@"same" loadTime:missingDuration loadStartEpochNs:nil];
+        [manager startViewWithName:@"same"];
+        [manager onCreateView:@"other" loadTime:@50];
+        [manager startViewWithName:@"missing"];
+        [manager startViewWithName:@"other"];
+        NSMutableString *name = [@"snapshot" mutableCopy];
+        [manager onCreateView:name loadTime:@70];
+        [name setString:@"changed-after-create"];
+        NSMutableString *startName = [@"snapshot" mutableCopy];
+        // Rejected starts must not consume a pending duration.
+        [manager startViewWithViewID:@"" viewName:startName property:nil];
+        [manager startViewWithName:startName];
+        [startName setString:@"changed-after-start"];
+    } @finally {
+        dispatch_resume(queue);
+    }
+    [manager syncProcess];
+    NSArray *expected = @[@60000000, @0, @(-1), @20, @0, @40, @0, @50, @70];
+    XCTAssertEqual(manager.startedViews.count, expected.count);
+    [manager.startedViews enumerateObjectsUsingBlock:^(FTRUMViewModel *view, NSUInteger idx, BOOL *stop) {
+        XCTAssertEqualObjects(view.loading_time, expected[idx]);
+        XCTAssertEqualObjects(view.loading_start_epoch_ns, idx == 0 ? @1000000000 : nil);
+    }];
+    XCTAssertEqualObjects(manager.startedViews.lastObject.view_name, @"snapshot");
+}
+
+- (void)testViewLoadingHandoffPreservesEventTimeAndVisitorDuringQueueDelay {
+    FTLoadingHandoffTestManager *manager = [[FTLoadingHandoffTestManager alloc] initWithRumDependencies:[FTRUMDependencies new]];
+    [manager syncProcess];
+    dispatch_queue_t queue = [manager valueForKey:@"rumQueue"];
+    NSDate *eventTime = [NSDate dateWithTimeIntervalSince1970:1700000000];
+    Method method = class_getClassMethod(NSDate.class, @selector(date));
+    IMP original = method_getImplementation(method);
+    NSThread *testThread = NSThread.currentThread;
+    IMP replacement = imp_implementationWithBlock(^NSDate *(id receiver) {
+        if (NSThread.currentThread == testThread) return eventTime;
+        return ((NSDate *(*)(id, SEL))original)(receiver, @selector(date));
+    });
+    dispatch_suspend(queue);
+    method_setImplementation(method, replacement);
+    @try {
+        manager.testVisitorID = @"visitor-at-event";
+        [manager onCreateView:@"delayed" loadTime:@60000000 loadStartEpochNs:@1699999999000000000LL];
+        [manager startViewWithName:@"delayed"];
+        manager.testVisitorID = @"visitor-after-event";
+    } @finally {
+        // The real clock is restored before processing can start.
+        method_setImplementation(method, original);
+        imp_removeBlock(replacement);
+        dispatch_resume(queue);
+    }
+    [manager syncProcess];
+    XCTAssertEqual(manager.startedViews.count, 1u);
+    FTRUMViewModel *view = manager.startedViews.firstObject;
+    XCTAssertEqualObjects(view.time, eventTime);
+    XCTAssertEqualObjects(view.visitorIDSnapshot, @"visitor-at-event");
+    XCTAssertEqualObjects(view.loading_time, @60000000);
+    XCTAssertEqualObjects(view.loading_start_epoch_ns, @1699999999000000000LL);
+}
+
+- (void)testManualViewLoadingDoesNotInferStateFromDuration {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    long long now = [NSDate ft_currentNanosecondTimeStamp];
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground"
+                                                                        timeNs:now - 10000000000LL];
+    [history recordState:@"background" timeNs:now - 2000000000LL];
+    [history recordState:@"foreground" timeNs:now - 1000000000LL];
+    dependencies.appStateHistory = history;
+
+    [manager onCreateView:@"manual-loading-state" loadTime:@(3000000000LL)];
+    [manager startViewWithName:@"manual-loading-state"];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"manual-loading-state"]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @(3000000000LL));
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground");
+            XCTAssertNil(fields[@"loading_time_app_state"]);
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testAutomaticViewAppStateIncludesBackgroundBeforeViewStart {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    long long now = [NSDate ft_currentNanosecondTimeStamp];
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground"
+                                                                        timeNs:now - 10000000000LL];
+    [history recordState:@"background" timeNs:now - 2500000000LL];
+    [history recordState:@"foreground" timeNs:now - 1500000000LL];
+    dependencies.appStateHistory = history;
+
+    NSNumber *loadStartEpochNs = @(now - 3000000000LL);
+    [manager onCreateView:@"auto-loading-gap" loadTime:@(2000000000LL) loadStartEpochNs:loadStartEpochNs];
+    [manager startViewWithName:@"auto-loading-gap"];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"auto-loading-gap"]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @(2000000000LL));
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground_and_background");
+            XCTAssertNil(fields[@"loading_time_app_state"]);
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testAutomaticViewStartUsesCapturedLoadStartAndPreservesIdentity {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    long long now = [NSDate ft_currentNanosecondTimeStamp];
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground"
+                                                                        timeNs:now - 10000000000LL];
+    [history recordState:@"background" timeNs:now - 2000000000LL];
+    [history recordState:@"foreground" timeNs:now - 1000000000LL];
+    dependencies.appStateHistory = history;
+
+    NSNumber *loadStartEpochNs = @(now - 3000000000LL);
+    [manager onCreateView:@"custom-native-auto-view" loadTime:@(1000000000LL) loadStartEpochNs:loadStartEpochNs];
+    [manager startViewWithViewID:@"native-auto-view-id" viewName:@"custom-native-auto-view" property:@{@"custom": @"value"}];
+    [manager stopViewWithViewID:@"native-auto-view-id" property:nil];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_ID] isEqualToString:@"native-auto-view-id"]) {
+            found = YES;
+            XCTAssertEqualObjects(tags[FT_KEY_VIEW_NAME], @"custom-native-auto-view");
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @(1000000000LL));
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground_and_background");
+            XCTAssertEqualObjects(fields[@"custom"], @"value");
+            XCTAssertNil(fields[@"loading_time_app_state"]);
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testViewLoadingUpdateWithoutStartUsesViewState {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    dependencies.appStateHistory = [[FTRUMAppStateHistory alloc]
+        initWithState:@"foreground" timeNs:[NSDate ft_currentNanosecondTimeStamp] - 1000000000LL];
+    [manager startViewWithName:@"updated-loading-state"];
+    [[FTExternalDataManager sharedManager] updateViewLoadingTime:@(1234567)];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] &&
+            [tags[FT_KEY_VIEW_NAME] isEqualToString:@"updated-loading-state"] &&
+            [fields[FT_KEY_LOADING_TIME] isEqual:@(1234567)]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground");
+            XCTAssertNil(fields[@"loading_time_app_state"]);
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testExternalLoadingStartPreservesIntegerNanoseconds {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    // Foreground lasts exactly one ns before background. Rounding the loading
+    // start through NSDate would change which states this interval includes.
+    long long startNs = 1700000000000000123LL;
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc] initWithState:@"foreground" timeNs:startNs];
+    [history recordState:@"background" timeNs:startNs + 1];
+    dependencies.appStateHistory = history;
+    [[FTExternalDataManager sharedManager] onCreateView:@"precise-loading"
+                                              loadTime:@1234567
+                                      loadStartEpochNs:@(startNs)];
+    [manager startViewWithName:@"precise-loading"];
+    [manager syncProcess];
+    NSObject *session = [manager valueForKey:@"sessionHandler"];
+    NSObject *view = [[session valueForKey:@"viewHandlers"] lastObject];
+    XCTAssertEqual([[view valueForKey:@"loadingStartEpochNs"] longLongValue], startNs);
+    [manager stopView];
+    [manager syncProcess];
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"precise-loading"]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground_and_background");
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @1234567);
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testInvalidLoadingStartFallsBackToViewStart {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    NSArray *inputs = @[[NSNull null], @0, @(-1), @(NAN), @(INFINITY), @(ULLONG_MAX), @(LLONG_MAX)];
+    for (id input in inputs) {
+        NSNumber *start = input == NSNull.null ? nil : input;
+        [[FTExternalDataManager sharedManager] onCreateView:@"invalid-loading" loadTime:@123 loadStartEpochNs:start];
+        [manager startViewWithName:@"invalid-loading"];
+        [manager syncProcess];
+        NSObject *session = [manager valueForKey:@"sessionHandler"];
+        NSObject *view = [[session valueForKey:@"viewHandlers"] lastObject];
+        NSDate *viewStart = [view valueForKey:@"viewStartTime"];
+        XCTAssertEqual([[view valueForKey:@"loadingStartEpochNs"] longLongValue], [viewStart ft_nanosecondTimeStamp], @"input: %@", input);
+        [manager stopView];
+        [manager syncProcess];
+    }
+}
+
+- (void)testExternalAutomaticViewUsesEpochNanosecondLoadingStart {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    long long now = [NSDate ft_currentNanosecondTimeStamp];
+    FTRUMAppStateHistory *history = [[FTRUMAppStateHistory alloc]
+        initWithState:@"foreground" timeNs:now - 10000000000LL];
+    [history recordState:@"background" timeNs:now - 2000000000LL];
+    [history recordState:@"foreground" timeNs:now - 1000000000LL];
+    dependencies.appStateHistory = history;
+
+    NSNumber *loadStartEpochNs = @(now - 3000000000LL);
+    [[FTExternalDataManager sharedManager] onCreateView:@"external-auto-loading"
+                                              loadTime:@(1000000000LL)
+                                      loadStartEpochNs:loadStartEpochNs];
+    [manager startViewWithName:@"external-auto-loading"];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"external-auto-loading"]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @(1000000000LL));
+            XCTAssertEqualObjects(fields[@"app_state"], @"foreground_and_background");
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testAutomaticViewLoadingOverThirtySecondsIsPreserved {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    [manager onCreateView:@"auto-over-max" loadTime:@(30000000001LL) loadStartEpochNs:nil];
+    [manager startViewWithName:@"auto-over-max"];
+    [manager stopView];
+    [manager syncProcess];
+
+    NSArray *records = [[FTTrackerEventDBTool sharedManager] getAllDatas];
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:records callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"auto-over-max"]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @(30000000001LL));
+            XCTAssertNil(fields[@"noise_reduction"]);
+            *stop = YES;
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testAutomaticViewLoadingAtThirtySecondsIsPreserved {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    [manager onCreateView:@"auto-at-max" loadTime:@(30000000000LL) loadStartEpochNs:nil];
+    [manager startViewWithName:@"auto-at-max"];
+    [manager stopView];
+    [manager syncProcess];
+
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"auto-at-max"]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @(30000000000LL));
+            XCTAssertNil(fields[@"noise_reduction"]);
+            *stop = YES;
+        }
+    }];
+    XCTAssertTrue(found);
+}
+
+- (void)testManualViewLoadingOverThirtySecondsIsPreserved {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    [manager onCreateView:@"manual-over-max" loadTime:@(45000000000LL)];
+    [manager startViewWithName:@"manual-over-max"];
+    [manager stopView];
+    [manager syncProcess];
+
+    NSArray *records = [[FTTrackerEventDBTool sharedManager] getAllDatas];
+    __block BOOL found = NO;
+    [FTModelHelper resolveModelArray:records callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"manual-over-max"]) {
+            found = YES;
+            XCTAssertEqualObjects(fields[FT_KEY_LOADING_TIME], @(45000000000LL));
+            XCTAssertNil(fields[@"noise_reduction"]);
+            *stop = YES;
+        }
+    }];
+    XCTAssertTrue(found);
+}
 #if FT_HAS_UIKIT
-- (void)testWillEnterForegroundKeepsBackgroundAppState{
+- (void)testInactiveInterruptionDoesNotMarkMetricAsMixed {
+    FTRUMDependencies *dependencies = [[FTRUMDependencies alloc] init];
+    dependencies.fatalErrorContext = [[FTFatalErrorContext alloc] initWithErrorInfoProvider:nil];
+    FTRUMManager *manager = [[FTRUMManager alloc] initWithRumDependencies:dependencies];
+    id<FTAppLifeCycleDelegate> delegate = [self lifecycleForManager:manager];
+
+    [delegate applicationDidBecomeActive];
+    long long start = [NSDate ft_currentNanosecondTimeStamp];
+    [delegate applicationWillResignActive];
+    [delegate applicationDidBecomeActive];
+    // Synchronous no-op callbacks can finish within NSDate's timestamp resolution.
+    long long end = MAX(start + 1, [NSDate ft_currentNanosecondTimeStamp]);
+    XCTAssertEqualObjects([dependencies.appStateHistory stateFrom:start to:end], @"foreground");
+
+    [delegate applicationDidEnterBackground];
+    long long backgroundTime = [NSDate ft_currentNanosecondTimeStamp];
+    XCTAssertEqualObjects([dependencies.appStateHistory stateAt:backgroundTime], @"background");
+    if ([delegate respondsToSelector:@selector(applicationWillEnterForeground)]) {
+        [delegate applicationWillEnterForeground];
+    }
+    long long beforeActive = [NSDate ft_currentNanosecondTimeStamp];
+    XCTAssertEqualObjects([dependencies.appStateHistory stateAt:beforeActive], @"foreground");
+    [delegate applicationDidBecomeActive];
+    end = [NSDate ft_currentNanosecondTimeStamp];
+    XCTAssertEqualObjects([dependencies.appStateHistory stateFrom:start to:end], @"foreground_and_background");
+    [manager syncProcess];
+}
+
+- (void)testWillEnterForegroundUpdatesAppState{
     FTRUMDependencies *dependencies = [[FTRUMDependencies alloc]init];
     dependencies.fatalErrorContext = [[FTFatalErrorContext alloc]initWithErrorInfoProvider:nil];
     FTRUMManager *manager = [[FTRUMManager alloc]initWithRumDependencies:dependencies];
-    manager.appState = FTAppStateBackground;
-
-    id<FTAppLifeCycleDelegate> delegate = (id<FTAppLifeCycleDelegate>)manager;
+    id<FTAppLifeCycleDelegate> delegate = [self lifecycleForManager:manager];
+    [delegate applicationDidEnterBackground];
     if ([delegate respondsToSelector:@selector(applicationWillEnterForeground)]) {
         [delegate applicationWillEnterForeground];
     }
 
-    XCTAssertEqual(manager.appState, FTAppStateBackground);
+    XCTAssertEqual(manager.appState, FTAppStateRun);
+    long long beforeActive = [NSDate ft_currentNanosecondTimeStamp];
+    XCTAssertEqualObjects([dependencies.appStateHistory stateAt:beforeActive], @"foreground");
+
+    [delegate applicationDidBecomeActive];
+    long long afterActive = [NSDate ft_currentNanosecondTimeStamp];
+    XCTAssertEqual(manager.appState, FTAppStateRun);
+    XCTAssertEqualObjects([dependencies.appStateHistory stateAt:afterActive], @"foreground");
     [manager syncProcess];
 }
 #endif
@@ -178,11 +1265,154 @@
 
     XCTAssertEqualObjects([session valueForKey:@"sessionStartTime"], startTime);
     XCTAssertEqualObjects([session valueForKey:@"lastInteractionTime"], startTime);
+    XCTAssertEqualObjects(session.context.sessionState.sessionFields[FT_RUM_KEY_SESSION_START_REASON], @"sdk_init");
 
     NSDate *rolloverTime = [startTime dateByAddingTimeInterval:60];
     FTRUMSessionHandler *newSession = [[FTRUMSessionHandler alloc] initWithExpiredSession:session time:rolloverTime];
     XCTAssertEqualObjects([newSession valueForKey:@"sessionStartTime"], rolloverTime);
     XCTAssertEqualObjects([newSession valueForKey:@"lastInteractionTime"], rolloverTime);
+    XCTAssertEqualObjects(newSession.context.sessionState.sessionFields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_UNKNOWN);
+}
+
+- (void)testProcessStartTimeIsOmittedAcrossSessions{
+    NSDate *eventTime = [NSDate date];
+    FTRUMSessionHandler *session = [self sessionStartingAtForEventTimeTest:eventTime];
+    FTRUMSessionHandler *renewedSession = [[FTRUMSessionHandler alloc] initWithExpiredSession:session
+                                                                                         time:[eventTime dateByAddingTimeInterval:15 * 60]];
+    XCTAssertNil(session.context.sessionState.sessionFields[@"process_start_time_ns"]);
+    XCTAssertNil(renewedSession.context.sessionState.sessionFields[@"process_start_time_ns"]);
+}
+
+- (void)testSessionStartReasonSurvivesStateCopyAndSerialization{
+    FTRUMSessionState *state = [self sessionStartingAtForEventTimeTest:[NSDate date]].context.sessionState;
+    FTRUMSessionState *copiedState = [state copy];
+    FTRUMSessionState *restoredState = [[FTRUMSessionState alloc] initWithDict:[state toDictionary]];
+
+    XCTAssertEqualObjects(copiedState.session_start_reason, FT_RUM_SESSION_START_REASON_SDK_INIT);
+    XCTAssertEqualObjects(restoredState.session_start_reason, FT_RUM_SESSION_START_REASON_SDK_INIT);
+    XCTAssertEqualObjects(copiedState, state);
+    XCTAssertEqualObjects(restoredState, state);
+
+    NSMutableDictionary *legacyDictionary = [[state toDictionary] mutableCopy];
+    [legacyDictionary removeObjectForKey:FT_RUM_KEY_SESSION_START_REASON];
+    FTRUMSessionState *legacyState = [[FTRUMSessionState alloc] initWithDict:legacyDictionary];
+    XCTAssertNil(legacyState.session_start_reason);
+    XCTAssertNil(legacyState.sessionFields[FT_RUM_KEY_SESSION_START_REASON]);
+    XCTAssertNil(legacyState.sessionFields[@"process_start_time_ns"]);
+
+    legacyDictionary[@"process_start_time_ns"] = @1800000000000000000LL;
+    FTRUMSessionState *restoredLegacyState = [[FTRUMSessionState alloc] initWithDict:legacyDictionary];
+    XCTAssertNil(restoredLegacyState.sessionFields[@"process_start_time_ns"]);
+    XCTAssertNil([restoredLegacyState toDictionary][@"process_start_time_ns"]);
+}
+
+- (void)testSessionStartReasonAtInactivityBoundary{
+    NSDate *startTime = [NSDate dateWithTimeIntervalSince1970:1000000];
+    FTRUMSessionHandler *session = [self sessionStartingAtForEventTimeTest:startTime];
+    FTRUMDataModel *beforeBoundary = [[FTRUMDataModel alloc] initWithType:FTRUMViewPlaceholder
+                                                                     time:[startTime dateByAddingTimeInterval:15 * 60 - 1]];
+    FTRUMDataModel *atBoundary = [[FTRUMDataModel alloc] initWithType:FTRUMViewPlaceholder
+                                                                 time:[startTime dateByAddingTimeInterval:15 * 60]];
+
+    XCTAssertTrue([self processModel:beforeBoundary inTestSession:session]);
+    XCTAssertFalse([self processModel:atBoundary inTestSession:session]);
+    FTRUMSessionHandler *renewedSession = [[FTRUMSessionHandler alloc] initWithExpiredSession:session time:atBoundary.time];
+    XCTAssertEqualObjects(renewedSession.context.sessionState.sessionFields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_INACTIVITY_TIMEOUT);
+    XCTAssertEqualObjects(session.context.sessionState.sessionFields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_SDK_INIT);
+}
+
+- (void)testSessionStartReasonAtMaximumDurationWithRecentInteractions{
+    NSDate *startTime = [NSDate dateWithTimeIntervalSince1970:1000000];
+    FTRUMSessionHandler *session = [self sessionStartingAtForEventTimeTest:startTime];
+    for (NSUInteger minute = 10; minute < 240; minute += 10) {
+        FTRUMDataModel *interaction = [[FTRUMDataModel alloc] initWithType:FTRUMDataAddAction
+                                                                      time:[startTime dateByAddingTimeInterval:minute * 60]];
+        XCTAssertTrue([self processModel:interaction inTestSession:session]);
+    }
+    FTRUMDataModel *atMaximum = [[FTRUMDataModel alloc] initWithType:FTRUMViewPlaceholder
+                                                                 time:[startTime dateByAddingTimeInterval:4 * 60 * 60]];
+    XCTAssertFalse([self processModel:atMaximum inTestSession:session]);
+    FTRUMSessionHandler *renewedSession = [[FTRUMSessionHandler alloc] initWithExpiredSession:session time:atMaximum.time];
+    XCTAssertEqualObjects(renewedSession.context.sessionState.sessionFields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_MAX_DURATION);
+}
+
+- (void)testSessionStartReasonWhenSamplingRateChangeRenewsSession{
+    FTRUMDependencies *dependencies = [[FTRUMDependencies alloc] init];
+    dependencies.sampleRate = 100;
+    dependencies.sessionOnErrorSampleRate = 0;
+    dependencies.appId = @"sampling-change-test";
+    NSDate *startTime = [NSDate dateWithTimeIntervalSince1970:1000000];
+    FTRUMDataModel *initialModel = [[FTRUMDataModel alloc] initWithType:FTRUMViewPlaceholder time:startTime];
+    FTRUMSessionHandler *session = [[FTRUMSessionHandler alloc] initWithModel:initialModel dependencies:dependencies];
+    dependencies.sampleRate = 0;
+    FTRUMDataModel *updateModel = [[FTRUMDataModel alloc] initWithType:FTRUMSampleRateUpdate
+                                                                  time:[startTime dateByAddingTimeInterval:60]];
+
+    XCTAssertFalse([self processModel:updateModel inTestSession:session]);
+    FTRUMSessionHandler *renewedSession = [[FTRUMSessionHandler alloc] initWithExpiredSession:session time:updateModel.time];
+    XCTAssertEqualObjects(renewedSession.context.sessionState.sessionFields[FT_RUM_KEY_SESSION_START_REASON], @"sampling_changed");
+}
+
+- (void)testSampledSessionRenewalPublishesRenewedSessionStateToFatalErrorContext{
+    FTRUMDependencies *dependencies = [[FTRUMDependencies alloc] init];
+    dependencies.sampleRate = 100;
+    dependencies.sessionOnErrorSampleRate = 0;
+    dependencies.appId = @"sampled-session-renewal-test";
+    dependencies.fatalErrorContext = [[FTFatalErrorContext alloc] initWithErrorInfoProvider:nil];
+    NSDate *startTime = [NSDate date];
+    FTRUMDataModel *initialModel = [[FTRUMDataModel alloc] initWithType:FTRUMViewPlaceholder time:startTime];
+    FTRUMSessionHandler *session = [[FTRUMSessionHandler alloc] initWithModel:initialModel dependencies:dependencies];
+
+    FTRUMSessionHandler *renewedSession = [[FTRUMSessionHandler alloc]
+        initWithExpiredSession:session
+        time:[startTime dateByAddingTimeInterval:16 * 60]];
+    FTRUMSessionState *publishedState = dependencies.fatalErrorContext.currentContextModel.lastSessionState;
+
+    XCTAssertNotNil(publishedState);
+    XCTAssertNotEqualObjects(renewedSession.context.sessionState.session_id, session.context.sessionState.session_id);
+    XCTAssertEqualObjects(publishedState, renewedSession.context.sessionState);
+    XCTAssertEqual(publishedState.sampleRate, 100);
+    XCTAssertFalse(publishedState.sampled_for_error_session);
+}
+
+- (void)testErrorSampledSessionRenewalPublishesRenewedSessionStateToFatalErrorContext{
+    FTRUMDependencies *dependencies = [[FTRUMDependencies alloc] init];
+    dependencies.sampleRate = 0;
+    dependencies.sessionOnErrorSampleRate = 100;
+    dependencies.appId = @"error-sampled-session-renewal-test";
+    dependencies.fatalErrorContext = [[FTFatalErrorContext alloc] initWithErrorInfoProvider:nil];
+    NSDate *startTime = [NSDate date];
+    FTRUMDataModel *initialModel = [[FTRUMDataModel alloc] initWithType:FTRUMViewPlaceholder time:startTime];
+    FTRUMSessionHandler *session = [[FTRUMSessionHandler alloc] initWithModel:initialModel dependencies:dependencies];
+
+    FTRUMSessionHandler *renewedSession = [[FTRUMSessionHandler alloc]
+        initWithExpiredSession:session
+        time:[startTime dateByAddingTimeInterval:16 * 60]];
+    FTRUMSessionState *publishedState = dependencies.fatalErrorContext.currentContextModel.lastSessionState;
+
+    XCTAssertNotNil(publishedState);
+    XCTAssertNotEqualObjects(renewedSession.context.sessionState.session_id, session.context.sessionState.session_id);
+    XCTAssertEqualObjects(publishedState, renewedSession.context.sessionState);
+    XCTAssertEqual(publishedState.sessionOnErrorSampleRate, 100);
+    XCTAssertTrue(publishedState.sampled_for_error_session);
+}
+
+- (void)testUnsampledSessionRenewalKeepsFatalErrorSessionStateNil{
+    FTRUMDependencies *dependencies = [[FTRUMDependencies alloc] init];
+    dependencies.sampleRate = 0;
+    dependencies.sessionOnErrorSampleRate = 0;
+    dependencies.appId = @"unsampled-session-renewal-test";
+    dependencies.fatalErrorContext = [[FTFatalErrorContext alloc] initWithErrorInfoProvider:nil];
+    NSDate *startTime = [NSDate date];
+    FTRUMDataModel *initialModel = [[FTRUMDataModel alloc] initWithType:FTRUMViewPlaceholder time:startTime];
+    FTRUMSessionHandler *session = [[FTRUMSessionHandler alloc] initWithModel:initialModel dependencies:dependencies];
+
+    FTRUMSessionHandler *renewedSession = [[FTRUMSessionHandler alloc]
+        initWithExpiredSession:session
+        time:[startTime dateByAddingTimeInterval:16 * 60]];
+
+    XCTAssertNotNil(renewedSession.context.sessionState);
+    XCTAssertNil(dependencies.fatalErrorContext.currentContextModel.lastSessionState);
 }
 
 - (void)testUserInteractionsAdvanceLastInteractionUsingModelTime{
@@ -819,19 +2049,30 @@
 }
 - (void)testStopResourceInBackground{
     [self setRumConfig];
-    UIViewController *vc = [[UIViewController alloc] init];
-    vc.view.backgroundColor = UIColor.whiteColor;
-    [vc viewDidAppear:YES];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    NSString *viewID = [FTBaseInfoHandler randomUUID];
+    // Exercise RUM background handling without relying on synthetic UIKit callbacks.
+    [manager startViewWithViewID:viewID viewName:@"background-resource-page" property:nil];
+    [manager syncProcess];
+    FTRUMSessionHandler *sessionHandler = [manager valueForKey:@"sessionHandler"];
+    NSArray<FTRUMViewHandler *> *initialViews = [sessionHandler valueForKey:@"viewHandlers"];
+    NSPredicate *ownsView = [NSPredicate predicateWithBlock:^BOOL(FTRUMViewHandler *view, NSDictionary *bindings) {
+        return [view.view_id isEqualToString:viewID];
+    }];
+    NSArray<FTRUMViewHandler *> *trackedViews = [initialViews filteredArrayUsingPredicate:ownsView];
+    XCTAssertEqual(trackedViews.count, 1u);
+    XCTAssertTrue(trackedViews.firstObject.isActiveView);
+    XCTAssertEqual(trackedViews.firstObject.trackingType, FTRUMViewTrackingTypeAutomatic);
 
     NSString *key = [FTBaseInfoHandler randomUUID];
     NSURL *url = [NSURL URLWithString:@"https://www.baidu.com/more/"];
     [[FTExternalDataManager sharedManager] startResourceWithKey:key];
     [[NSNotificationCenter defaultCenter]
      postNotificationName:UIApplicationDidEnterBackgroundNotification object:nil];
-    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    FTRUMSessionHandler *sessionHandler = [[FTGlobalRumManager sharedInstance].rumManager valueForKey:@"sessionHandler"];
-    NSArray *viewHandlers = [sessionHandler valueForKey:@"viewHandlers"];
-    XCTAssertTrue(viewHandlers.count>0);
+    [manager syncProcess];
+    NSArray<FTRUMViewHandler *> *viewHandlers = [[sessionHandler valueForKey:@"viewHandlers"] filteredArrayUsingPredicate:ownsView];
+    XCTAssertEqual(viewHandlers.count, 1u);
+    XCTAssertFalse(viewHandlers.firstObject.isActiveView);
 
     FTResourceContentModel *model = [FTResourceContentModel new];
     model.url = url;
@@ -839,9 +2080,17 @@
     model.httpMethod = @"GET";
     [[FTExternalDataManager sharedManager] stopResourceWithKey:key];
     [[FTExternalDataManager sharedManager] addResourceWithKey:key metrics:nil content:model];
-    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
-    NSArray *newViewHandlers = [sessionHandler valueForKey:@"viewHandlers"];
-    XCTAssertTrue(newViewHandlers.count == 0);
+    [manager syncProcess];
+    NSArray *newViewHandlers = [[sessionHandler valueForKey:@"viewHandlers"] filteredArrayUsingPredicate:ownsView];
+    XCTAssertEqual(newViewHandlers.count, 0u);
+    __block NSUInteger resourceCount = 0;
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        if ([source isEqualToString:FT_RUM_SOURCE_RESOURCE] && [tags[FT_KEY_RESOURCE_ID] isEqualToString:key]) {
+            resourceCount++;
+            XCTAssertEqualObjects(tags[FT_KEY_VIEW_ID], viewID);
+        }
+    }];
+    XCTAssertEqual(resourceCount, 1u);
 }
 // When the next View Start, the duration of the current View is no longer updated (no new View data until the resource ends)
 - (void)testGivenViewUnfinishedResource{
@@ -1391,6 +2640,8 @@
         if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"ApplicationLaunch"]) {
             previousSessionID = tags[FT_RUM_KEY_SESSION_ID];
             XCTAssertTrue([fields[FT_KEY_IS_ACTIVE] boolValue]);
+            XCTAssertEqualObjects(fields[FT_RUM_KEY_SESSION_START_REASON], @"sdk_init");
+            XCTAssertNil(fields[@"process_start_time_ns"]);
             *stop = YES;
         }
     }];
@@ -1422,10 +2673,14 @@
         NSString *sessionID = tags[FT_RUM_KEY_SESSION_ID];
         if ([source isEqualToString:FT_RUM_SOURCE_ERROR] && [sessionID isEqualToString:newSessionID]) {
             XCTAssertTrue([tags[FT_KEY_VIEW_NAME] isEqualToString:@"RootView"]);
+            XCTAssertEqualObjects(fields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_INACTIVITY_TIMEOUT);
+            XCTAssertNil(fields[@"process_start_time_ns"]);
             hasNewSessionRootError = YES;
         } else if ([source isEqualToString:FT_RUM_SOURCE_VIEW] && [tags[FT_KEY_VIEW_NAME] isEqualToString:@"ApplicationLaunch"]) {
             if ([sessionID isEqualToString:previousSessionID] && ![fields[FT_KEY_IS_ACTIVE] boolValue]) {
                 XCTAssertTrue([fields[FT_KEY_TIME_SPENT] longLongValue] > 0);
+                XCTAssertEqualObjects(fields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_SDK_INIT);
+                XCTAssertNil(fields[@"process_start_time_ns"]);
                 stoppedPreviousApplicationLaunch = YES;
             }
             if ([sessionID isEqualToString:newSessionID]) {
@@ -1449,6 +2704,8 @@
         if ([tags[FT_KEY_VIEW_NAME] isEqualToString:@"ApplicationLaunch"]) {
             XCTAssertTrue([tags[FT_KEY_VIEW_ID] length] > 0);
             XCTAssertTrue([tags[FT_KEY_VIEW_REFERRER] isEqualToString:@"root"]);
+            XCTAssertEqualObjects(fields[FT_RUM_KEY_SESSION_START_REASON], FT_RUM_SESSION_START_REASON_SDK_INIT);
+            XCTAssertNil(fields[@"process_start_time_ns"]);
             if ([source isEqualToString:FT_RUM_SOURCE_VIEW]) {
                 XCTAssertTrue([fields[FT_KEY_LOADING_TIME] isEqual:@(-1)]);
                 hasApplicationLaunchView = YES;
@@ -1661,6 +2918,46 @@
     }];
     XCTAssertTrue(hasClosedColdApplicationLaunch);
     XCTAssertTrue(hasClosedWarmApplicationLaunch);
+}
+
+- (void)testLaunchDurationPreservesRawValuesForAllLaunchTypes {
+    [self setRumConfig];
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    NSArray<NSDictionary *> *cases = @[
+        @{@"name": @"cold-at-max", @"type": FT_LAUNCH_COLD, @"duration": @(60000000000LL), @"role": FT_APP_LAUNCH_TYPE_FOREGROUND},
+        @{@"name": @"cold-over-max", @"type": FT_LAUNCH_COLD, @"duration": @(60000000001LL), @"role": FT_APP_LAUNCH_TYPE_FOREGROUND},
+        @{@"name": @"cold-background-short", @"type": FT_LAUNCH_COLD, @"duration": @(1000000000LL), @"role": FT_APP_LAUNCH_TYPE_BACKGROUND},
+        @{@"name": @"cold-background-over", @"type": FT_LAUNCH_COLD, @"duration": @(61000000000LL), @"role": FT_APP_LAUNCH_TYPE_BACKGROUND},
+        @{@"name": @"cold-unknown-over", @"type": FT_LAUNCH_COLD, @"duration": @(61000000000LL)},
+        @{@"name": @"warm-over", @"type": FT_LAUNCH_WARM, @"duration": @(61000000000LL)},
+        @{@"name": @"hot-over", @"type": FT_LAUNCH_HOT, @"duration": @(61000000000LL)},
+        @{@"name": @"warm-at-max", @"type": FT_LAUNCH_WARM, @"duration": @(60000000000LL)},
+        @{@"name": @"hot-at-max", @"type": FT_LAUNCH_HOT, @"duration": @(60000000000LL)},
+    ];
+    for (NSDictionary *testCase in cases) {
+        NSString *role = testCase[@"role"];
+        [manager addLaunch:testCase[@"name"]
+                      type:testCase[@"type"]
+                launchTime:[NSDate date]
+                  duration:testCase[@"duration"]
+                  property:role ? @{FT_KEY_APP_LAUNCH_TYPE: role} : nil];
+    }
+    [manager syncProcess];
+
+    NSMutableDictionary<NSString *, NSDictionary *> *fieldsByName = [NSMutableDictionary dictionary];
+    [FTModelHelper resolveModelArray:[[FTTrackerEventDBTool sharedManager] getAllDatas] callBack:^(NSString *source, NSDictionary *tags, NSDictionary *fields, BOOL *stop) {
+        NSString *name = tags[FT_KEY_ACTION_NAME];
+        if ([source isEqualToString:FT_RUM_SOURCE_ACTION] && name) {
+            fieldsByName[name] = fields;
+        }
+    }];
+    for (NSDictionary *testCase in cases) {
+        NSDictionary *fields = fieldsByName[testCase[@"name"]];
+        XCTAssertEqualObjects(fields[FT_DURATION], testCase[@"duration"], @"%@", testCase[@"name"]);
+        XCTAssertEqualObjects(fields[FT_KEY_APP_LAUNCH_TYPE], testCase[@"role"]);
+        XCTAssertNil(fields[@"app_state"]);
+        XCTAssertNil(fields[@"noise_reduction"]);
+    }
 }
 - (void)testLaunchActionUsesApplicationLaunchAndClosesWithActiveView{
     [self setRumConfig];
@@ -2079,8 +3376,15 @@
 }
 - (void)testErrorSituation{
     [self setRumConfig];
-//    [[FTExternalDataManager sharedManager] addErrorWithType:@"ios_crash" message:@"testSituation_unknown" stack:@"error stack"];
-    [FTGlobalRumManager sharedInstance].rumManager.appState = FTAppStateStartUp;
+    FTRUMManager *manager = [FTGlobalRumManager sharedInstance].rumManager;
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    [dependencies.appStateHistory stopMonitoring];
+    // Model an inactive startup consistently in both manager and lifecycle history.
+    dependencies.appStateHistory = [[FTRUMAppStateHistory alloc]
+        initWithState:@"unknown" timeNs:[NSDate ft_currentNanosecondTimeStamp]];
+    dependencies.appStateHistory.delegate = (id<FTRUMAppStateHistoryDelegate>)manager;
+    [dependencies.appStateHistory startMonitoring];
+    manager.appState = FTAppStateStartUp;
     [[FTExternalDataManager sharedManager] addErrorWithType:@"ios_crash" message:@"testSituation_startup" stack:@"error stack"];
     [[NSNotificationCenter defaultCenter]
      postNotificationName:UIApplicationDidBecomeActiveNotification object:nil];
@@ -2098,10 +3402,10 @@
             NSString *errorMessage = fields[FT_KEY_ERROR_MESSAGE];
             NSString *errorSituation = tags[FT_KEY_ERROR_SITUATION];
             NSString *situation = [errorMessage substringFromIndex:14];
-            XCTAssertTrue([errorSituation isEqualToString:situation]);
+            XCTAssertEqualObjects(errorSituation, situation);
         }
     }];
-    XCTAssertTrue(hasDatasCount == 3);
+    XCTAssertEqual(hasDatasCount, 3);
     
 }
 #pragma mark ========== Long Task ==========
@@ -3060,6 +4364,16 @@
     RUMModel *model = rumReport.value;
     XCTAssertNil(model.fields[FT_KEY_FOREGROUND_CRASH_FREE_DURATION]);
     XCTAssertNil(model.fields[FT_KEY_BACKGROUND_CRASH_FREE_DURATION]);
+}
+
+- (void)testFractionalSamplingRatesArePreservedInSessionFields {
+    FTRUMSessionState *sessionState = [[FTRUMSessionState alloc] init];
+    sessionState.sampleRate = 0.1f;
+    sessionState.sessionOnErrorSampleRate = 12.5f;
+
+    NSDictionary *fields = [sessionState sessionFields];
+    XCTAssertEqualWithAccuracy([fields[FT_RUM_SESSION_SAMPLE_RATE] floatValue], 0.1f, 0.00001f);
+    XCTAssertEqualWithAccuracy([fields[FT_RUM_SESSION_ON_ERROR_SAMPLE_RATE] floatValue], 12.5f, 0.00001f);
 }
 
 #pragma mark ========== Mock Data ==========
