@@ -275,6 +275,7 @@ extern NSString * const FT_KEY_RESOURCE_REQUEST_SIZE;
 extern NSString * const FT_KEY_RESOURCE_CONNECTION_REUSE;
 /// Network availability field key captured when the resource starts.
 extern NSString * const FT_KEY_NETWORK_AVAILABLE;
+extern NSString * const FT_KEY_NETWORK_SIGNAL_STRENGTH;
 /// Resource type value for a WebSocket opening handshake.
 extern NSString * const FT_RESOURCE_TYPE_WEBSOCKET;
 /// WebSocket collection-level value for opening-handshake-only Resources.
@@ -367,10 +368,13 @@ extern NSString * const FT_KEY_LAUNCH_PRE_RUNTIME_INIT_TIME;
 extern NSString * const FT_KEY_LAUNCH_RUNTIME_INIT_TIME;
 /// Cold launch role field key.
 extern NSString * const FT_KEY_APP_LAUNCH_TYPE;
+extern NSString * const FT_KEY_PREWARM_TYPE;
 /// Cold launch role value for foreground launches.
 extern NSString * const FT_APP_LAUNCH_TYPE_FOREGROUND;
 /// Cold launch role value for background launches.
 extern NSString * const FT_APP_LAUNCH_TYPE_BACKGROUND;
+/// Foreground cold launch interrupted by background before its completion.
+extern NSString * const FT_APP_LAUNCH_TYPE_FOREGROUND_AND_BACKGROUND;
 
 #pragma mark ========== Session Replay ==========
 /// Flag key indicating whether the current session has associated Session Replay data.

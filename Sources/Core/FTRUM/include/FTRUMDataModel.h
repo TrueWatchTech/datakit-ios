@@ -44,15 +44,17 @@ typedef NS_ENUM(NSUInteger, FTRUMDataType) {
 };
 
 NS_ASSUME_NONNULL_BEGIN
-@class FTResourceMetricsModel,FTResourceContentModel,FTHeatmapAttributes;
+@class FTResourceMetricsModel,FTResourceContentModel,FTHeatmapAttributes,FTLongTaskEvent;
 @interface FTRUMDataModel : NSObject
 @property (nonatomic, strong) NSDate *time;
 @property (nonatomic, assign) FTRUMDataType type;
 @property (nonatomic, strong) NSDictionary *tags;
 @property (nonatomic, strong) NSDictionary *fields;
+@property (nonatomic, copy) NSSet<NSString *> *customFieldKeys;
+@property (nonatomic, copy) NSSet<NSString *> *customTagKeys;
 @property (nonatomic, assign) long long tm;
-/// Immutable Visitor ID captured when this event entered the SDK.
-@property (nonatomic, copy, nullable) NSString *visitorIDSnapshot;
+/// Automatic LongTask facts captured before asynchronous RUM processing.
+@property (nonatomic, strong, nullable) FTLongTaskEvent *longTaskEvent;
 @property (nonatomic, assign, readonly) BOOL isUserInteraction;
 -(instancetype)initWithType:(FTRUMDataType)type time:(NSDate *)time;
 @end
@@ -92,7 +94,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 @interface FTRUMResourceModel : FTRUMDataModel
+/// Request/Start Visitor captured before queueing; nil stays absent throughout this Resource.
+@property (nonatomic, copy, nullable) NSString *visitorIDSnapshot;
 @property (nonatomic, copy) NSString *identifier;
+/// Latest network facts captured at Resource Start API entry, before RUM queue processing.
+/// The Handler retains only the first Start values; nil means the field is absent.
+@property (nonatomic, strong, nullable) NSNumber *networkAvailable;
+/// Ordinal link quality: unknown=0, minimal=1, moderate=2, good=3.
+@property (nonatomic, strong, nullable) NSNumber *networkSignalStrength;
 /// Resource terminals retain the View associated when Start is processed.
 @property (nonatomic, copy, nullable) NSString *ownerViewID;
 
@@ -102,6 +111,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) FTResourceMetricsModel *metrics;
 @end
 @interface FTRUMLaunchDataModel : FTRUMActionModel
+/// Captured endpoint; calibration must not shorten the owning View lifecycle.
+@property (nonatomic, strong, nullable) NSDate *launchEndDate;
 @property (nonatomic, strong) NSNumber *duration;
 @property (nonatomic, assign, readonly) BOOL isInitialLaunchAction;
 -(instancetype)initWithDuration:(NSNumber *)duration;

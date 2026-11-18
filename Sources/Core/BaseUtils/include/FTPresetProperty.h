@@ -23,6 +23,7 @@
 #import "FTInternalConstants.h"
 #import "FTSDKCompat.h"
 #import "FTReadWriteHelper.h"
+#import "FTRUMPropertySnapshot.h"
 NS_ASSUME_NONNULL_BEGIN
 @class FTUserInfo;
 /// Preset properties
@@ -32,6 +33,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Device name
 + (NSString *)deviceInfo;
+/// Whether this process is an iOS app running on a Mac.
++ (BOOL)isiOSAppOnMac;
 + (NSString *)getApplicationUUID;
 + (NSString *)cpuArch;
 + (NSString *)CPUArchForMajor:(cpu_type_t)majorCode minor:(cpu_subtype_t)minorCode;
@@ -55,6 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(void)setLogGlobalContext:(nullable NSDictionary *)logGlobalContext;
 
+- (FTRUMPropertySnapshot *)rumPropertySnapshot;
 - (NSDictionary *)rumTags;
 - (NSDictionary *)rumDynamicTags;
 

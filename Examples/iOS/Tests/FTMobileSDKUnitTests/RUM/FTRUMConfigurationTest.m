@@ -32,6 +32,8 @@
 #import "FTModelHelper.h"
 #import "FTGlobalRumManager+Private.h"
 #import "FTRUMManager.h"
+#import "FTRUMDependencies.h"
+#import "FTFatalErrorContext.h"
 #import "FTAutoTrackHandler.h"
 #import "XCTestCase+Utils.h"
 #import "UIEvent+Mock.h"
@@ -433,10 +435,6 @@ typedef FTRUMAction* _Nullable (^FTLaunchActionTrackingBlock)(FTLaunchType type)
 @end
 #endif
 
-@interface FTRumConfig (FTViewLoadingTimeTest)
-@property (nonatomic, assign) BOOL enableUIKitViewLoadingTime;
-@end
-
 @interface ModalViewController : UIViewController
 
 @end
@@ -560,7 +558,7 @@ static void FTStartAutoTrackActionTest(AddRumDatasHandlerMock *mock,
     rumConfig.freezeDurationMs = 5000;
     XCTAssertTrue(rumConfig.freezeDurationMs == 5000);
 }
-- (void)testVisitorIDUsesEventSnapshotAndManagedContextPrecedence {
+- (void)testVisitorIDUsesWriteSnapshotAndManagedContextPrecedence {
     __block NSInteger finalModifierMode = 0;
     FTMobileConfig *mobileConfig = [[FTMobileConfig alloc] initWithDatakitUrl:self.url ?: @"http://127.0.0.1:9529"];
     mobileConfig.autoSync = NO;
@@ -614,6 +612,12 @@ static void FTStartAutoTrackActionTest(AddRumDatasHandlerMock *mock,
     dispatch_semaphore_signal(release);
     [manager syncProcess];
 
+    FTRUMDependencies *dependencies = [manager valueForKey:@"rumDependencies"];
+    FTFatalErrorContextModel *historical = [dependencies.fatalErrorContext currentContextModel];
+    XCTAssertEqualObjects(historical.dynamicContext[FT_VISITOR_ID], newVisitorID);
+    XCTAssertEqualObjects(historical.lastViewContext[@"tags"][FT_VISITOR_ID], newVisitorID);
+    XCTAssertEqualObjects(dependencies.lastViewUserCustomDatas[FT_VISITOR_ID], newVisitorID);
+
     finalModifierMode = 1;
     [[FTExternalDataManager sharedManager] addAction:@"visitor-final-override" actionType:@"custom" property:nil];
     [manager syncProcess];
@@ -638,9 +642,11 @@ static void FTStartAutoTrackActionTest(AddRumDatasHandlerMock *mock,
             deleteTags = tags;
         }
     }];
-    XCTAssertEqualObjects(snapshotTags[FT_VISITOR_ID], eventVisitorID);
+    XCTAssertEqualObjects(snapshotTags[FT_VISITOR_ID], newVisitorID);
     XCTAssertEqualObjects(overrideTags[FT_VISITOR_ID], @"final-override");
     XCTAssertNil(deleteTags[FT_VISITOR_ID]);
+    XCTAssertEqualObjects(historical.dynamicContext[FT_VISITOR_ID], newVisitorID);
+    XCTAssertEqualObjects([dependencies.fatalErrorContext currentContextModel].dynamicContext[FT_VISITOR_ID], newVisitorID);
 }
 - (void)testVisitorIDResourceAndNetworkErrorKeepRequestHeaderSnapshotAfterReset {
     FTMobileConfig *mobileConfig = [[FTMobileConfig alloc] initWithDatakitUrl:self.url ?: @"http://127.0.0.1:9529"];
@@ -757,14 +763,14 @@ static void FTStartAutoTrackActionTest(AddRumDatasHandlerMock *mock,
     XCTAssertNotEqualObjects(resourceTags[FT_VISITOR_ID], completionVisitorID);
     XCTAssertNil(resourceFields[FT_VISITOR_ID]);
 }
-- (void)testUIKitViewLoadingTimePrivateConfiguration {
+- (void)testViewLoadingTimeConfiguration {
     FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:@"appid"];
-    XCTAssertTrue(rumConfig.enableUIKitViewLoadingTime);
+    XCTAssertTrue(rumConfig.enableTraceUserViewLoadingTime);
 
-    rumConfig.enableUIKitViewLoadingTime = NO;
+    rumConfig.enableTraceUserViewLoadingTime = NO;
     FTRumConfig *copiedConfig = [rumConfig copy];
-    XCTAssertFalse(copiedConfig.enableUIKitViewLoadingTime);
-    XCTAssertFalse([[rumConfig debugDescription] containsString:@"enableUIKitViewLoadingTime"]);
+    XCTAssertFalse(copiedConfig.enableTraceUserViewLoadingTime);
+    XCTAssertTrue([[rumConfig debugDescription] containsString:@"enableTraceUserViewLoadingTime"]);
 }
 - (void)testIssueDataProviderConfigurationCopyAndSerialization{
     FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:@"appid"];
@@ -1546,6 +1552,51 @@ static void FTStartAutoTrackActionTest(AddRumDatasHandlerMock *mock,
     XCTAssertNil(mock.lastHeatmapAttributes);
 }
 
+- (void)testActionPublisherOwnsNestedUIKitPropertiesBeforeHandoff {
+    AddRumDatasHandlerMock *mock = [AddRumDatasHandlerMock new];
+    TestTrackingHandler *handler = [TestTrackingHandler new];
+    NSMutableString *label = [NSMutableString stringWithString:@"before"];
+    NSMutableDictionary *nested = [@{@"label": label} mutableCopy];
+    handler.actionTrackingBlock = ^FTRUMAction *(UIView *view) {
+        return [[FTRUMAction alloc] initWithActionName:@"owned-action" property:@{@"nested": nested, @"fraction": @1.25}];
+    };
+    FTAutoTrackActionPublisher *publisher = [[FTAutoTrackActionPublisher alloc] initWithActionTrackingHandler:handler
+        addRumDatasDelegate:mock heatmapResolver:[FTAutoTrackHeatmapResolver new]];
+    UIButton *button = [UIButton new];
+    [publisher publishUIKitActionWithTargetView:button heatmapTargetView:button locationResolver:nil];
+    [label appendString:@"-after"];
+    nested[@"later"] = @2;
+    XCTAssertEqualObjects(mock.lastActionProperty[@"nested"], (@{@"label": @"before"}));
+    XCTAssertEqualObjects(mock.lastActionProperty[@"fraction"], @1.25);
+    XCTAssertTrue([mock.lastActionProperty[@"fraction"] isKindOfClass:NSNumber.class]);
+}
+
+- (void)testActionPublisherOwnsNestedSwiftUIPropertiesBeforeHandoff {
+    AddRumDatasHandlerMock *mock = [AddRumDatasHandlerMock new];
+    FTAutoTrackActionPublisher *publisher = [[FTAutoTrackActionPublisher alloc] initWithActionTrackingHandler:nil
+        addRumDatasDelegate:mock heatmapResolver:[FTAutoTrackHeatmapResolver new]];
+    NSMutableArray *items = [NSMutableArray arrayWithObject:@1];
+    [publisher publishSwiftUIActionWithName:@"owned-swiftui-action" property:@{@"items": items, @"fraction": @1.25}];
+    [items addObject:@2];
+    XCTAssertEqualObjects(mock.lastActionProperty[@"items"], @[@1]);
+    XCTAssertEqualObjects(mock.lastActionProperty[@"fraction"], @1.25);
+    XCTAssertTrue([mock.lastActionProperty[@"fraction"] isKindOfClass:NSNumber.class]);
+}
+
+- (void)testSwiftUIViewOwnsNestedPropertiesBeforeHandoff {
+    AddRumDatasHandlerMock *mock = [AddRumDatasHandlerMock new];
+    FTAutoTrackHandler *handler = [FTAutoTrackHandler sharedInstance];
+    [handler startWithTrackView:YES action:NO addRumDatasDelegate:mock viewHandler:nil swiftUIViewHandler:nil actionHandler:nil];
+    NSMutableArray *items = [NSMutableArray arrayWithObject:@1];
+    [handler notifyOnAppearWithIdentity:@"owned-swiftui-view" name:@"OwnedView"
+        property:@{@"items": items, @"fraction": @1.25} loadTime:@0];
+    [items addObject:@2];
+    XCTAssertEqualObjects(mock.lastStartProperty[@"items"], @[@1]);
+    XCTAssertEqualObjects(mock.lastStartProperty[@"fraction"], @1.25);
+    XCTAssertTrue([mock.lastStartProperty[@"fraction"] isKindOfClass:NSNumber.class]);
+    [handler notifyOnDisappearWithIdentity:@"owned-swiftui-view"];
+}
+
 - (void)testActionPublisher_ignoresEmptySwiftUIActionName {
     AddRumDatasHandlerMock *mock = [AddRumDatasHandlerMock new];
     FTAutoTrackActionPublisher *publisher = [[FTAutoTrackActionPublisher alloc]initWithActionTrackingHandler:nil
@@ -1884,8 +1935,10 @@ static void FTStartAutoTrackActionTest(AddRumDatasHandlerMock *mock,
     FTRumConfig *rumConfig = [[FTRumConfig alloc]initWithAppid:self.appid];
     rumConfig.enableTraceUserAction = YES;
     __block NSString *actionName;
+    NSMutableArray<NSNumber *> *launchTypes = [NSMutableArray array];
     TestTrackingHandler *handler = [TestTrackingHandler new];
     handler.launchActionTrackingBlock = ^FTRUMAction * _Nullable(FTLaunchType type) {
+        [launchTypes addObject:@(type)];
         switch (type) {
             case FTLaunchHot:
                 actionName = @"hot";
@@ -1902,14 +1955,24 @@ static void FTStartAutoTrackActionTest(AddRumDatasHandlerMock *mock,
     rumConfig.actionTrackingHandler = handler;
     [FTMobileAgent startWithConfigOptions:config];
     [[FTMobileAgent sharedInstance] startRumWithConfigOptions:rumConfig];
-    
-    
+
+    // Initial launch is process-scoped and may have been reported by an earlier
+    // test. Exercise a new hot launch owned entirely by this SDK instance.
     [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+    [[FTTrackerEventDBTool sharedManager] deleteAllDatas];
+    [launchTypes removeAllObjects];
+    actionName = nil;
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationWillEnterForegroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UIApplicationDidBecomeActiveNotification object:nil];
+
+    [[FTGlobalRumManager sharedInstance].rumManager syncProcess];
+    XCTAssertEqualObjects(launchTypes, (@[@(FTLaunchHot)]));
+    XCTAssertEqualObjects(actionName, @"hot");
     NSArray *datas =[[FTTrackerEventDBTool sharedManager] getFirstRecords:50 withType:FT_DATA_TYPE_RUM];
     __block BOOL hasLaunchAction = NO;
     [FTModelHelper resolveModelArray:datas callBack:^(NSString * _Nonnull source, NSDictionary * _Nonnull tags, NSDictionary * _Nonnull fields, BOOL * _Nonnull stop) {
-        if ([source isEqualToString:FT_RUM_SOURCE_ACTION] && ![tags[FT_KEY_ACTION_TYPE] isEqualToString:FT_KEY_ACTION_TYPE_CLICK ]) {
-            XCTAssertTrue([tags[FT_KEY_ACTION_NAME] isEqualToString:actionName]);
+        if ([source isEqualToString:FT_RUM_SOURCE_ACTION] && [tags[FT_KEY_ACTION_TYPE] isEqualToString:FT_LAUNCH_HOT]) {
+            XCTAssertEqualObjects(tags[FT_KEY_ACTION_NAME], @"hot");
             hasLaunchAction = YES;
             *stop = YES;
         }

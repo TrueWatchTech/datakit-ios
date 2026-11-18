@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
 	s.name         = "TrueWatchSDK"
-	s.version      = "1.6.8"
+	s.version      = "1.6.9"
 	s.summary      = "TrueWatchTech iOS Data Collection SDK"
 	#s.description  = ""
 	s.homepage     = "https://github.com/TrueWatchTech/datakit-ios.git"
@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
 		'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) FT_COCOAPODS=1'
 	}
 
-	#1.6.8 replacing "#{s.version}" will cause an error during pod valid phase
+	#1.6.9 replacing "#{s.version}" will cause an error during pod valid phase
 	s.source       = { :git => "https://github.com/TrueWatchTech/datakit-ios.git", :tag => s.version.to_s }
 
     s.resource_bundle = {
@@ -89,6 +89,7 @@ Pod::Spec.new do |s|
 
 		c.subspec 'Protocol' do |r|
 			r.source_files = 'Sources/Core/Protocol/**/*{.h,.m}'
+			r.dependency 'TrueWatchSDK/Core/BaseUtils'
 		end
 
 		c.subspec 'RemoteConfig' do |r|

@@ -30,11 +30,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)sharedInstance;
 
+/// Latest path link quality: unknown=0, minimal=1, moderate=2, good=3.
+/// Supported on iOS/tvOS/macOS 26.0+ when built with a supporting SDK.
+/// Returns nil before the first path update or on systems/SDKs without support.
+/// This ordinal value does not represent RSSI, dBm, or signal bars.
+- (nullable NSNumber *)networkSignalStrength;
+
 - (NSDictionary<NSString *, id> *)networkResourceFields;
 
 - (void)addNetworkObserver:(id<FTNetworkChangeObserver>)observer;
 
 - (void)removeNetworkObserver:(id<FTNetworkChangeObserver>)observer;
+/// Enqueues monitoring startup. Network fields remain unset until the first path update.
 - (void)start;
 - (void)stop;
 @end

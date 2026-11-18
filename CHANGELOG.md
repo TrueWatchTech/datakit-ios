@@ -1,3 +1,55 @@
+# 1.6.9
+
+1. Automatic Long Task and ANR collection now ignores background stalls by default, and ANR reports retain the application state captured at stall start. Improved stall timing accuracy, captured stack preservation, and monitor startup reliability.
+2. Added `FTRumConfig.enableTraceUserViewLoadingTime` and `viewLoadingTimeClassNameExcludes` to disable automatic page loading-time collection globally or by controller class while preserving RUM View tracking.
+3. Added the RUM Resource `network_signal_strength` field to report network link quality on iOS 26, tvOS 26, and macOS 26 or later. Network state is captured when the Resource starts.
+4. Improved RUM `custom_keys` reporting to include global custom context, user extra properties, and custom event properties.
+5. Fixed RUM cold launch source detection and added the `foreground_and_background` classification to `app_launch_type` for foreground launches interrupted by a transition to the background.
+6. Fixed cellular network type detection to use the SIM currently providing the data service.
+7. Fixed device model reporting for iOS apps running on Mac to use the host Mac model.
+8. Fixed RUM context correlation when Session Replay starts late, ensuring recording can link to the existing session and View.
+9. Shortened the first automatic upload wait on the next launch after an early startup crash, and improved crash history persistence and upload scheduling reliability.
+10. Removed diagnostic symbol lookup during automatic instrumentation to reduce startup overhead in SDK Debug builds. Swizzle diagnostic logging is disabled by default and must be explicitly enabled with `[FTLog enableSwizzleLog:YES]`, with SDK debug logging also enabled.
+11. Added the `launchPrewarmInterval` configuration option for custom launch prewarm detection (disabled by default) and manual detection APIs, with improved prewarm duration trimming and timeline calibration.
+12. Fixed duplicate initial launch reports after SDK shutdown and reinitialization. The initial launch Action is reported only once per process, while subsequent hot launches continue to be tracked after reinitialization.
+---
+
+# 1.6.9-beta.1
+
+1. Fixed interval-based `app_state` reporting for automatically collected Long Tasks. Recovered historical Long Task events report `unknown`.
+2. `FTRumConfig.viewLoadingTimeClassNameExcludes` now accepts `NSArray<NSString *>` instead of `NSSet<NSString *>`. Update existing configurations to use arrays.
+3. Added opt-in iOS launch prewarm inference through `FTRumConfig.launchPrewarmInterval` (in milliseconds, disabled by default), with `prewarmCheckStart` / `prewarmCheckEnd` markers for the detection interval. Launch event timestamps, total duration, and phase offsets are calibrated consistently.
+4. System-detected prewarm launches now exclude pre-runtime and runtime intervals from total duration even when duration inference is disabled.
+5. Added process-wide launch event deduplication to prevent duplicate initial launch reports after SDK restarts.
+---
+
+# 1.6.9-alpha.4
+
+1. Improved RUM `custom_keys` reporting for global context, user extra properties, and event properties, including WebView, Widget, and historical Crash/ANR events.
+2. **Changed:** Automatic Long Task and ANR collection now ignores background stalls by default, and ANR reports retain the application state captured at stall start. Automatically collected Long Task and ANR events no longer include interval-based `app_state`; manually reported Long Tasks retain interval-based reporting.
+---
+
+# 1.6.9-alpha.3
+
+1. Reduced SDK startup overhead by initializing network connectivity monitoring asynchronously and avoiding eager controller class initialization during automatic View scanning.
+2. Added `FTRumConfig.enableTraceUserViewLoadingTime` and `viewLoadingTimeClassNameExcludes` to disable automatic page loading-time collection globally or for specific controller classes while preserving RUM View tracking.
+3. Added the RUM Resource `network_signal_strength` field to report network link quality on iOS 26, tvOS 26, and macOS 26 or later. Network state is captured when the Resource starts.
+4. Fixed cellular network type detection to use the SIM currently providing the data service.
+5. Fixed device model reporting for iOS apps running on Mac to use the host Mac model.
+6. Improved Long Task and ANR timing, application state classification, captured stack preservation, and monitor startup reliability.
+7. Fixed RUM context correlation when Session Replay starts and prevented ended Views from being used as the current View.
+8. Shortened the first automatic upload wait after an early startup crash and improved crash history persistence and upload scheduling reliability.
+---
+# 1.6.9-alpha.2
+
+1. Reduced Debug startup overhead by removing diagnostic symbol lookup during automatic instrumentation. Swizzle diagnostic logging for troubleshooting SDK compatibility issues is disabled by default and also requires SDK debug logging to be enabled.
+---
+
+# 1.6.9-alpha.1
+
+1. Fixed RUM cold launch source detection and added `foreground_and_background` classification for interrupted foreground launches.
+---
+
 # 1.6.8
 
 1. **Breaking:** Raised minimum supported versions to iOS 15, tvOS 15, and macOS 12.

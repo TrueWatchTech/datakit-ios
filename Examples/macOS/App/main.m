@@ -20,7 +20,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "TrueWatchSDKExampleImports.h"
-#import <TrueWatchReplay/TrueWatchSessionReplay.h>
+#import <TrueWatchSessionReplay/TrueWatchSessionReplay.h>
 // Configure preprocessor definitions in Target -> Build Settings -> GCC_PREPROCESSOR_DEFINITIONS
 #if PRE
 #define Track_id       @"0000000001"

@@ -29,6 +29,7 @@
 #endif
 #import "FTSDKCompat.h"
 #import "FTLongTaskManager.h"
+#import "FTLongTaskEvent.h"
 #import "FTAutoTrackHandler.h"
 #import "FTRUMManager.h"
 #import "FTDisplayRateMonitor.h"
@@ -37,6 +38,7 @@
 #import "FTExternalDataManager+Private.h"
 #import "FTInternalConstants.h"
 #import "FTCrash.h"
+#import "FTTrackDataManager.h"
 #import "FTFatalErrorContext.h"
 #import "FTErrorMonitorInfo.h"
 #import "FTModuleManager.h"
@@ -204,6 +206,9 @@ static NSObject *sharedInstanceLock;
                      enableMonitorMemory:[errorInfoWrapper enableMonitorMemory]
                         enableMonitorCpu:[errorInfoWrapper enableMonitorCpu]
                        issueDataProvider:rumConfig.issueDataProvider];
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+        [[FTTrackDataManager sharedInstance] updatePreviousEarlyCrash:[FTCrash shared].previousEarlyCrash];
+#endif
         dependencies.fatalErrorContext.onChange = ^(NSDictionary * _Nonnull context) {
             [FTCrash shared].userInfo = context;
         };
@@ -235,8 +240,8 @@ static NSObject *sharedInstanceLock;
     [self.rumManager updateSampleRate:sampleRate sessionOnErrorSampleRate:sessionOnErrorSampleRate];
 }
 #pragma mark ========== FTRunloopDetectorDelegate ==========
-- (void)longTaskStackDetected:(NSString*)slowStack duration:(long long)duration time:(long long)time{
-    [self.rumManager addLongTaskWithStack:slowStack duration:[NSNumber numberWithLongLong:duration] startTime:time];
+- (void)longTaskDetected:(FTLongTaskEvent *)event {
+    [self.rumManager addLongTaskEvent:event];
 }
 - (void)anrStackDetected:(NSString*)slowStack appState:(NSString *)appState time:(long long)time{
     [self.rumManager addAutomaticIssueWithCategory:FTIssueCategoryANR
@@ -251,6 +256,7 @@ static NSObject *sharedInstanceLock;
 #pragma mark ========== Shutdown ==========
 - (void)shutDown{
     [[FTAutoTrackHandler sharedInstance] shutDown];
+    [self.rumManager shutDown];
     self.heatmapIdentifierStore = nil;
     [_longTaskManager shutDown];
     [FTCrash clearIssueDataProvider];
